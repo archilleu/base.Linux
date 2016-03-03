@@ -1,0 +1,5 @@
+#ignore
+base/debug
+base/release
+base/test/*.o
+base/test/test
