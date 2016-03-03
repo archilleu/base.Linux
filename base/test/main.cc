@@ -1,9 +1,10 @@
-#include <stdio.h>
-#include "test.h"
+#include "test_main.h"
 
 int main(int argc, char** argv)
 {
-    MemoryBlock memb;
-    memb.Printf();
+    base::test::TestMain test;
+
+    test.StartTest();
+    
     return 0;
 }
