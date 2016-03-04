@@ -1,4 +1,6 @@
 #ignore
+*.o
+*.a
 base/debug
 base/release
 base/test/*.o

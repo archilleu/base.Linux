@@ -2,8 +2,8 @@
 
 using namespace base;
 
-MemoryBlock::MemoryBlock(size_t len)
-:   len_(len),
+MemoryBlock::MemoryBlock(size_t size)
+:   len_(size),
     dat_(0)
 {
     if(0 < len_)

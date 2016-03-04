@@ -3,6 +3,8 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <string.h>
+#include <stdio.h>
 
 #include <cstdint>
 #include <cassert>
@@ -31,4 +33,5 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "share_def.h"
 #endif //BASE_LINUX_BASE_SHARE_INC_H_

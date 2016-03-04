@@ -9,7 +9,7 @@ namespace base
 class MemoryBlock
 {
 public:
-    explicit MemoryBlock(size_t len=0);
+    explicit MemoryBlock(size_t size=0);
     MemoryBlock(const MemoryBlock& other);
     MemoryBlock& operator=(const MemoryBlock& other);
     MemoryBlock(MemoryBlock&& other);
@@ -20,7 +20,9 @@ public:
 
     char*       dat()       { return dat_; }
     const char* dat() const { return dat_; }
-    size_t      size()      { return len_; }
+    size_t      len()       { return len_; }
+
+    char operator[] (size_t index) { return dat_[index]; }
 
 private:
     friend bool operator==  (const MemoryBlock& left, const MemoryBlock& right);
@@ -50,7 +52,7 @@ inline bool operator!=(const MemoryBlock& left, const MemoryBlock& right)
 inline bool operator>(const MemoryBlock& left, const MemoryBlock& right)
 {
     return  (
-            (left.len_ < right.len_)    ?   true
+            (left.len_ > right.len_)    ?   true
                                         :
                                             (left.len_ != right.len_    ? false
                                                                         : (memcmp(left.dat_, right.dat_, left.len_)>0)

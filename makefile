@@ -17,21 +17,22 @@ VPATH = base
 
 	_CFLAGS=-D_REENTRANT -Wall -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Wpointer-arith -Wshadow -Wwrite-strings -std=c++11
 ifeq ($(debug),y)
-	_OBJ_PATH=./base/debug
 	CXX_FLAGS=$(_CFLAGS)
 	CXX_FLAGS+=-g -D_DEBUG
 else
-	_OBJ_PATH=./base/release
 	CXX_FLAGS=$(_CFLAGS)
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 
-objects=memory_block.o
+objects=memory_block.o timestamp.o
 main : $(objects)
-	$(CXX_COMPILER_LIB) $(_OBJ_PATH)/$(_OBJ_NAME) $(_OBJ_PATH)/$(objects)
+	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
 
 memory_block.o : memory_block.h memory_block.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/memory_block.cc -o $(_OBJ_PATH)/memory_block.o
+	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/memory_block.cc
+
+timestamp.o : timestamp.h timestamp.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/timestamp.cc 
 
 clean:	
-	-@ rm $(_OBJ_PATH)/*
+	-@ rm *.o *.a

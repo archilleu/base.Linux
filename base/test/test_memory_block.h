@@ -23,7 +23,7 @@ public:
 
 private:
     bool Illegal();
-    bool Leegal();
+    bool Legal();
 };
 
 }//namespace test
