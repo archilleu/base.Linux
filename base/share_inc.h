@@ -2,9 +2,13 @@
 #define BASE_LINUX_BASE_SHARE_INC_H_
 
 #include <unistd.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <linux/limits.h>
+
 
 #include <cstdint>
 #include <cassert>

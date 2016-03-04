@@ -22,7 +22,8 @@ public:
     const char* dat() const { return dat_; }
     size_t      len()       { return len_; }
 
-    char operator[] (size_t index) { return dat_[index]; }
+    char    operator[] (size_t index) const { return dat_[index]; }
+    char&   operator[] (size_t index)       { return dat_[index]; }
 
 private:
     friend bool operator==  (const MemoryBlock& left, const MemoryBlock& right);

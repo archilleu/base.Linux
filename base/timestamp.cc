@@ -2,9 +2,10 @@
 #include <time.h>
 #include <sys/time.h>
 
-using namespace base;
+namespace base
+{
 
-Timestamp kZero = Timestamp(0);
+Timestamp Timestamp::kZero = Timestamp();
 
 Timestamp::Timestamp(const std::string& datetime)
 {
@@ -29,10 +30,10 @@ std::string Timestamp::Data()
     time_t seconds = static_cast<time_t>(Secodes());
     gmtime_r(&seconds, &time);
 
-    std::string datetime("00:00:00");
-    snprintf(const_cast<char*>(datetime.data()), datetime.size(), "%02d:%02d:%02d", time.tm_hour, time.tm_min, time.tm_sec);
+    std::string datetime("YYYY-MM-DD");
+    snprintf(const_cast<char*>(datetime.data()), datetime.size()+1, "%4d-%02d-%02d", time.tm_year+1900, time.tm_mon+1, time.tm_mday);
 
-    //return std::move(datetime);
+    //return std::move(datetime); RVO
     return datetime;
 }
 
@@ -43,10 +44,10 @@ std::string Timestamp::Time()
     time_t seconds = static_cast<time_t>(Secodes());
     gmtime_r(&seconds, &time);
 
-    std::string datetime("YYY-MM-DD");
-    snprintf(const_cast<char*>(datetime.data()), datetime.size(), "%4d-%02d-%02d", time.tm_year+1900, time.tm_mon+1, time.tm_mday);
+    std::string datetime("00:00:00");
+    snprintf(const_cast<char*>(datetime.data()), datetime.size()+1, "%02d:%02d:%02d", time.tm_hour, time.tm_min, time.tm_sec);
 
-    //return std::move(datetime);
+    //return std::move(datetime); RVO
     return datetime;
 }
 
@@ -59,19 +60,19 @@ std::string Timestamp::Datatime(bool decimal)
 
     if(decimal) //show micro seconds
     {
-        std::string datetime("YYY-MM-DD HH:MM:SS.000000");
-        snprintf(const_cast<char*>(datetime.data()), datetime.size(), "%4d-%02d-%02d %02d:%02d:%02d.%06d", 
+        std::string datetime("YYYY-MM-DD HH:MM:SS.000000");
+        snprintf(const_cast<char*>(datetime.data()), datetime.size()+1, "%4d-%02d-%02d %02d:%02d:%02d.%06d", 
             time.tm_year+1900, time.tm_mon+1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec, static_cast<int>(micro_seconds_%kMicrosecondsPerSecond));
 
-        return datetime;
+        return datetime;//RVO
     }
     else
     {
-        std::string datetime("YYY-MM-DD HH:MM:SS");
-        snprintf(const_cast<char*>(datetime.data()), datetime.size(), "%4d-%02d-%02d %02d:%02d:%02d", 
+        std::string datetime("YYYY-MM-DD HH:MM:SS");
+        snprintf(const_cast<char*>(datetime.data()), datetime.size()+1, "%4d-%02d-%02d %02d:%02d:%02d", 
             time.tm_year+1900, time.tm_mon+1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
 
-        return datetime;
+        return datetime;//RVO
     }
 }
 
@@ -92,7 +93,7 @@ Timestamp Timestamp::Now()
     struct timeval tv;
     gettimeofday(&tv, 0);
 
-   return Timestamp(static_cast<uint64_t>(tv.tv_sec)*kMicrosecondsPerSecond + tv.tv_usec);
+   return Timestamp(static_cast<uint64_t>(tv.tv_sec)*kMicrosecondsPerSecond + tv.tv_usec);//RVO
 }
 
 Timestamp& Timestamp::Zero()
@@ -100,3 +101,4 @@ Timestamp& Timestamp::Zero()
     return Timestamp::kZero;
 }
 
+}//namespace base

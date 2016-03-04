@@ -16,7 +16,6 @@ public:
     Timestamp()
     :   micro_seconds_(0)
     {
-        std::cout << "timestamp con" << std::endl;
     }
     explicit Timestamp(uint64_t micro_seconds)
     :   micro_seconds_(micro_seconds)
@@ -26,7 +25,7 @@ public:
 
     std::string Data();
     std::string Time();
-    std::string Datatime(bool decimal);
+    std::string Datatime(bool decimal=false);
 
     uint64_t Secodes()      { return micro_seconds_ / kMicrosecondsPerSecond; }
     uint64_t Microseconds() { return micro_seconds_; }
@@ -53,18 +52,27 @@ inline bool operator == (Timestamp left, Timestamp right)
 {
     return left.Microseconds() == right.Microseconds();
 }
+
+inline bool operator != (Timestamp left, Timestamp right)
+{
+    return left.Microseconds() != right.Microseconds();
+}
+
 inline bool operator > (Timestamp left, Timestamp right)
 {
     return left.Microseconds() > right.Microseconds();
 }
+
 inline bool operator < (Timestamp left, Timestamp right)
 {
     return left.Microseconds() < right.Microseconds();
 }
+
 inline uint64_t operator + (Timestamp left, Timestamp right)
 {
     return left.Microseconds() + right.Microseconds();
 }
+
 inline uint64_t operator - (Timestamp left, Timestamp right)
 {
     return left.Microseconds() - right.Microseconds();

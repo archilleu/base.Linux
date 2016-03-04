@@ -11,7 +11,6 @@ VPATH = base
 	CXX_COMPILER_LIB=ar cvr
 	_OBJ_NAME=test
 	_SRC_PATH=.
-	_LIB_SHARE_HEADER=-I ../.
 	_LIB_SHARE=-L ../../.
 	_LIB_SHARE_NAME=-lbase.Linux
 
@@ -24,9 +23,9 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 
-objects=main.o test_base.o test_main.o test_memory_block.o
+objects=main.o test_base.o test_main.o test_memory_block.o test_timestamp.o test_function.o
 main : $(objects)
-	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE) $(_LIB_SHARE_HEADER) $(_LIB_SHARE_NAME)
+	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE)  $(_LIB_SHARE_NAME)
 
 main.o : main.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/main.cc 
@@ -40,5 +39,11 @@ test_main.o : test_main.cc test_main.h
 test_memory_block.o : test_memory_block.cc test_memory_block.h
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_memory_block.cc
 	
+test_timestamp.o : test_timestamp.cc test_timestamp.h
+	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_timestamp.cc
+	
+test_function.o : test_function.cc test_function.h
+	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_function.cc
+
 clean:	
 	-@ rm *.o

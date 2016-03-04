@@ -1,6 +1,7 @@
 #include "memory_block.h"
 
-using namespace base;
+namespace base
+{
 
 MemoryBlock::MemoryBlock(size_t size)
 :   len_(size),
@@ -88,3 +89,4 @@ void MemoryBlock::Fill(char c)
     return;
 }
 
+}//namespace base

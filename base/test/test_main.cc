@@ -1,6 +1,7 @@
 #include "test_main.h"
 #include "test_base.h"
 #include "test_memory_block.h"
+#include "test_timestamp.h"
 
 using namespace base;
 using namespace base::test;
@@ -10,6 +11,7 @@ TestMain::TestMain()
 #define TEST_ADD(TypeName)   test_obj_list_[#TypeName]=std::shared_ptr<TestBase>(dynamic_cast<TestBase*>(new TypeName))
 
     TEST_ADD(TestMemoryBlock);
+    TEST_ADD(TestTimestamp);
 
 #undef TEST_ADD
 }
