@@ -27,6 +27,7 @@ private:
     bool Test_BinChar();
     bool Test_Path();
     bool Test_Document();
+    
 };
 
 }//namespace test

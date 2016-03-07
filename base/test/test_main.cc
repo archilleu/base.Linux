@@ -2,6 +2,8 @@
 #include "test_base.h"
 #include "test_memory_block.h"
 #include "test_timestamp.h"
+#include "test_function.h"
+#include "test_thread.h"
 
 using namespace base;
 using namespace base::test;
@@ -10,8 +12,10 @@ TestMain::TestMain()
 {
 #define TEST_ADD(TypeName)   test_obj_list_[#TypeName]=std::shared_ptr<TestBase>(dynamic_cast<TestBase*>(new TypeName))
 
-    TEST_ADD(TestMemoryBlock);
-    TEST_ADD(TestTimestamp);
+    //TEST_ADD(TestMemoryBlock);
+    //TEST_ADD(TestTimestamp);
+    //TEST_ADD(TestFunction);
+    TEST_ADD(TestThread);
 
 #undef TEST_ADD
 }
@@ -23,6 +27,8 @@ TestMain::~TestMain()
 
 void TestMain::StartTest()
 {
+    std::cout << "验证没有bug后请使用 查看是否有内存问题: valgrind --tool=memcheck --leak-check=full ./test" << std::endl;
+
     for(auto iter=test_obj_list_.begin(); test_obj_list_.end()!=iter; ++iter)
     {
         std::cout <<"----------------------------------------------------------->"<< std::endl;

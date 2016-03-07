@@ -4,7 +4,7 @@ namespace base
 {
 
 //组装字符串，和printf类似
-std::string CombindString(const char* format, ...)
+std::string CombineString(const char* format, ...)
 {
     if(0 == format)
         return "";
@@ -230,7 +230,10 @@ bool FolderCreate(const std::string& path, bool recursive)
 
     for(size_t pos=path.find("/", 0); std::string::npos!=pos; pos=path.find('/', pos+1))
     {
-        std::string sub_path(path, pos);
+        if(0 == pos)    //find path is "/"
+            continue;
+
+        std::string sub_path(path.c_str(), pos);
         if(-1 == mkdir(sub_path.c_str(), 0770))
         {
             if(EEXIST == errno)
@@ -254,6 +257,10 @@ bool FolderDelete(const std::string& path, bool recursive)
     if(path.empty())
         return false;
 
+    /*todo recursive = true
+     */
+    recursive = false;
+    
     if(false == recursive)
     {
         if(-1 == rmdir(path.c_str()))
@@ -265,6 +272,9 @@ bool FolderDelete(const std::string& path, bool recursive)
     //清空文件和文件夹
     for(size_t pos=path.find("/", 0); std::string::npos!=pos; pos=path.find('/', pos+1))
     {
+        if(0 == pos)    //find path is "/"
+            continue;
+
         std::string sub_path(path, pos);
         if(-1 == rmdir(sub_path.c_str()))
             return false;

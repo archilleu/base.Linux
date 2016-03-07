@@ -76,6 +76,7 @@ bool TestMemoryBlock::Legal()
     {
     //compare
     MemoryBlock mb(8);
+    mb.Fill(0);
     MemoryBlock mb_assig = mb;
     MemoryBlock mb_copy(mb);
 
@@ -94,6 +95,27 @@ bool TestMemoryBlock::Legal()
 
     assert(mb != mb_copy);
     assert(mb < mb_copy);
+
+    }
+
+    {
+    MemoryBlock mb(8);
+    mb.Fill('a');
+    for(size_t i=0; i<mb.len(); i++)
+    {
+        MY_ASSERT('a' == mb[i]);
+    }
+
+    for(size_t i=0; i<mb.len(); i++)
+    {
+        mb[i] = 'b';
+    }
+
+    for(size_t i=0; i<mb.len(); i++)
+    {
+        MY_ASSERT('b' == mb[i]);
+    }
+
 
     }
 

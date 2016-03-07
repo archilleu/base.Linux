@@ -8,7 +8,7 @@ namespace base
 {
 
 //组装字符串，和printf类似
-std::string CombindString(const char* format, ...);
+std::string CombineString(const char* format, ...);
 
 //二进制数据转换为字符串(1byte<==>2byte)
 std::string BinToString(const unsigned char* buffer, size_t len);
@@ -21,9 +21,9 @@ MemoryBlock CharsToBin(const std::string& buffer);
 MemoryBlock CharsToBin(const char* buffer);
 
 //获取程序运行的路径
-std::string RunPathFolder();
-std::string RunPathFileName(const std::string& name);
-std::string RunPathFileName(const char* name);
+std::string RunPathFolder   ();
+std::string RunPathFileName (const std::string& name);
+std::string RunPathFileName (const char* name);
 
 std::string PathParent  (const std::string& path);
 std::string PathParent  (const char* path);
@@ -33,7 +33,6 @@ std::string PathName    (const char* path);
 //文件夹操作
 bool FolderCreate   (const std::string& path, bool recursive);
 bool FolderDelete   (const std::string& path, bool recursive);
-bool FolderDelete   (const char* path, bool recursive);
 bool FolderExist    (const std::string& path);
 bool FolderExist    (const char* path);
 

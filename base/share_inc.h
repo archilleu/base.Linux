@@ -9,7 +9,7 @@
 #include <stdarg.h>
 #include <linux/limits.h>
 
-
+#include <limits.h>
 #include <cstdint>
 #include <cassert>
 #include <cstdlib>
