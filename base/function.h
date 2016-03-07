@@ -37,6 +37,8 @@ bool FolderExist    (const std::string& path);
 bool FolderExist    (const char* path);
 
 //文件操作
+bool FileDelete (const std::string& pathname);
+bool FileDelete (const char* pathname);
 bool FileExist  (const std::string& pathname);
 bool FileExist  (const char* pathname);
 

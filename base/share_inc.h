@@ -10,13 +10,10 @@
 #include <linux/limits.h>
 
 #include <limits.h>
-#include <cstdint>
-#include <cassert>
-#include <cstdlib>
-#include <cstdio>
-#include <ctime>
-#include <cstdarg>
-#include <cstring>
+#include <stdint.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include <algorithm>
 #include <iostream>

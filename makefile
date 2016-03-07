@@ -24,7 +24,7 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 
-objects=memory_block.o timestamp.o function.o thread.o
+objects=memory_block.o timestamp.o function.o thread.o append_file.o
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
 
@@ -39,6 +39,9 @@ function.o : function.h function.cc
 
 thread.o : thread.h thread.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/thread.cc 
+
+append_file.o : append_file.h append_file.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/append_file.cc 
 
 clean:	
 	-@ rm *.o *.a

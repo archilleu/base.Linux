@@ -7,7 +7,6 @@ namespace base
 {
 
 //因为每个线程都需要自己的副本,所以这里用namespace替代类
-
 namespace CurrentThread
 {
     extern __thread uint32_t    t_cache_tid;

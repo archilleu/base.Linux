@@ -1,6 +1,7 @@
 #ifndef BASE_LINUX_BASE_SHARE_DFE_H_
 #define BASE_LINUX_BASE_SHARE_DFE_H_
 
+#include <stdint.h>
 namespace base
 {
     const uint64_t UNIT_KB = 1024;

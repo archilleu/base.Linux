@@ -4,6 +4,7 @@
 #include "test_timestamp.h"
 #include "test_function.h"
 #include "test_thread.h"
+#include "test_append_file.h"
 
 using namespace base;
 using namespace base::test;
@@ -15,7 +16,8 @@ TestMain::TestMain()
     //TEST_ADD(TestMemoryBlock);
     //TEST_ADD(TestTimestamp);
     //TEST_ADD(TestFunction);
-    TEST_ADD(TestThread);
+    //TEST_ADD(TestThread);
+    TEST_ADD(TestAppendFile);
 
 #undef TEST_ADD
 }

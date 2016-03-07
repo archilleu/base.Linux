@@ -302,6 +302,18 @@ bool FolderExist(const char* path)
 }
 
 //文件操作
+bool FileDelete(const std::string& pathname)
+{
+    return FileDelete(pathname.c_str());
+}
+
+bool FileDelete(const char* pathname)
+{
+    if(0 == pathname)
+        return false;
+
+    return (0==unlink(pathname));
+}
 bool FileExist(const std::string& pathname)
 {
     return FileExist(pathname.c_str());

@@ -23,7 +23,7 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 
-objects=main.o test_base.o test_main.o test_memory_block.o test_timestamp.o test_function.o test_thread.o
+objects=main.o test_base.o test_main.o test_memory_block.o test_timestamp.o test_function.o test_thread.o test_append_file.o
 main : $(objects)
 	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE)  $(_LIB_SHARE_NAME) $(_LIB_PUBLIC_NAME);
 
@@ -47,6 +47,9 @@ test_function.o : test_function.cc test_function.h
 
 test_thread.o : test_thread.cc test_thread.h
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_thread.cc
+
+test_append_file.o : test_append_file.cc test_append_file.h
+	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_append_file.cc
 
 clean:	
 	-@ rm *.o $(_OBJ_NAME)
