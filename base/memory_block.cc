@@ -1,8 +1,9 @@
+//---------------------------------------------------------------------------
 #include "memory_block.h"
-
+//---------------------------------------------------------------------------
 namespace base
 {
-
+//---------------------------------------------------------------------------
 MemoryBlock::MemoryBlock(size_t size)
 :   len_(size),
     dat_(0)
@@ -12,7 +13,7 @@ MemoryBlock::MemoryBlock(size_t size)
 
     return;
 }
-
+//---------------------------------------------------------------------------
 MemoryBlock::MemoryBlock(const MemoryBlock& other)
 :   len_(other.len_),
     dat_(0)
@@ -25,7 +26,7 @@ MemoryBlock::MemoryBlock(const MemoryBlock& other)
 
     return;
 }
-
+//---------------------------------------------------------------------------
 MemoryBlock& MemoryBlock::operator=(const MemoryBlock& other)
 {
     if(this != &other)
@@ -44,7 +45,7 @@ MemoryBlock& MemoryBlock::operator=(const MemoryBlock& other)
 
     return *this;
 }
-
+//---------------------------------------------------------------------------
 MemoryBlock::MemoryBlock(MemoryBlock&& other)
 {
     dat_ = other.dat_;
@@ -55,7 +56,7 @@ MemoryBlock::MemoryBlock(MemoryBlock&& other)
 
     return;
 }
-
+//---------------------------------------------------------------------------
 MemoryBlock& MemoryBlock::operator=(MemoryBlock&& other)
 {
     if(this != &other)
@@ -72,7 +73,7 @@ MemoryBlock& MemoryBlock::operator=(MemoryBlock&& other)
 
     return *this;
 }
-
+//---------------------------------------------------------------------------
 MemoryBlock::~MemoryBlock()
 {
     if(0 != dat_)
@@ -80,7 +81,7 @@ MemoryBlock::~MemoryBlock()
 
     return;
 }
-
+//---------------------------------------------------------------------------
 void MemoryBlock::Fill(char c)
 {
     if(0 != len_)
@@ -88,5 +89,5 @@ void MemoryBlock::Fill(char c)
 
     return;
 }
-
+//---------------------------------------------------------------------------
 }//namespace base

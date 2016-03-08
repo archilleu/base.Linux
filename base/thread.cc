@@ -1,9 +1,10 @@
+//---------------------------------------------------------------------------
 #include "thread.h"
 #include "sys/syscall.h"
-
+//---------------------------------------------------------------------------
 namespace base
 {
-
+//---------------------------------------------------------------------------
 namespace CurrentThread
 {
     __thread uint32_t       t_cache_tid;
@@ -14,7 +15,8 @@ namespace CurrentThread
         t_cache_tid = static_cast<uint32_t>(::syscall(SYS_gettid));
     }
 }
-
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 Thread::Thread(const ThreadFunc& thread_func, const std::string& thread_name)
 :   tid_(0),
     name_(thread_name),
@@ -24,7 +26,7 @@ Thread::Thread(const ThreadFunc& thread_func, const std::string& thread_name)
 {
     assert(thread_func_);
 }
-
+//---------------------------------------------------------------------------
 Thread::Thread(const Thread&& other)
 :   tid_(0),
     name_(std::move(other.name_)),
@@ -34,7 +36,7 @@ Thread::Thread(const Thread&& other)
     thread_func_(std::move(other.thread_func_))
 {
 }
-
+//---------------------------------------------------------------------------
 Thread::~Thread()
 {
     if((started_) && (!joined_))
@@ -44,7 +46,7 @@ Thread::~Thread()
 
     return;
 }
-
+//---------------------------------------------------------------------------
 bool Thread::Start()
 {
     if(started_)
@@ -64,7 +66,7 @@ bool Thread::Start()
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 void Thread::Join()
 {
     if(started_)
@@ -72,7 +74,7 @@ void Thread::Join()
 
     joined_ = true;
 }
-
+//---------------------------------------------------------------------------
 void Thread::OnThreadFunc()
 {
     tid_                            = CurrentThread::Tid();
@@ -92,7 +94,7 @@ void Thread::OnThreadFunc()
     }
     }
 
-
+    return;
 }
-
+//---------------------------------------------------------------------------
 }//namespace base

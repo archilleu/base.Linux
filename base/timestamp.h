@@ -1,12 +1,13 @@
+//---------------------------------------------------------------------------
 #ifndef BASE_LINUX_BASE_TIMESTAMPK_H_
 #define BASE_LINUX_BASE_TIMESTAMPK_H_
-
+//---------------------------------------------------------------------------
 #include "share_inc.h"
-
+//---------------------------------------------------------------------------
 /*
  * string time string format: YYYY-MM-DD HOUR:MINUTE:SECONDS
 */
-
+//---------------------------------------------------------------------------
 namespace base
 {
 
@@ -47,39 +48,38 @@ private:
 
     static Timestamp kZero;
 };
-
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 inline bool operator == (Timestamp left, Timestamp right)
 {
     return left.Microseconds() == right.Microseconds();
 }
-
+//---------------------------------------------------------------------------
 inline bool operator != (Timestamp left, Timestamp right)
 {
     return left.Microseconds() != right.Microseconds();
 }
-
+//---------------------------------------------------------------------------
 inline bool operator > (Timestamp left, Timestamp right)
 {
     return left.Microseconds() > right.Microseconds();
 }
-
+//---------------------------------------------------------------------------
 inline bool operator < (Timestamp left, Timestamp right)
 {
     return left.Microseconds() < right.Microseconds();
 }
-
+//---------------------------------------------------------------------------
 inline uint64_t operator + (Timestamp left, Timestamp right)
 {
     return left.Microseconds() + right.Microseconds();
 }
-
+//---------------------------------------------------------------------------
 inline uint64_t operator - (Timestamp left, Timestamp right)
 {
     return left.Microseconds() - right.Microseconds();
 }
-
+//---------------------------------------------------------------------------
 }//namespace base
-
+//---------------------------------------------------------------------------
 #endif// BASE_LINUX_BASE_TIMESTAMPK_H_
-
-

@@ -1,8 +1,9 @@
+//---------------------------------------------------------------------------
 #ifndef BASE_LINUX_BASE_MEMORYBLOCK_H_
 #define BASE_LINUX_BASE_MEMORYBLOCK_H_
-
+//---------------------------------------------------------------------------
 #include "share_inc.h"
-
+//---------------------------------------------------------------------------
 namespace base
 {
 
@@ -33,7 +34,8 @@ private:
     size_t  len_;
     char*   dat_;
 };
-
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 inline bool operator==(const MemoryBlock& left, const MemoryBlock& right)
 {
     return  (
@@ -42,12 +44,12 @@ inline bool operator==(const MemoryBlock& left, const MemoryBlock& right)
                                           (0 == memcmp(left.dat_, right.dat_, left.len_))
             );
 }
-
+//---------------------------------------------------------------------------
 inline bool operator!=(const MemoryBlock& left, const MemoryBlock& right)
 {
     return !(left==right);
 }
-
+//---------------------------------------------------------------------------
 inline bool operator>(const MemoryBlock& left, const MemoryBlock& right)
 {
     return  (
@@ -58,11 +60,12 @@ inline bool operator>(const MemoryBlock& left, const MemoryBlock& right)
                                             )
             );
 }
-
+//---------------------------------------------------------------------------
 inline bool operator<(const MemoryBlock& left, const MemoryBlock& right)
 {
     return !(left > right);
 }
-
-}
+//---------------------------------------------------------------------------
+}//namespace base
+//---------------------------------------------------------------------------
 #endif //BASE_LINUX_BASE_MEMORYBLOCK_H_

@@ -1,12 +1,13 @@
+//---------------------------------------------------------------------------
 #include "timestamp.h"
 #include <time.h>
 #include <sys/time.h>
-
+//---------------------------------------------------------------------------
 namespace base
 {
-
+//---------------------------------------------------------------------------
 Timestamp Timestamp::kZero = Timestamp();
-
+//---------------------------------------------------------------------------
 Timestamp::Timestamp(const std::string& datetime)
 {
     struct tm time;
@@ -22,7 +23,7 @@ Timestamp::Timestamp(const std::string& datetime)
 
     return;
 }
-
+//---------------------------------------------------------------------------
 std::string Timestamp::Data()
 {
     struct tm time;
@@ -36,7 +37,7 @@ std::string Timestamp::Data()
     //return std::move(datetime); RVO
     return datetime;
 }
-
+//---------------------------------------------------------------------------
 std::string Timestamp::Time()
 {
     struct tm time;
@@ -50,7 +51,7 @@ std::string Timestamp::Time()
     //return std::move(datetime); RVO
     return datetime;
 }
-
+//---------------------------------------------------------------------------
 std::string Timestamp::Datatime(bool decimal)
 {
     struct tm time;
@@ -75,19 +76,19 @@ std::string Timestamp::Datatime(bool decimal)
         return datetime;//RVO
     }
 }
-
+//---------------------------------------------------------------------------
 void Timestamp::AddTime(uint64_t seconds)
 {
     micro_seconds_ += seconds * kMicrosecondsPerSecond;
     return;
 }
-
+//---------------------------------------------------------------------------
 void Timestamp::ReduceTime(uint64_t seconds)
 {
     micro_seconds_ -= seconds * kMicrosecondsPerSecond;
     return;
 }
-
+//---------------------------------------------------------------------------
 Timestamp Timestamp::Now()
 {
     struct timeval tv;
@@ -95,10 +96,10 @@ Timestamp Timestamp::Now()
 
    return Timestamp(static_cast<uint64_t>(tv.tv_sec)*kMicrosecondsPerSecond + tv.tv_usec);//RVO
 }
-
+//---------------------------------------------------------------------------
 Timestamp& Timestamp::Zero()
 {
     return Timestamp::kZero;
 }
-
+//---------------------------------------------------------------------------
 }//namespace base

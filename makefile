@@ -14,7 +14,7 @@ VPATH = base
 	_LIB_SHARE_HEADER=""	
 	CXX_COMPILER_LIB=ar cvr
 	CXX_COMPILER=g++
- 
+#---------------------------------------------------------------------------
 	_CFLAGS=-D_REENTRANT -Wall -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Wpointer-arith -Wshadow -Wwrite-strings -std=c++11
 ifeq ($(debug),y)
 	CXX_FLAGS=$(_CFLAGS)
@@ -23,8 +23,9 @@ else
 	CXX_FLAGS=$(_CFLAGS)
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
-
-objects=memory_block.o timestamp.o function.o thread.o append_file.o
+#---------------------------------------------------------------------------
+objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o
+#---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
 
@@ -43,5 +44,10 @@ thread.o : thread.h thread.cc
 append_file.o : append_file.h append_file.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/append_file.cc 
 
+log_file.o : log_file.h log_file.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/log_file.cc 
+
+#---------------------------------------------------------------------------
 clean:	
 	-@ rm *.o *.a
+#---------------------------------------------------------------------------

@@ -1,8 +1,9 @@
+//---------------------------------------------------------------------------
 #include "function.h"
-
+//---------------------------------------------------------------------------
 namespace base
 {
-
+//---------------------------------------------------------------------------
 //组装字符串，和printf类似
 std::string CombineString(const char* format, ...)
 {
@@ -25,7 +26,7 @@ std::string CombineString(const char* format, ...)
 
     return result; //RVO
 }
-
+//---------------------------------------------------------------------------
 //二进制数据转换为字符串(1byte<==>2byte)
 std::string BinToString(const unsigned char* buffer, size_t len)
 {
@@ -39,12 +40,12 @@ std::string BinToString(const unsigned char* buffer, size_t len)
 
      return result;//RVO
 }
-
+//---------------------------------------------------------------------------
 MemoryBlock StringToBin(const std::string& buffer)
 {
     return StringToBin(reinterpret_cast<const unsigned char*>(buffer.c_str()), buffer.size());
 }
-
+//---------------------------------------------------------------------------
 MemoryBlock StringToBin(const unsigned char* buffer, size_t len)
 {
     static const unsigned char char_bin[256] =
@@ -80,7 +81,7 @@ MemoryBlock StringToBin(const unsigned char* buffer, size_t len)
 
     return mb;//RVO
 }
-
+//---------------------------------------------------------------------------
 //二进制数据转换为等值的字符(1byte<==>1byte)
 std::string BinToChars(const unsigned char* buffer, size_t len)
 {
@@ -92,12 +93,12 @@ std::string BinToChars(const unsigned char* buffer, size_t len)
 
     return str;//RVO
 }
-
+//---------------------------------------------------------------------------
 MemoryBlock CharsToBin(const std::string& buffer)
 {
     return CharsToBin(buffer.c_str());
 }
-
+//---------------------------------------------------------------------------
 MemoryBlock CharsToBin(const char* buffer)
 {
     MemoryBlock mb(strlen(buffer));
@@ -106,7 +107,7 @@ MemoryBlock CharsToBin(const char* buffer)
 
     return mb;//RVO
 }
-
+//---------------------------------------------------------------------------
 //获取程序运行的路径
 std::string RunPathFolder()
 {
@@ -135,12 +136,12 @@ std::string RunPathFolder()
 
     return path;
 }
-
+//---------------------------------------------------------------------------
 std::string RunPathFileName(const std::string& name)
 {
     return RunPathFileName(name.c_str());
 }
-
+//---------------------------------------------------------------------------
 std::string RunPathFileName(const char* name)
 {
     std::string path = RunPathFolder();
@@ -152,12 +153,12 @@ std::string RunPathFileName(const char* name)
 
     return path + "/";
 }
-
+//---------------------------------------------------------------------------
 std::string PathParent(const std::string& path)
 {
     return PathParent(path.c_str());
 }
-
+//---------------------------------------------------------------------------
 std::string PathParent(const char* path)
 {
     if(0 == path)       return "";
@@ -181,12 +182,12 @@ std::string PathParent(const char* path)
 
     return std::string(path, len-1);
 }
-
+//---------------------------------------------------------------------------
 std::string PathName(const std::string& path)
 {
     return PathName(path.c_str());
 }
-
+//---------------------------------------------------------------------------
 std::string PathName(const char* path)
 {
     if(0 == path)       return "";
@@ -210,7 +211,7 @@ std::string PathName(const char* path)
 
     return std::string(path+len);
 }
-
+//---------------------------------------------------------------------------
 //文件夹操作
 bool FolderCreate(const std::string& path, bool recursive)
 {
@@ -251,7 +252,7 @@ bool FolderCreate(const std::string& path, bool recursive)
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool FolderDelete(const std::string& path, bool recursive)
 {
     if(path.empty())
@@ -282,13 +283,12 @@ bool FolderDelete(const std::string& path, bool recursive)
 
     return true;
 }
-
-
+//---------------------------------------------------------------------------
 bool FolderExist(const std::string& path)
 {
     return FolderExist(path.c_str());
 }
-
+//---------------------------------------------------------------------------
 bool FolderExist(const char* path)
 {
     if(0 == path)
@@ -300,13 +300,13 @@ bool FolderExist(const char* path)
 
     return S_ISDIR(stat_info.st_mode);
 }
-
+//---------------------------------------------------------------------------
 //文件操作
 bool FileDelete(const std::string& pathname)
 {
     return FileDelete(pathname.c_str());
 }
-
+//---------------------------------------------------------------------------
 bool FileDelete(const char* pathname)
 {
     if(0 == pathname)
@@ -318,7 +318,7 @@ bool FileExist(const std::string& pathname)
 {
     return FileExist(pathname.c_str());
 }
-
+//---------------------------------------------------------------------------
 bool FileExist(const char* pathname)
 {
     if(0 == pathname)
@@ -330,13 +330,13 @@ bool FileExist(const char* pathname)
 
     return S_ISREG(stat_info.st_mode);
 }
-
+//---------------------------------------------------------------------------
 //文档
 bool DocumentExist(const std::string& pathname)
 {
     return DocumentExist(pathname.c_str());
 }
-
+//---------------------------------------------------------------------------
 bool DocumentExist(const char* pathname)
 {
     if(0 == pathname)
@@ -348,5 +348,5 @@ bool DocumentExist(const char* pathname)
 
     return true;
 }
-
-}
+//---------------------------------------------------------------------------
+}//namespace base

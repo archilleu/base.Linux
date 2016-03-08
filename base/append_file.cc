@@ -1,9 +1,10 @@
+//---------------------------------------------------------------------------
 #include "append_file.h"
 #include "function.h"
-
+//---------------------------------------------------------------------------
 namespace base
 {
-
+//---------------------------------------------------------------------------
 bool AppendFile::Open(const std::string& file_path)
 {
     if(file_path.empty())   return false;
@@ -22,7 +23,7 @@ bool AppendFile::Open(const std::string& file_path)
     name_ = PathName(file_path);
     return true;
 }
-
+//---------------------------------------------------------------------------
 void AppendFile::Close()
 {
     if(0 != fp_)
@@ -33,7 +34,7 @@ void AppendFile::Close()
 
     return;
 }
-
+//---------------------------------------------------------------------------
 bool AppendFile::Append(const char* dat, size_t len)
 {
     assert(fp_);
@@ -57,16 +58,16 @@ bool AppendFile::Append(const char* dat, size_t len)
     
     return true;
 }
-
+//---------------------------------------------------------------------------
 void AppendFile::Flush()
 {
     ::fflush_unlocked(fp_);
     return;
 }
-
+//---------------------------------------------------------------------------
 size_t AppendFile::Size()
 {
     return (init_size_ + ::ftell(fp_));
 }
-
+//---------------------------------------------------------------------------
 }//namespace base
