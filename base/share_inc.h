@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-#ifndef BASE_LINUX_BASE_SHARE_INC_H_
-#define BASE_LINUX_BASE_SHARE_INC_H_
+#ifndef LINUX_BASE_SHARE_INC_H_
+#define LINUX_BASE_SHARE_INC_H_
 //---------------------------------------------------------------------------
 #include <unistd.h>
 #include <sys/stat.h>
@@ -37,4 +37,4 @@
 
 #include "share_def.h"
 //---------------------------------------------------------------------------
-#endif //BASE_LINUX_BASE_SHARE_INC_H_
+#endif //LINUX_BASE_SHARE_INC_H_

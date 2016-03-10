@@ -19,7 +19,7 @@ Timestamp::Timestamp(const std::string& datetime)
     }
     time.tm_year    -= 1900;
     time.tm_mon     -= 1;
-    micro_seconds_  = static_cast<uint64_t>(timegm(&time) * kMicrosecondsPerSecond);
+    micro_seconds_   = static_cast<uint64_t>(timegm(&time) * kMicrosecondsPerSecond);
 
     return;
 }

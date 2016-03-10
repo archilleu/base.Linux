@@ -1,11 +1,11 @@
+//---------------------------------------------------------------------------
 #include "test_append_file.h"
 #include "../append_file.h"
 #include "../function.h"
-
+//---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
-
-
+//---------------------------------------------------------------------------
 bool TestAppendFile::DoTest()
 {
     //非法
@@ -40,7 +40,8 @@ bool TestAppendFile::DoTest()
     for(int i=0; i<100; i++)
     {
         char buffer[128];
-        fgets(buffer, 128, fp);
+        if(0 != fgets(buffer, 128, fp))
+            MY_ASSERT(0==strcmp(buffer, info1));
         MY_ASSERT(0==strcmp(buffer, info1));
     }
     MY_ASSERT(file_size == static_cast<size_t>(ftell(fp)));
@@ -63,13 +64,15 @@ bool TestAppendFile::DoTest()
     for(int i=0; i<100; i++)
     {
         char buffer[128];
-        fgets(buffer, 128, fp);
+        if(0 != fgets(buffer, 128, fp))
+            MY_ASSERT(0==strcmp(buffer, info1));
         MY_ASSERT(0==strcmp(buffer, info1));
     }
     for(int i=100; i<200; i++)
     {
         char buffer[128];
-        fgets(buffer, 128, fp);
+        if(0 != fgets(buffer, 128, fp))
+            MY_ASSERT(0==strcmp(buffer, info2));
         MY_ASSERT(0==strcmp(buffer, info2));
     }
 
@@ -77,3 +80,4 @@ bool TestAppendFile::DoTest()
 
     return true;
 }
+//---------------------------------------------------------------------------

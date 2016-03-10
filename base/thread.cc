@@ -8,7 +8,7 @@ namespace base
 namespace CurrentThread
 {
     __thread uint32_t       t_cache_tid;
-    __thread const char*    t_thread_name = "perhabs mainthread";
+    __thread const char*    t_thread_name = "perhabs main thread";
 
     void CacheTid()
     {

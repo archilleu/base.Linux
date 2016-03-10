@@ -1,34 +1,32 @@
 //---------------------------------------------------------------------------
-#ifndef LINUX_BASE_TEST_TEST_MEMORY_BLOCK_H_
-#define LINUX_BASE_TEST_TEST_MEMORY_BLOCK_H_
+#ifndef LINUX_NET_TEST_MAIN_H_
+#define LINUX_NET_TEST_MAIN_H_
 //---------------------------------------------------------------------------
-#include "test_base.h"
+#include "../../base/share_inc.h"
 //---------------------------------------------------------------------------
-namespace base
+namespace net
 {
 
 namespace test
 {
 
-class TestMemoryBlock : public TestBase
+class TestBase;
+
+class TestMain
 {
 public:
-    TestMemoryBlock()
-    {
-    }
-    virtual ~TestMemoryBlock()
-    {
-    }
+    TestMain();
+    ~TestMain();
 
-    bool DoTest();
+    void StartTest();
 
 private:
-    bool Illegal();
-    bool Legal();
+    typedef std::unordered_map<std::string, std::shared_ptr<TestBase>> TestObj;
+    TestObj test_obj_list_;
 };
 
 }//namespace test
 
-}//namespace base
+}//namespace net
 //---------------------------------------------------------------------------
-#endif// LINUX_BASE_TEST_TEST_MEMORY_BLOCK_H_
+#endif// LINUX_NET_TEST_MAIN_H_

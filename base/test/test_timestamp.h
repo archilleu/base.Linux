@@ -1,8 +1,9 @@
-#ifndef BASE_LINUX_BASE_TEST_TEST_TIMESTAMP_H_
-#define BASE_LINUX_BASE_TEST_TEST_TIMESTAMP_H_
-
+//---------------------------------------------------------------------------
+#ifndef LINUX_BASE_TEST_TEST_TIMESTAMP_H_
+#define LINUX_BASE_TEST_TEST_TIMESTAMP_H_
+//---------------------------------------------------------------------------
 #include "test_base.h"
-
+//---------------------------------------------------------------------------
 namespace base
 {
 
@@ -25,5 +26,5 @@ public:
 }//namespace test
 
 }//namespace base
-
+//---------------------------------------------------------------------------
 #endif// BASE_LINUX_BASE_TEST_TEST_TIMESTAMP_H_

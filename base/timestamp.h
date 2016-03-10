@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-#ifndef BASE_LINUX_BASE_TIMESTAMPK_H_
-#define BASE_LINUX_BASE_TIMESTAMPK_H_
+#ifndef LINUX_BASE_TIMESTAMPK_H_
+#define LINUX_BASE_TIMESTAMPK_H_
 //---------------------------------------------------------------------------
 #include "share_inc.h"
 //---------------------------------------------------------------------------
@@ -82,4 +82,4 @@ inline uint64_t operator - (Timestamp left, Timestamp right)
 //---------------------------------------------------------------------------
 }//namespace base
 //---------------------------------------------------------------------------
-#endif// BASE_LINUX_BASE_TIMESTAMPK_H_
+#endif// LINUX_BASE_TIMESTAMPK_H_

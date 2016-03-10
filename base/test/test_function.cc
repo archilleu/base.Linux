@@ -1,9 +1,10 @@
+//---------------------------------------------------------------------------
 #include "test_function.h"
 #include "../function.h"
-
+//---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
-
+//---------------------------------------------------------------------------
 bool TestFunction::DoTest()
 {
     if(false == Test_String())      return false;
@@ -14,7 +15,7 @@ bool TestFunction::DoTest()
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestFunction::Test_String()
 {
     int32_t     int32   = (static_cast<uint32_t>(-1)) >> 1;
@@ -30,7 +31,7 @@ bool TestFunction::Test_String()
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestFunction::Test_BinString()
 {
     std::string bin(10, 'a');
@@ -42,7 +43,7 @@ bool TestFunction::Test_BinString()
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestFunction::Test_BinChar()
 {
     unsigned char   dat[]   = {'S','s','0','1','2','3','4','5','6','7','8','9'};
@@ -53,7 +54,7 @@ bool TestFunction::Test_BinChar()
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestFunction::Test_Path()
 {
     MY_ASSERT(false == DocumentExist(("/tmpdddd")));
@@ -75,9 +76,9 @@ bool TestFunction::Test_Path()
     MY_ASSERT(FolderDelete(path, true));
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestFunction::Test_Document()
 {
     return true;
 }
-
+//---------------------------------------------------------------------------

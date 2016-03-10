@@ -1,9 +1,10 @@
+//---------------------------------------------------------------------------
 #include "test_memory_block.h"
 #include "../memory_block.h"
-
+//---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
-
+//---------------------------------------------------------------------------
 bool TestMemoryBlock::DoTest()
 {
     if(false == Illegal())
@@ -19,7 +20,7 @@ bool TestMemoryBlock::DoTest()
     }
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestMemoryBlock::Illegal()
 {
     //no memory alloc
@@ -44,7 +45,7 @@ bool TestMemoryBlock::Illegal()
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestMemoryBlock::Legal()
 {
     {
@@ -121,3 +122,4 @@ bool TestMemoryBlock::Legal()
 
     return true;
 }
+//---------------------------------------------------------------------------

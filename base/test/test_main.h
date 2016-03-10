@@ -1,8 +1,9 @@
-#ifndef BASE_LINUX_BASE_TEST_TEST_MAIN_H_
-#define BASE_LINUX_BASE_TEST_TEST_MAIN_H_
-
+//---------------------------------------------------------------------------
+#ifndef LINUX_BASE_TEST_TEST_MAIN_H_
+#define LINUX_BASE_TEST_TEST_MAIN_H_
+//---------------------------------------------------------------------------
 #include "../share_inc.h"
-
+//---------------------------------------------------------------------------
 namespace base
 {
 
@@ -27,5 +28,5 @@ private:
 }//namespace test
 
 }//namespace base
-
-#endif// BASE_LINUX_BASE_TEST_TEST_MAIN_H_
+//---------------------------------------------------------------------------
+#endif// LINUX_BASE_TEST_TEST_MAIN_H_

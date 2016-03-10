@@ -1,20 +1,21 @@
+//---------------------------------------------------------------------------
 #include "test_thread.h"
-
+//---------------------------------------------------------------------------
 namespace base
 {
 
 namespace test
 {
-
+//---------------------------------------------------------------------------
 void ThreadFunc_None()
 {
 }
-
+//---------------------------------------------------------------------------
 void Thread_Func_ParanNone()
 {
     sleep(5);
 }
-
+//---------------------------------------------------------------------------
 void Thread_Func_ParamTow(int num, int* count)
 {
     for(int i=0; i<10; i++)
@@ -25,7 +26,7 @@ void Thread_Func_ParamTow(int num, int* count)
 
     return;
 }
-
+//---------------------------------------------------------------------------
 bool TestThread::TestThread::DoTest()
 {
     if(false == Test_None())        return false;
@@ -35,7 +36,7 @@ bool TestThread::TestThread::DoTest()
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestThread::Test_None()
 {
     Thread t1(ThreadFunc_None);
@@ -47,7 +48,7 @@ bool TestThread::Test_None()
     t1.Join();
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestThread::Test_ParamNone()
 {
     {
@@ -67,7 +68,7 @@ bool TestThread::Test_ParamNone()
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestThread::Test_Param1()
 {
     int num     = 0;
@@ -82,7 +83,7 @@ bool TestThread::Test_Param1()
 
     return true;
 }
-
+//---------------------------------------------------------------------------
 bool TestThread::Test_ParamClass()
 {
     count_ = 0;  
@@ -93,13 +94,14 @@ bool TestThread::Test_ParamClass()
     thread1_.Join();
     thread2_.Join();
 
-    MY_ASSERT(UNIT_GB*2 == count_);
+    fprintf(stderr, "test log time, please wait");
+    MY_ASSERT(UNIT_GB == count_);
     return true;
 }
-
+//---------------------------------------------------------------------------
 void TestThread::Thread_Func1()
 {
-    for(uint64_t i=0; i<UNIT_GB; i++)
+    for(uint64_t i=0; i<UNIT_GB/2; i++)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         count_++;
@@ -107,7 +109,7 @@ void TestThread::Thread_Func1()
 
     return;
 }
-
+//---------------------------------------------------------------------------
 }//namespace test
 
 }//namespace base

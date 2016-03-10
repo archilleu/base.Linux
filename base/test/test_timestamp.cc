@@ -1,9 +1,10 @@
+//---------------------------------------------------------------------------
 #include "test_timestamp.h"
 #include "../timestamp.h"
-
+//---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
-
+//---------------------------------------------------------------------------
 bool TestTimestamp::DoTest()
 {
     std::cout << Timestamp::Zero().Datatime(true)<< std::endl;
@@ -46,3 +47,4 @@ bool TestTimestamp::DoTest()
 
     return true;
 }
+//---------------------------------------------------------------------------

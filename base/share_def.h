@@ -1,8 +1,15 @@
 //---------------------------------------------------------------------------
-#ifndef BASE_LINUX_BASE_SHARE_DFE_H_
-#define BASE_LINUX_BASE_SHARE_DFE_H_
+#ifndef LINUX_BASE_SHARE_DFE_H_
+#define LINUX_BASE_SHARE_DFE_H_
 //---------------------------------------------------------------------------
 #include <stdint.h>
+//---------------------------------------------------------------------------
+#define DISALLOW_COPY_AND_ASSIGN(TypeName)  \
+    TypeName(const TypeName&);              \
+    void operator=(const TypeName&);        \
+    TypeName(const TypeName&&);             \
+    void operator=(const TypeName&&);
+
 //---------------------------------------------------------------------------
 namespace base
 {
@@ -12,4 +19,4 @@ namespace base
     
 }//namespace base
 //---------------------------------------------------------------------------
-#endif// BASE_LINUX_BASE_SHARE_DFE_H_
+#endif// LINUX_BASE_SHARE_DFE_H_

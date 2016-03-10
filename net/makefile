@@ -8,12 +8,14 @@ VPATH = base
 #CXX_COMPILER		:编译器
 #CXX_FLAGS			:编译选项
 #CXX_COMPILER_LIB	:编译指令
-	_OBJ_NAME=libbase.Linux.a
-	_SRC_PATH=./base
+	_OBJ_NAME=libnet.linux.a
+	_SRC_PATH=.
 	_LIB_SHARE=""			
-	_LIB_SHARE_HEADER=""	
+	_LIB_SHARE_HEADER=""
+#	_LIB_SHARE_NAME=-lbase.linux该库依赖baselinux
 	CXX_COMPILER_LIB=ar cvr
 	CXX_COMPILER=g++
+
 #---------------------------------------------------------------------------
 	_CFLAGS=-D_REENTRANT -Wall -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Wpointer-arith -Wshadow -Wwrite-strings -std=c++11
 ifeq ($(debug),y)
@@ -24,28 +26,19 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 #---------------------------------------------------------------------------
-objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o
+objects=event_loop.o net_log.o channel.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
 
-memory_block.o : memory_block.h memory_block.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/memory_block.cc
+event_loop.o : event_loop.h event_loop.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c event_loop.cc
 
-timestamp.o : timestamp.h timestamp.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/timestamp.cc 
+net_log.o : net_log.h net_log.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c net_log.cc
 
-function.o : function.h function.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/function.cc 
-
-thread.o : thread.h thread.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/thread.cc 
-
-append_file.o : append_file.h append_file.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/append_file.cc 
-
-log_file.o : log_file.h log_file.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c $(_SRC_PATH)/log_file.cc 
+channel.o : channel.h channel.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c channel.cc
 
 #---------------------------------------------------------------------------
 clean:	

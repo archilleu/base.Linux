@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-#ifndef BASE_LINUX_BASE_TEST_TEST_LOG_FILE_H_
-#define BASE_LINUX_BASE_TEST_TEST_LOG_FILE_H_
+#ifndef LINUX_BASE_TEST_TEST_LOG_FILE_H_
+#define LINUX_BASE_TEST_TEST_LOG_FILE_H_
 //---------------------------------------------------------------------------
 #include "test_base.h"
 //---------------------------------------------------------------------------
@@ -32,4 +32,4 @@ private:
 
 }//namespace base
 //---------------------------------------------------------------------------
-#endif// BASE_LINUX_BASE_TEST_TEST_LOG_FILE_H_
+#endif// LINUX_BASE_TEST_TEST_LOG_FILE_H_

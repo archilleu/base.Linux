@@ -1,34 +1,32 @@
 //---------------------------------------------------------------------------
-#ifndef LINUX_BASE_TEST_TEST_MEMORY_BLOCK_H_
-#define LINUX_BASE_TEST_TEST_MEMORY_BLOCK_H_
+#ifndef LINUX_NET_TEST_BASE_H_
+#define LINUX_NET_TEST_BASE_H_
 //---------------------------------------------------------------------------
-#include "test_base.h"
+#define MY_ASSERT(EXPRESSION) {if(true != (EXPRESSION)) { assert(0); return false;}}
 //---------------------------------------------------------------------------
-namespace base
+namespace net
 {
 
 namespace test
 {
 
-class TestMemoryBlock : public TestBase
+class TestBase
 {
 public:
-    TestMemoryBlock()
-    {
-    }
-    virtual ~TestMemoryBlock()
+    TestBase()
     {
     }
 
-    bool DoTest();
+    virtual ~TestBase()
+    {
+    }
 
-private:
-    bool Illegal();
-    bool Legal();
+    virtual bool DoTest() =0;
 };
 
-}//namespace test
+}// namespace test
 
-}//namespace base
+}//namespace net
 //---------------------------------------------------------------------------
-#endif// LINUX_BASE_TEST_TEST_MEMORY_BLOCK_H_
+#endif// LINUX_NET_TEST_BASE_H_
+

@@ -9,8 +9,8 @@ VPATH = base
 #CXX_FLAGS			:编译选项
 	_OBJ_NAME=test
 	_SRC_PATH=.
-	_LIB_SHARE=-L ../.
-	_LIB_SHARE_NAME=-lbase.linux
+	_LIB_SHARE=-L ../. -L ../../base/.
+	_LIB_SHARE_NAME=-lnet.linux -lbase.linux
 	_LIB_PUBLIC_NAME=-pthread
 	CXX_COMPILER=g++
 
@@ -23,8 +23,7 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 #---------------------------------------------------------------------------
-objects=main.o test_base.o test_main.o test_memory_block.o test_timestamp.o test_function.o	\
-		test_thread.o test_append_file.o test_log_file.o
+objects=main.o test_base.o test_main.o test_event_loop.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE)  $(_LIB_SHARE_NAME) $(_LIB_PUBLIC_NAME);
@@ -38,23 +37,9 @@ test_base.o : test_base.cc test_base.h
 test_main.o : test_main.cc test_main.h
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_main.cc
 
-test_memory_block.o : test_memory_block.cc test_memory_block.h
-	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_memory_block.cc
-	
-test_timestamp.o : test_timestamp.cc test_timestamp.h
-	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_timestamp.cc
-	
-test_function.o : test_function.cc test_function.h
-	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_function.cc
+test_event_loop.o : test_event_loop.cc test_event_loop.h
+	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_event_loop.cc
 
-test_thread.o : test_thread.cc test_thread.h
-	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_thread.cc
-
-test_append_file.o : test_append_file.cc test_append_file.h
-	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_append_file.cc
-
-test_log_file.o : test_log_file.cc test_log_file.h
-	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_log_file.cc
 
 #---------------------------------------------------------------------------
 clean:	

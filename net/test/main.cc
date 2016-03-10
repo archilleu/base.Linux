@@ -3,7 +3,7 @@
 //---------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-    base::test::TestMain test;
+    net::test::TestMain test;
     test.StartTest();
     
     return 0;

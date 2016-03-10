@@ -1,26 +1,16 @@
 //---------------------------------------------------------------------------
 #include "test_main.h"
 #include "test_base.h"
-#include "test_memory_block.h"
-#include "test_timestamp.h"
-#include "test_function.h"
-#include "test_thread.h"
-#include "test_append_file.h"
-#include "test_log_file.h"
+#include "test_event_loop.h"
 //---------------------------------------------------------------------------
-using namespace base;
-using namespace base::test;
+using namespace net;
+using namespace net::test;
 //---------------------------------------------------------------------------
 TestMain::TestMain()
 {
 #define TEST_ADD(TypeName)   test_obj_list_[#TypeName]=std::shared_ptr<TestBase>(dynamic_cast<TestBase*>(new TypeName))
 
-    TEST_ADD(TestMemoryBlock);
-    TEST_ADD(TestTimestamp);
-    TEST_ADD(TestFunction);
-    TEST_ADD(TestThread);
-    TEST_ADD(TestAppendFile);
-    TEST_ADD(TestLogFile);
+    TEST_ADD(TestEventLoop);
 
 #undef TEST_ADD
 }
@@ -29,7 +19,7 @@ TestMain::~TestMain()
 {
     test_obj_list_.clear();
 }
-
+//---------------------------------------------------------------------------
 void TestMain::StartTest()
 {
     std::cout << "验证没有bug后请使用 查看是否有内存问题: valgrind --tool=memcheck --leak-check=full ./test" << std::endl;

@@ -1,22 +1,24 @@
 //---------------------------------------------------------------------------
-#ifndef LINUX_BASE_TEST_TEST_APPEND_FILE_H_
-#define LINUX_BASE_TEST_TEST_APPEND_FILE_H_
+#ifndef LINUX_NET_TEST_EVENT_LOOP_H_
+#define LINUX_NET_TEST_EVENT_LOOP_H_
 //---------------------------------------------------------------------------
 #include "test_base.h"
 //---------------------------------------------------------------------------
-namespace base
+#define MY_ASSERT(EXPRESSION) {if(true != (EXPRESSION)) { assert(0); return false;}}
+//---------------------------------------------------------------------------
+namespace net
 {
 
 namespace test
 {
 
-class TestAppendFile : public TestBase
+class TestEventLoop : public TestBase
 {
 public:
-    TestAppendFile()
+    TestEventLoop()
     {
     }
-    virtual ~TestAppendFile()
+    virtual ~TestEventLoop()
     {
     }
 
@@ -25,7 +27,6 @@ public:
 
 }//namespace test
 
-}//namespace test
+}//namespace net
 //---------------------------------------------------------------------------
-#endif //LINUX_BASE_TEST_TEST_APPEND_FILE_H_
-
+#endif //LINUX_NET_TEST_EVENT_LOOP_H_

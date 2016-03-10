@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-#ifndef BASE_LINUX_BASE_MEMORYBLOCK_H_
-#define BASE_LINUX_BASE_MEMORYBLOCK_H_
+#ifndef LINUX_BASE_MEMORYBLOCK_H_
+#define LINUX_BASE_MEMORYBLOCK_H_
 //---------------------------------------------------------------------------
 #include "share_inc.h"
 //---------------------------------------------------------------------------
@@ -68,4 +68,4 @@ inline bool operator<(const MemoryBlock& left, const MemoryBlock& right)
 //---------------------------------------------------------------------------
 }//namespace base
 //---------------------------------------------------------------------------
-#endif //BASE_LINUX_BASE_MEMORYBLOCK_H_
+#endif //LINUX_BASE_MEMORYBLOCK_H_

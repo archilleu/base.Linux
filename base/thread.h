@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-#ifndef BASE_LINUX_BASE_THREAD_H_
-#define BASE_LINUX_BASE_THREAD_H_
+#ifndef LINUX_BASE_THREAD_H_
+#define LINUX_BASE_THREAD_H_
 //---------------------------------------------------------------------------
 #include "share_inc.h"
 //---------------------------------------------------------------------------
@@ -66,4 +66,4 @@ private:
 
 }//namespace base
 //---------------------------------------------------------------------------
-#endif //BASE_LINUX_BASE_THREAD_H_
+#endif //LINUX_BASE_THREAD_H_

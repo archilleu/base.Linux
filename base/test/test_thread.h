@@ -1,9 +1,10 @@
-#ifndef BASE_LINUX_BASE_TEST_TEST_THREAD_H_
-#define BASE_LINUX_BASE_TEST_TEST_THREAD_H_
-
+//---------------------------------------------------------------------------
+#ifndef LINUX_BASE_TEST_TEST_THREAD_H_
+#define LINUX_BASE_TEST_TEST_THREAD_H_
+//---------------------------------------------------------------------------
 #include "test_base.h"
 #include "../thread.h"
-
+//---------------------------------------------------------------------------
 namespace base
 {
 
@@ -42,5 +43,5 @@ private:
 }// namespace test
 
 }// namespace base
-
-#endif //BASE_LINUX_BASE_TEST_TEST_THREAD_H_
+//---------------------------------------------------------------------------
+#endif //LINUX_BASE_TEST_TEST_THREAD_H_
