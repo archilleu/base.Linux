@@ -77,16 +77,16 @@ std::string Timestamp::Datatime(bool decimal)
     }
 }
 //---------------------------------------------------------------------------
-void Timestamp::AddTime(uint64_t seconds)
+Timestamp& Timestamp::AddTime(uint64_t seconds)
 {
     micro_seconds_ += seconds * kMicrosecondsPerSecond;
-    return;
+    return *this;
 }
 //---------------------------------------------------------------------------
-void Timestamp::ReduceTime(uint64_t seconds)
+Timestamp& Timestamp::ReduceTime(uint64_t seconds)
 {
     micro_seconds_ -= seconds * kMicrosecondsPerSecond;
-    return;
+    return *this;
 }
 //---------------------------------------------------------------------------
 Timestamp Timestamp::Now()

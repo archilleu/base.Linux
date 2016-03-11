@@ -23,6 +23,10 @@ public:
     }
 
     virtual bool DoTest();
+
+private:
+    bool Test_Normal();
+    bool Test_Timefd();
 };
 
 }//namespace test

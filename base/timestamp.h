@@ -31,8 +31,9 @@ public:
     uint64_t Secodes()      { return micro_seconds_ / kMicrosecondsPerSecond; }
     uint64_t Microseconds() { return micro_seconds_; }
 
-    void AddTime    (uint64_t seconds);
-    void ReduceTime (uint64_t seconds);
+    Timestamp& AddTime      (uint64_t seconds);
+    Timestamp& ReduceTime   (uint64_t seconds);
+
 
     static Timestamp    Now();
     static Timestamp&   Zero();

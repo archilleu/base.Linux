@@ -12,14 +12,14 @@ const int Channel::kEventRead   = EPOLLIN | EPOLLPRI;
 const int Channel::kEventWrite  = EPOLLOUT;
 //---------------------------------------------------------------------------
 Channel::Channel(EventLoop* loop, int vfd)
-:   loop_(loop),
+:   owner_loop_(loop),
     fd_(vfd),
     events_(kEventNormal),
     revents_(0),
-    status_(0),
+    status_(CHANNEL_None),
     handling_(false)
 {
-    assert(0 != loop_);
+    assert(0 != owner_loop_);
     assert(0 < fd_);
 
     return;
@@ -39,7 +39,7 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
     SystemLog_Debug("Handle event:fd:%d event:%s", fd_, REventsToString().c_str());
 
     //优先处理断线情况
-    if((EPOLLHUP | EPOLLRDHUP) & events_)
+    if((EPOLLHUP | EPOLLRDHUP) & revents_)
     {
         if(callback_close_)
         {
@@ -84,7 +84,8 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
 //---------------------------------------------------------------------------
 void Channel::Remove()
 {
-//    loop_->ChannelRemove(this);
+    owner_loop_->ChannelDel(this);
+    return;
 }
 //---------------------------------------------------------------------------
 std::string Channel::REventsToString()
@@ -99,6 +100,17 @@ std::string Channel::EventsToString()
 //---------------------------------------------------------------------------
 void Channel::UpdateEvent()
 {
+    //如果该channel是新的,则添加到epoll监控事件,否则修改监控事件
+    if(Channel::CHANNEL_None == status_)
+    {
+        owner_loop_->ChannelAdd(this);
+        return;
+    }
+    
+    assert(CHANNEL_Added == status_);
+    owner_loop_->ChannelMod(this);
+
+    return;
 }
 //---------------------------------------------------------------------------
 std::string Channel::_EventsToString(int vfd, int ev)

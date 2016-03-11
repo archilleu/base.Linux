@@ -26,7 +26,7 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 #---------------------------------------------------------------------------
-objects=event_loop.o net_log.o channel.o
+objects=event_loop.o net_log.o channel.o poller.o timer_task.o timer_task_queue.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
@@ -39,6 +39,15 @@ net_log.o : net_log.h net_log.cc
 
 channel.o : channel.h channel.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c channel.cc
+
+poller.o : poller.h poller.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c poller.cc
+
+timer_task.o : timer_task.h timer_task.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c timer_task.cc
+
+timer_task_queue.o : timer_task_queue.h timer_task_queue.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c timer_task_queue.cc
 
 #---------------------------------------------------------------------------
 clean:	

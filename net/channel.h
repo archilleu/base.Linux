@@ -18,9 +18,8 @@ public:
     
     enum
     {
-        CHANNEL_ADD = 1,    //添加Channle
-        CHANNEL_DEL,        //删除Channel
-        CHANNEL_MODIFY      //修改Channel
+        CHANNEL_None = 1,    //Channle还未被监控
+        CHANNEL_Added        //Channel已经在监控
     };
 
 public:
@@ -55,9 +54,11 @@ public:
     int     events()                    { return events_; }
     void    set_revents(int revents)    { revents_ = revents; }
     
+    EventLoop* owner_loop() { return owner_loop_; }
+
     int     fd()                    { return fd_; }
     int     status()                { return status_; }
-    void    set_status(int statu)  { status_ = statu; }
+    void    set_status(int statu)   { status_ = statu; }
 
     //调试接口
     std::string REventsToString();
@@ -68,7 +69,7 @@ private:
     std::string _EventsToString(int fd, int ev);
 
 private:
-    EventLoop*  loop_;      //事件循环
+    EventLoop*  owner_loop_;//事件循环对象
     int         fd_;        //Channel关联的描述符
     int         events_;    //关注的事件
     int         revents_;   //触发的事件

@@ -5,11 +5,12 @@
 #include "../base/share_inc.h"
 #include "../base/timestamp.h"
 //---------------------------------------------------------------------------
+struct epoll_event;
+//---------------------------------------------------------------------------
 namespace net
 {
 
 class Channel;
-struct epoll_event;
 
 class Poller
 {
@@ -19,11 +20,16 @@ public:
     Poller();
     ~Poller();
 
-    base::Timestamp Poll(int timeout, ChannelList* active_channle_list);    //timeout 以秒为单位
+    base::Timestamp Poll(int timeout, ChannelList* active_channel_list);    //timeout 以秒为单位
 
     void ChannelAdd(Channel* channel);
     void ChannelMod(Channel* channel);
     void ChannelDel(Channel* channel);
+
+private:
+    void FillActiveChannel(int active_nums, ChannelList* active_channel_list);
+
+    void Update(int op, Channel* channel);
 
 private:
     int         efd_;       //epoll fd
