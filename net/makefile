@@ -13,7 +13,7 @@ VPATH = base
 	_LIB_SHARE=""			
 	_LIB_SHARE_HEADER=""
 #	_LIB_SHARE_NAME=-lbase.linux该库依赖baselinux
-	CXX_COMPILER_LIB=ar cvr
+	CXX_COMPILER_LIB=ar cvr -s
 	CXX_COMPILER=g++
 
 #---------------------------------------------------------------------------

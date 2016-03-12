@@ -30,7 +30,7 @@ private:
     void HandRead();
 
     std::vector<Entry>  GetExpired  (base::Timestamp now);
-    void                Reset       (const std::vector<Entry>& expired, base::Timestamp now);
+    void                Reset       (const std::vector<Entry>& expired);
 
     bool Insert(const TimerTask::Ptr timer_task);
 

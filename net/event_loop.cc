@@ -2,6 +2,7 @@
 #include "event_loop.h"
 #include "net_log.h"
 #include "channel.h"
+#include "timer_task_queue.h"
 #include <poll.h>
 #include <sys/eventfd.h>
 //---------------------------------------------------------------------------
@@ -33,6 +34,7 @@ EventLoop::EventLoop()
     channel_wakeup_->set_callback_read(std::bind(&EventLoop::HandleRead, this));
     channel_wakeup_->ReadEnable();
 
+    timer_task_queue_.reset(new TimerTaskQueue(this));
     SystemLog_Debug("event loop create:%p, in thread tid:%u, tname:%s", this, tid_, tname_);
     return;
 }
@@ -58,6 +60,8 @@ void EventLoop::Loop()
         {
             (*iter)->HandleEvent(rcv_time);
         }
+
+        DoPendingTasks();
     }
 
     SystemLog_Info("%p Event loop stop", this);
@@ -67,7 +71,10 @@ void EventLoop::Loop()
 void EventLoop::Quit()
 {
     looping_ = false;
-    //todo wakup
+    
+    //wakup
+    Wakeup();
+    return;
 }
 //---------------------------------------------------------------------------
 void EventLoop::AssertInLoopThread()
@@ -109,13 +116,35 @@ void EventLoop::QueueInLoop(const Task& task)
     task_list_.push_back(task);
     }
 
-    //如果不是在EventLoop线程内调用或者EventLoop线程不在处理实践中,则需要唤醒loop
+    //如果不是在EventLoop线程内调用
+    //或者EventLoop线程在不在处理事件中,则需要唤醒loop(fix:好像还是有点问题,因为在处理过程中有is_pending_task变量值有窗口)
     if((!IsInLoopThread()) || (!is_pending_task_))
     {
         Wakeup();
     }
 
     return;
+}
+//---------------------------------------------------------------------------
+TimerTask::Ptr EventLoop::RunAt(const base::Timestamp when, const CallbackTimerTask& callback)
+{
+    return timer_task_queue_->TimerTaskAdd(callback, when, 0);
+}
+//---------------------------------------------------------------------------
+TimerTask::Ptr EventLoop::RunAfter(int delayS, const CallbackTimerTask& callback)
+{
+    base::Timestamp when = base::Timestamp::Now().AddTime(delayS);
+    return timer_task_queue_->TimerTaskAdd(callback, when, 0);
+}
+//---------------------------------------------------------------------------
+TimerTask::Ptr EventLoop::RunInterval(int intervalS, const CallbackTimerTask& callback)
+{
+    return timer_task_queue_->TimerTaskAdd(callback, base::Timestamp::Now(), intervalS);
+}
+//---------------------------------------------------------------------------
+void EventLoop::RunCancel(TimerTask::Ptr timer_task)
+{
+    timer_task_queue_->TimerTaskCancel(timer_task);
 }
 //---------------------------------------------------------------------------
 void EventLoop::ChannelAdd(Channel* channel)

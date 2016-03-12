@@ -27,6 +27,7 @@ public:
 private:
     bool Test_Normal();
     bool Test_Timefd();
+    bool Test_TimerTask();
 };
 
 }//namespace test

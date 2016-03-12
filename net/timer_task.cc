@@ -5,7 +5,7 @@
 namespace net
 {
 
-TimerTask::TimerTask(TimerTaskCallback& callback, base::Timestamp when, int intervalS)
+TimerTask::TimerTask(const TimerTaskCallback& callback, base::Timestamp when, int intervalS)
 :   task_callback_(std::move(callback)),
     expairation_(when),
     interval_(intervalS)

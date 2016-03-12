@@ -4,12 +4,15 @@
 //---------------------------------------------------------------------------
 #include "../base/share_inc.h"
 #include "poller.h"
+#include "callback.h"
+#include "timer_task.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 class Channel;
 class Poller;
+class TimerTaskQueue;
 
 class EventLoop
 {
@@ -28,6 +31,12 @@ public:
     //线程安全方法,如果调用着的线程是本EventLoop线程,则RunInLoop会立刻执行,否则排队到QueueInLoop
     void RunInLoop  (const Task& task);
     void QueueInLoop(const Task& task);
+
+    //定时任务
+    TimerTask::Ptr  RunAt       (const base::Timestamp when, const CallbackTimerTask& callback);
+    TimerTask::Ptr  RunAfter    (int delayS, const CallbackTimerTask& callback);
+    TimerTask::Ptr  RunInterval (int intervalS, const CallbackTimerTask& callback);
+    void            RunCancel   (TimerTask::Ptr timer_task);
 
     //改变监控的Channel状态,一般由connection通过Channel发起改变请求,Channel再通过EventLoop向poller请求改变
     void ChannelAdd(Channel* channel);
@@ -60,8 +69,9 @@ private:
     bool            is_pending_task_;
 
 
-    std::shared_ptr<Poller> poller_;
-    Poller::ChannelList     active_channel_list_;
+    Poller::ChannelList             active_channel_list_;
+    std::shared_ptr<Poller>         poller_;
+    std::shared_ptr<TimerTaskQueue> timer_task_queue_;
 
 protected:
     DISALLOW_COPY_AND_ASSIGN(EventLoop);

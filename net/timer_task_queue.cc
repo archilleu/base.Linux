@@ -92,34 +92,104 @@ TimerTaskQueue::~TimerTaskQueue()
 //---------------------------------------------------------------------------
 TimerTask::Ptr TimerTaskQueue::TimerTaskAdd(const TimerTask::TimerTaskCallback& callback, base::Timestamp when, int intervalS)
 {
+    TimerTask::Ptr ptr = std::make_shared<TimerTask>(callback, when, intervalS);
+    owner_loop_->RunInLoop(std::bind(&TimerTaskQueue::AddTimerInLoop, this, ptr));
+
+    return ptr;
 }
 //---------------------------------------------------------------------------
 void TimerTaskQueue::TimerTaskCancel(const TimerTask::Ptr timer_task)
 {
+    owner_loop_->RunInLoop(std::bind(&TimerTaskQueue::CancelTimerInLoop, this, timer_task));
+
+    return;
 }
 //---------------------------------------------------------------------------
 void TimerTaskQueue::AddTimerInLoop(const TimerTask::Ptr timer_task)
 {
+    owner_loop_->AssertInLoopThread();
+
+    bool earliest = Insert(timer_task);
+    if(true == earliest)
+        ResetTimerfd(timerfd_, timer_task->expairation());
+
+    return;
 }
 //---------------------------------------------------------------------------
 void TimerTaskQueue::CancelTimerInLoop(const TimerTask::Ptr timer_task)
 {
+    owner_loop_->AssertInLoopThread();
+
+    auto iter = entry_list_.find(Entry(timer_task->expairation(), timer_task));
+    if(entry_list_.end() == iter)
+        return;
+
+    entry_list_.erase(iter);
+    return;
 }
 //---------------------------------------------------------------------------
 void TimerTaskQueue::HandRead()
 {
+    owner_loop_->AssertInLoopThread();
+
+    base::Timestamp now = base::Timestamp::Now();
+    ReadTimer(timerfd_);
+
+    std::vector<Entry> expired = GetExpired(now);
+    for(auto iter : expired)
+        iter.second->Run();
+
+    Reset(expired);
 }
 //---------------------------------------------------------------------------
-std::vector<Entry> TimerTaskQueue::GetExpired  (base::Timestamp now)
+std::vector<TimerTaskQueue::Entry> TimerTaskQueue::GetExpired(base::Timestamp now)
 {
+    std::vector<Entry>  expired;
+    Entry               sentry(now, TimerTask::Ptr(reinterpret_cast<TimerTask*>(UINTPTR_MAX)));
+    auto                iter = entry_list_.lower_bound(sentry);
+
+    std::copy(entry_list_.begin(), iter, back_inserter(expired));
+    entry_list_.erase(entry_list_.begin(), iter);
+
+    return expired;
 }
 //---------------------------------------------------------------------------
-void TimerTaskQueue::Reset(const std::vector<Entry>& expired, base::Timestamp now)
+void TimerTaskQueue::Reset(const std::vector<Entry>& expired)
 {
+    for(auto iter : expired)
+    {
+        if(0 < iter.second->interval())
+        {
+            iter.second->Restart();
+            Insert(iter.second);
+        }
+    }
+
+    if(!entry_list_.empty())
+    {
+        base::Timestamp next_expired = entry_list_.begin()->second->expairation();
+        ResetTimerfd(timerfd_, next_expired);
+    }
+
+    return;
 }
 //---------------------------------------------------------------------------
 bool TimerTaskQueue::Insert(const TimerTask::Ptr timer_task)
 {
+    //bool earliest = false;
+    //base::Timestamp when = timer_task->expairation();
+    //auto iter = entry_list_.begin();
+    //if((iter==entry_list_.end()) || (when<iter->first))
+    //    earliest = true;
+
+    //if(false == entry_list_.insert(std::make_pair<Timestamp, TimerTask::Ptr>(when, timer_task)))
+    //{
+    //    SystemLog_Error("insert timer_task error");
+    //    assert(0);
+    //    return false;
+    //}
+
+    return true;
 }
 //---------------------------------------------------------------------------
 }//namespace net

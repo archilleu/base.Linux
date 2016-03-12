@@ -10,6 +10,7 @@ VPATH = base
 	_OBJ_NAME=test
 	_SRC_PATH=.
 	_LIB_SHARE=-L ../. -L ../../base/.
+	_LIB_SHARE_INCLUDE=-I ../. -I ../../base/.
 	_LIB_SHARE_NAME=-lnet.linux -lbase.linux
 	_LIB_PUBLIC_NAME=-pthread
 	CXX_COMPILER=g++
@@ -26,7 +27,7 @@ endif
 objects=main.o test_base.o test_main.o test_event_loop.o
 #---------------------------------------------------------------------------
 main : $(objects)
-	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE)  $(_LIB_SHARE_NAME) $(_LIB_PUBLIC_NAME);
+	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE) $(_LIB_SHARE_INCLUDE)  $(_LIB_SHARE_NAME) $(_LIB_PUBLIC_NAME);
 
 main.o : main.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/main.cc 

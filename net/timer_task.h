@@ -11,10 +11,10 @@ namespace net
 class TimerTask
 {
 public:
-    typedef std::function<void (void)>  TimerTaskCallback;
     typedef std::shared_ptr<TimerTask>  Ptr;
+    typedef std::function<void (void)>  TimerTaskCallback;
 
-    TimerTask(TimerTaskCallback& callback, base::Timestamp when, int intervalS=0);
+    TimerTask(const TimerTaskCallback& callback, base::Timestamp when, int intervalS=0);
     ~TimerTask();
 
     void Run() { task_callback_();} //运行定时任务
@@ -30,7 +30,7 @@ private:
     int                 interval_;
 
 protected:
-    DISALLOW_COPY_AND_ASSIGN(TimerTask);
+//    DISALLOW_COPY_AND_ASSIGN(TimerTask);
 };
 
 }//namespace net
