@@ -3,6 +3,7 @@
 #include "test_base.h"
 #include "test_event_loop.h"
 #include "test_event_loop_thread.h"
+#include "test_inet_address.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;
@@ -12,7 +13,8 @@ TestMain::TestMain()
 #define TEST_ADD(TypeName)   test_obj_list_[#TypeName]=std::shared_ptr<TestBase>(dynamic_cast<TestBase*>(new TypeName))
 
     //TEST_ADD(TestEventLoop);
-    TEST_ADD(TestEventLoopThread);
+    //TEST_ADD(TestEventLoopThread);
+    TEST_ADD(TestInetAddress);
 
 #undef TEST_ADD
 }

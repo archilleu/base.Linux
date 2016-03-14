@@ -1,96 +1,112 @@
-#include <WS2tcpip.h>
+//---------------------------------------------------------------------------
 #include "inet_address.h"
-#include "../share/function.h"
-
-namespace aa
+#include "../base/function.h"
+#include "net_log.h"
+#include <arpa/inet.h>
+#include <netdb.h>
+//---------------------------------------------------------------------------
+namespace net
 {
-
+//---------------------------------------------------------------------------
 const InetAddress InetAddress::INVALID_ADDR = InetAddress();
-
+//---------------------------------------------------------------------------
 InetAddress::InetAddress()
 {
-  memset(&address_, 0, sizeof(address_));
+    memset(&address_, 0, sizeof(address_));
+    return;
 }
-
-InetAddress::InetAddress(const sockaddr_in& address)
+//---------------------------------------------------------------------------
+InetAddress::InetAddress(short port)
 {
-  address_ = address;
+    address_.sin_family     = AF_INET; //Address families
+    address_.sin_port       = htobe16(port);
+    address_.sin_addr.s_addr= 0;
+
+    return;
 }
-
-std::vector<InetAddress> InetAddress::GetAllByName(std::string domain_name, short port)
+//---------------------------------------------------------------------------
+InetAddress::InetAddress(const sockaddr_in& addr)
 {
-  std::vector<InetAddress> addr_list;
+    address_ = addr;
+    return;
+}
+//---------------------------------------------------------------------------
+InetAddress::InetAddress(uint32_t raw_ip, short port)
+{
+    address_.sin_family     = AF_INET; //Address families
+    address_.sin_port       = htobe16(port);
+    address_.sin_addr.s_addr= raw_ip;
 
-  if(domain_name.empty())
-  {
-    char host_name[256];
-    if(0 != gethostname(host_name, sizeof(host_name)))
-      return std::move(addr_list);
+    return;
+}
+//---------------------------------------------------------------------------
+InetAddress::InetAddress(const std::string& ip, short port)
+{
+    address_.sin_family = AF_INET; //Address families
+    address_.sin_port   = htobe16(port);
 
-    domain_name = host_name;
-  }
-
-  struct hostent* remote_host =gethostbyname(domain_name.c_str());
-  if(0 == remote_host)
-    return std::move(addr_list);
-
-  if(AF_INET == remote_host->h_addrtype)
-  {
-    for(int i=0; 0 !=remote_host->h_addr_list[i]; i++)
+    int error = ::inet_pton(AF_INET, ip.c_str(), &address_.sin_addr);
+    if(error > ::inet_pton(AF_INET, ip.c_str(), &address_.sin_addr))
     {
-      addr_list.push_back(std::move(InetAddress::GetByAddress(*(uint32_t*) remote_host->h_addr_list[i], port)));
+        *this = InetAddress::INVALID_ADDR;
     }
-  }
 
-  return std::move(addr_list);
+    return;
 }
-
-InetAddress InetAddress::GetByName(const std::string& ip, short port)
+//---------------------------------------------------------------------------
+std::vector<InetAddress> InetAddress::GetAllByDomain(std::string domain_name, short port)
 {
-  InetAddress inet_addr;
-  inet_addr.address_.sin_family = AF_INET; //Address families
-  inet_addr.address_.sin_port = zshare::htobe16(port);
+    std::vector<InetAddress> addr_list;
 
-  int error = ::inet_pton(AF_INET, ip.c_str(), &inet_addr.address_.sin_addr);
-  if(1 > ::inet_pton(AF_INET, ip.c_str(), &inet_addr.address_.sin_addr))
-    return InetAddress::INVALID_ADDR;
+    if(domain_name.empty())
+    {
+        char host_name[256];
+        if(0 != gethostname(host_name, sizeof(host_name)))
+        return addr_list;
 
-  return inet_addr;
+        domain_name = host_name;
+    }
+
+    struct addrinfo     hints;
+    struct addrinfo*    result;
+    bzero(&hints, sizeof(hints));
+    hints.ai_family     = AF_INET;
+    hints.ai_protocol   = SOCK_DGRAM;
+    int err_code = getaddrinfo(domain_name.c_str(), 0, &hints, &result);
+    if(0 != err_code)
+    {
+        SystemLog_Error("get addrinfo error:%s", gai_strerror(err_code));
+        return addr_list;
+    }
+
+    for(struct addrinfo* rp=result; NULL!=rp; rp=rp->ai_next)
+    {
+        struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(rp->ai_addr);
+        addr_list.push_back(InetAddress(addr->sin_addr.s_addr, htobe16(port)));
+    }
+
+    freeaddrinfo(result);
+
+    return addr_list;
 }
-
-InetAddress InetAddress::GetByAddress(short port)
-{
-  InetAddress inet_addr;
-  inet_addr.address_.sin_family = AF_INET; //Address families
-  inet_addr.address_.sin_port = zshare::htobe16(port);
-  inet_addr.address_.sin_addr.S_un.S_addr = 0;
-
-  return inet_addr;
-}
-
-InetAddress InetAddress::GetByAddress(uint32_t raw_ip, short port)
-{
-  InetAddress inet_addr;
-  inet_addr.address_.sin_family = AF_INET; //Address families
-  inet_addr.address_.sin_port = zshare::htobe16(port);
-  inet_addr.address_.sin_addr.S_un.S_addr = raw_ip;
-
-  return inet_addr;
-}
-
-std::string InetAddress::GetIP()
+//---------------------------------------------------------------------------
+std::string InetAddress::IP()
 {
   char buf[16];
   inet_ntop(AF_INET, &address_.sin_addr, buf, 16);
   return buf;
 }
-
-std::string InetAddress::ToString()
+//---------------------------------------------------------------------------
+std::string InetAddress::Port()
 {
   char buf[8];
-  _itoa_s(zshare::be16toh(address_.sin_port), buf, 8, 10);
-
-  return (GetIP() + ":" + buf);
+  snprintf(buf, 8, "%u", be16toh(address_.sin_port));
+  return buf;
 }
-
+//---------------------------------------------------------------------------
+std::string InetAddress::IPPort()
+{
+  return IP() + ":" + Port();
 }
+//---------------------------------------------------------------------------
+}//namespace net
