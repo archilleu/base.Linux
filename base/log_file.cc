@@ -99,7 +99,7 @@ void LogFile::CreateLogFile()
     struct stat file_info;
     std::string file_name;
     std::string file_path;
-    std::string date = Timestamp::Now().Data();
+    std::string date = Timestamp::Now().Date();
     for(int i=0; ; i++)
     {
         //拼接文件名
@@ -162,7 +162,7 @@ std::string LogFile::MakeLogString(int log_level, const char* log)
             level = "UNKNOWN";
             break;
     }
-    return (Timestamp::Now().Datatime(true) + "<<" + level + ":" + log + "\r\n");
+    return (Timestamp::Now().Datetime(true) + "<<" + level + ":" + log + "\r\n");
 }
 //---------------------------------------------------------------------------
 void LogFile::OnThreadWriteLog()

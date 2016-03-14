@@ -24,9 +24,9 @@ public:
     }
     explicit Timestamp(const std::string& datetime);
 
-    std::string Data();
+    std::string Date();
     std::string Time();
-    std::string Datatime(bool decimal=false);
+    std::string Datetime(bool decimal=false);
 
     uint64_t Secodes()      { return micro_seconds_ / kMicrosecondsPerSecond; }
     uint64_t Microseconds() { return micro_seconds_; }

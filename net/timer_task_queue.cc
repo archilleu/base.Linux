@@ -145,7 +145,7 @@ void TimerTaskQueue::HandRead()
 std::vector<TimerTaskQueue::Entry> TimerTaskQueue::GetExpired(base::Timestamp now)
 {
     std::vector<Entry>  expired;
-    Entry               sentry(now, TimerTask::Ptr(reinterpret_cast<TimerTask*>(UINTPTR_MAX)));
+    Entry               sentry(now, TimerTask::Ptr());
     auto                iter = entry_list_.lower_bound(sentry);
 
     std::copy(entry_list_.begin(), iter, back_inserter(expired));
@@ -176,20 +176,22 @@ void TimerTaskQueue::Reset(const std::vector<Entry>& expired)
 //---------------------------------------------------------------------------
 bool TimerTaskQueue::Insert(const TimerTask::Ptr timer_task)
 {
-    //bool earliest = false;
-    //base::Timestamp when = timer_task->expairation();
-    //auto iter = entry_list_.begin();
-    //if((iter==entry_list_.end()) || (when<iter->first))
-    //    earliest = true;
+    bool earliest = false;
+   
+    base::Timestamp when = timer_task->expairation();
+    auto            iter = entry_list_.begin();
+    if((iter==entry_list_.end()) || (when<iter->first))
+        earliest = true;
 
-    //if(false == entry_list_.insert(std::make_pair<Timestamp, TimerTask::Ptr>(when, timer_task)))
-    //{
-    //    SystemLog_Error("insert timer_task error");
-    //    assert(0);
-    //    return false;
-    //}
+    Entry entry = std::make_pair(when, timer_task);
+    if(false == entry_list_.insert(entry).second)
+    {
+        SystemLog_Error("insert timer_task error");
+        assert(0);
+        return false;
+    }
 
-    return true;
+    return earliest;
 }
 //---------------------------------------------------------------------------
 }//namespace net

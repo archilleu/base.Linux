@@ -64,7 +64,7 @@ bool TestEventLoop::Test_Normal()
 //---------------------------------------------------------------------------
 void Timeout(base::Timestamp rcv_time)
 {
-    printf("Timeout:%s\n", rcv_time.Datatime().c_str());
+    printf("Timeout:%s\n", rcv_time.Datetime().c_str());
     g_loop->Quit();
 }
 //---------------------------------------------------------------------------
@@ -111,6 +111,7 @@ void OnTimerTaskRunInterval()
 void OnTimerTask()
 {
     g_flag = false;
+    printf("thread start.......\n");
     base::Timestamp when = base::Timestamp::Now().AddTime(2);
     g_loop->RunAt(when, OnTimerTaskRunAt);
 
@@ -136,6 +137,7 @@ bool TestEventLoop::Test_TimerTask()
 
     base::Thread t(OnTimerTask);
     t.Start();
+    sleep(2);
     loop.Loop();
     t.Join();
 

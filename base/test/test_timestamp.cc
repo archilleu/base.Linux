@@ -7,14 +7,14 @@ using namespace base::test;
 //---------------------------------------------------------------------------
 bool TestTimestamp::DoTest()
 {
-    std::cout << Timestamp::Zero().Datatime(true)<< std::endl;
+    std::cout << Timestamp::Zero().Datetime(true)<< std::endl;
     Timestamp   now     = Timestamp::Now();
     uint64_t    seconds = now.Microseconds();
 
     std::string time1   = now.Time();
-    std::string time2   = now.Data();
-    std::string time3   = now.Datatime();
-    std::string time4   = now.Datatime(true);
+    std::string time2   = now.Date();
+    std::string time3   = now.Datetime();
+    std::string time4   = now.Datetime(true);
     std::string total   = time1 + " "+ time2 + " " + time3 + " " + time4;
 
     std::cout << time1 << std::endl;
@@ -25,17 +25,17 @@ bool TestTimestamp::DoTest()
 
     Timestamp t1(seconds);
     assert(time1 == t1.Time());
-    assert(time2 == t1.Data());
-    assert(time3 == t1.Datatime());
-    assert(time4 == t1.Datatime(true));
+    assert(time2 == t1.Date());
+    assert(time3 == t1.Datetime());
+    assert(time4 == t1.Datetime(true));
 
     MY_ASSERT(time1 == t1.Time());
-    MY_ASSERT(time2 == t1.Data());
-    MY_ASSERT(time3 == t1.Datatime());
-    MY_ASSERT(time4 == t1.Datatime(true));
+    MY_ASSERT(time2 == t1.Date());
+    MY_ASSERT(time3 == t1.Datetime());
+    MY_ASSERT(time4 == t1.Datetime(true));
 
     t1.AddTime(5);
-    std::string time_add = t1.Datatime(true);
+    std::string time_add = t1.Datetime(true);
     std::cout << "add time:" <<  time_add << std::endl;
 
     MY_ASSERT(now < t1);

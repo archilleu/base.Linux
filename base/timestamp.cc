@@ -24,7 +24,7 @@ Timestamp::Timestamp(const std::string& datetime)
     return;
 }
 //---------------------------------------------------------------------------
-std::string Timestamp::Data()
+std::string Timestamp::Date()
 {
     struct tm time;
     bzero(&time, sizeof(struct tm));
@@ -52,7 +52,7 @@ std::string Timestamp::Time()
     return datetime;
 }
 //---------------------------------------------------------------------------
-std::string Timestamp::Datatime(bool decimal)
+std::string Timestamp::Datetime(bool decimal)
 {
     struct tm time;
     bzero(&time, sizeof(struct tm));
