@@ -24,7 +24,7 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 #---------------------------------------------------------------------------
-objects=main.o test_base.o test_main.o test_event_loop.o
+objects=main.o test_base.o test_main.o test_event_loop.o test_event_loop_thread.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE) $(_LIB_SHARE_INCLUDE)  $(_LIB_SHARE_NAME) $(_LIB_PUBLIC_NAME);
@@ -41,6 +41,9 @@ test_main.o : test_main.cc test_main.h
 test_event_loop.o : test_event_loop.cc test_event_loop.h
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_event_loop.cc
 
+
+test_event_loop_thread.o : test_event_loop_thread.cc test_event_loop_thread.h
+	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_event_loop_thread.cc
 
 #---------------------------------------------------------------------------
 clean:	

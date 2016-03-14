@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-#ifndef LINUX_NET_TEST_EVENT_LOOP_H_
-#define LINUX_NET_TEST_EVENT_LOOP_H_
+#ifndef LINUX_NET_TEST_EVENT_LOOP_THREAD_H_
+#define LINUX_NET_TEST_EVENT_LOOP_THREAD_H_
 //---------------------------------------------------------------------------
 #include "test_base.h"
 //---------------------------------------------------------------------------
@@ -10,26 +10,25 @@ namespace net
 namespace test
 {
 
-class TestEventLoop : public TestBase
+class TestEventLoopThread : public TestBase
 {
 public:
-    TestEventLoop()
+    TestEventLoopThread()
     {
     }
-    virtual ~TestEventLoop()
+    virtual ~TestEventLoopThread()
     {
     }
 
-    virtual bool DoTest();
+   virtual bool DoTest();
 
 private:
-    bool Test_Normal();
-    bool Test_Timefd();
-    bool Test_TimerTask();
+   bool Test_TaskTimer();
 };
 
 }//namespace test
 
 }//namespace net
 //---------------------------------------------------------------------------
-#endif //LINUX_NET_TEST_EVENT_LOOP_H_
+#endif //LINUX_NET_TEST_EVENT_LOOP_THREAD_H_
+
