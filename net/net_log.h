@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------------
 #define SystemLog_Debug(format, ...)    (MyNetLog.LogWrite(base::LogFile::LOGLEVEL_DEBUG, "File:%s,Line[%d],Fun:%s >> " format " ", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
 #define SystemLog_Info(format, ...)     (MyNetLog.LogWrite(base::LogFile::LOGLEVEL_INFO,"File:%s,Line[%d],Fun:%s >> " format " ",__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
-#define SystemLog_Waring(format, ...)   (MyNetLog.LogWrite(base::LogFile::LOGLEVEL_WARING,"File:%s,Line[%d],Fun:%s >> " format " ",__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
+#define SystemLog_Warning(format, ...)  (MyNetLog.LogWrite(base::LogFile::LOGLEVEL_WARNING,"File:%s,Line[%d],Fun:%s >> " format " ",__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
 #define SystemLog_Error(format, ...)    (MyNetLog.LogWrite(base::LogFile::LOGLEVEL_ERROR, "File:%s,Line[%d],Fun:%s >> " format " ",__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
 
 namespace net
