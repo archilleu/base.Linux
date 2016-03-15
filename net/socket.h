@@ -43,6 +43,10 @@ public:
 
     bool IsSelfConnect();
 
+public:
+    static InetAddress GetLocalAddress(int sockfd);
+    static InetAddress GetPeerAddress(int sockfd);
+
 private:
    int fd_;
 

@@ -192,4 +192,32 @@ bool Socket::IsSelfConnect()
     return false;
 }
 //---------------------------------------------------------------------------
+InetAddress Socket::GetLocalAddress(int sockfd)
+{
+    struct sockaddr_in  local_address;
+    socklen_t           len = static_cast<socklen_t>(sizeof(local_address));
+    if(0 > ::getsockname(sockfd, reinterpret_cast<sockaddr*>(&local_address), &len))
+    {
+        char buffer[128];
+        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        assert(0);
+    }
+
+    return local_address;
+}
+//---------------------------------------------------------------------------
+InetAddress Socket::GetPeerAddress(int sockfd)
+{
+    struct sockaddr_in  peer_address;
+    socklen_t           len = static_cast<socklen_t>(sizeof(peer_address));
+    if(0 > ::getpeername(sockfd, reinterpret_cast<sockaddr*>(&peer_address), &len))
+    {
+        char buffer[128];
+        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        assert(0);
+    }
+
+    return peer_address;
+}
+//---------------------------------------------------------------------------
 }//namespace net

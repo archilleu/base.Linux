@@ -5,6 +5,7 @@
 #include "test_event_loop_thread.h"
 #include "test_inet_address.h"
 #include "test_socket.h"
+#include "test_acceptor.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;
@@ -16,7 +17,8 @@ TestMain::TestMain()
     //TEST_ADD(TestEventLoop);
     //TEST_ADD(TestEventLoopThread);
     //TEST_ADD(TestInetAddress);
-    TEST_ADD(TestSocket);
+    //TEST_ADD(TestSocket);
+    TEST_ADD(TestAcceptor);
 
 #undef TEST_ADD
 }

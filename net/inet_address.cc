@@ -90,21 +90,21 @@ std::vector<InetAddress> InetAddress::GetAllByDomain(std::string domain_name, sh
     return addr_list;
 }
 //---------------------------------------------------------------------------
-std::string InetAddress::IP()
+std::string InetAddress::IP() const
 {
   char buf[16];
   inet_ntop(AF_INET, &address_.sin_addr, buf, 16);
   return buf;
 }
 //---------------------------------------------------------------------------
-std::string InetAddress::Port()
+std::string InetAddress::Port() const
 {
   char buf[8];
   snprintf(buf, 8, "%u", be16toh(address_.sin_port));
   return buf;
 }
 //---------------------------------------------------------------------------
-std::string InetAddress::IPPort()
+std::string InetAddress::IPPort() const
 {
   return IP() + ":" + Port();
 }

@@ -27,7 +27,7 @@ else
 endif
 #---------------------------------------------------------------------------
 objects=event_loop.o net_log.o channel.o poller.o timer_task.o timer_task_queue.o event_loop_thread.o	\
-		inet_address.o socket.o
+		inet_address.o socket.o acceptor.o event_loop_thread_pool.o tcp_server.o tcp_connection.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
@@ -58,6 +58,18 @@ inet_address.o : inet_address.h inet_address.cc
 
 socket.o : socket.h socket.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c socket.cc
+
+acceptor.o : acceptor.h acceptor.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c acceptor.cc
+
+event_loop_thread_pool.o : event_loop_thread_pool.h event_loop_thread_pool.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c event_loop_thread_pool.cc
+
+tcp_server.o : tcp_server.h tcp_server.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c tcp_server.cc
+
+tcp_connection.o : tcp_connection.h tcp_connection.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c tcp_connection.cc
 
 #---------------------------------------------------------------------------
 clean:	

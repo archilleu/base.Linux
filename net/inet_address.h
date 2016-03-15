@@ -20,9 +20,11 @@ public:
     static std::vector<InetAddress> GetAllByDomain(std::string domain_name="", short port=0);//获取域名的所有ip,会进行DNS查询
 
 public:
-    std::string IP();
-    std::string Port();
-    std::string IPPort();
+    void set_address(const sockaddr_in& addr)    { address_ = addr; }
+
+    std::string IP      () const;
+    std::string Port    () const;
+    std::string IPPort  () const;
 
     const struct sockaddr_in& address() const { return address_; }
 

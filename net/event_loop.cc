@@ -41,8 +41,12 @@ EventLoop::EventLoop()
 //---------------------------------------------------------------------------
 EventLoop::~EventLoop()
 {
-    assert(!looping_);
+    channel_wakeup_->DisableAll();
+    channel_wakeup_->Remove();
+    ::close(wakeupfd_);
+    
     SystemLog_Debug("event loop exit:%p, in thread tid:%u, tname:%s", this, tid_, tname_);
+    return;
 }
 //---------------------------------------------------------------------------
 void EventLoop::Loop()
