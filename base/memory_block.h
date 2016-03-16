@@ -11,6 +11,7 @@ class MemoryBlock
 {
 public:
     explicit MemoryBlock(size_t size=0);
+    MemoryBlock(const char* dat, size_t size);
     MemoryBlock(const MemoryBlock& other);
     MemoryBlock& operator=(const MemoryBlock& other);
     MemoryBlock(MemoryBlock&& other);
@@ -19,8 +20,9 @@ public:
 
     void Fill(char c);
 
-    char*   dat()   { return dat_; }
-    size_t  len()   { return len_; }
+    size_t      len() const { return len_; }
+    char*       dat()       { return dat_; }
+    const char* dat() const { return dat_; }
 
     char    operator[] (size_t index) const { return dat_[index]; }
     char&   operator[] (size_t index)       { return dat_[index]; }

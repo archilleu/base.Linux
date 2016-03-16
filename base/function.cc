@@ -151,7 +151,7 @@ std::string RunPathFileName(const char* name)
     if(('/'==path[0]) && ('\0'==path[1]))
         return path+name;
 
-    return path + "/";
+    return path + "/" + name;
 }
 //---------------------------------------------------------------------------
 std::string PathParent(const std::string& path)

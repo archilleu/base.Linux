@@ -14,6 +14,13 @@ MemoryBlock::MemoryBlock(size_t size)
     return;
 }
 //---------------------------------------------------------------------------
+MemoryBlock::MemoryBlock(const char* data, size_t size)
+:   len_(size)
+{
+    dat_ = new char[len_];
+    memcpy(dat_, data, len_);
+}
+//---------------------------------------------------------------------------
 MemoryBlock::MemoryBlock(const MemoryBlock& other)
 :   len_(other.len_),
     dat_(0)
