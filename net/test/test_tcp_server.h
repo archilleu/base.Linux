@@ -1,8 +1,9 @@
 //---------------------------------------------------------------------------
-#ifndef LINUX_NET_TEST_ACCEPTOR_H_
-#define LINUX_NET_TEST_ACCEPTOR_H_
+#ifndef LINUX_NET_TEST_TCP_SERVER_H_
+#define LINUX_NET_TEST_TCP_SERVER_H_
 //---------------------------------------------------------------------------
 #include "test_base.h"
+#include "../callback.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -10,28 +11,32 @@ namespace net
 namespace test
 {
 
-class TestAcceptor : public TestBase
+class TestTCPServer : public TestBase
 {
 public:
-    TestAcceptor()
+    TestTCPServer()
     {
     }
-
-    virtual ~TestAcceptor()
+    virtual ~TestTCPServer()
     {
     }
 
     virtual bool DoTest();
 
 private:
-    bool Test_Illgal();
-    bool Test_Normal();
+    void OnConnection   (const TCPConnectionPtr& conn_ptr);
+    void OnDisconnection(const TCPConnectionPtr& conn_ptr);
 
-    void ClientConnect();
+    void OnThreadClientConnect();
+
+private:
+    bool Test_Illegal();
+    bool Test_Normal();
+    bool Test_MultiThread();
 };
 
 }//namespace test
 
 }//namespace net
 //---------------------------------------------------------------------------
-#endif//LINUX_NET_TEST_ACCEPTOR_H_
+#endif //LINUX_NET_TEST_CONNECTION_H_

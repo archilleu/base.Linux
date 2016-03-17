@@ -67,7 +67,7 @@ EventLoop* EventLoopThreadPool::GetNextEventLoop()
 
     loop_main_->AssertInLoopThread();
 
-    if(true == loops_.size())
+    if(true == loops_.empty())
         return loop_main_;
 
     EventLoop* loop = loops_[next_++%thread_nums_];

@@ -103,11 +103,16 @@ void TCPConnection::ConnectionDestroy()
 {
     owner_loop_->AssertInLoopThread();
 
+    //如果该函数是主动调用的,该连接还没有被注销,则需要通知TCPServer中注销掉了该连接,剩下的工作由TCPConnection线程自己清理
     if(true == connected_)
     {
         channel_->DisableAll();
         callback_disconnection_(shared_from_this());
     }
+   //else
+    //{
+    //该连接是被动调用的(客户端主动断开)
+    //}
 
     connected_ = false;
     channel_->Remove();
@@ -285,15 +290,15 @@ void TCPConnection::HandleClose()
     connected_ = false;
     channel_->DisableAll();
 
-    //通知下线
     TCPConnectionPtr guard(shared_from_this());
 
+    //通知下线,回调给用户,原则上接到这个指令后,上层使用者不应该在对该连接操作
     if(callback_disconnection_)
     {
         callback_disconnection_(guard);
     }
 
-    //销毁链接
+    //内部开始销毁链接
     if(callback_destroy_)
     {
         callback_destroy_(guard);

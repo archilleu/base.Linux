@@ -46,7 +46,7 @@ base::Timestamp Poller::Poll(int timeout, ChannelList* active_channel_list)
     //没有事件
     if(0 == nums)
     {
-        SystemLog_Debug("no events");
+        //SystemLog_Debug("no events");
         return rcv_time;
     }
 

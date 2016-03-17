@@ -26,6 +26,9 @@ public:
 
     void set_event_loop_nums(int nums);
 
+    void Start();
+    void Stop();
+
 private:
     void OnNewConnection(int clientfd, const InetAddress& client_addr, base::Timestamp accept_time);
 

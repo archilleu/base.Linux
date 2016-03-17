@@ -9,7 +9,7 @@ NetLog MyNetLog;
 //---------------------------------------------------------------------------
 NetLog::NetLog()
 {
-    if(false == MyNetLog.Initialize("net io frame", base::RunPathFolder(), "network_log", base::UNIT_MB))
+    if(false == MyNetLog.Initialize("net io frame", "/tmp", "network_log", base::UNIT_MB))
     {
         assert(0);
     }

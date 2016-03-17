@@ -43,9 +43,11 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
     {
         if(callback_close_)
         {
-//            handling_ = false;  //断线即是销毁对象的时候
+            handling_ = false;  //断线即是销毁对象的时候,该函数在返回前对象就已经被销毁了
             callback_close_();
         }
+
+        return;
     }
 
     //出错情况
@@ -67,6 +69,9 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
         {
             callback_read_(rcv_time);
         }
+
+        //同时可能有写操作
+        //return;
     }
     
     //可写
