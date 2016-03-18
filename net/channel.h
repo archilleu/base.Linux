@@ -39,7 +39,7 @@ public:
     void WriteDisable() { events_ &= ~kEventRead; UpdateEvent(); }
 
     //关闭所有事件,一般用于关闭连接
-    void DisableAll()   { events_ = kEventNormal; UpdateEvent(); }
+    void DisableAll()   { events_ = kNone; UpdateEvent(); }
 
     //处理活动事件
     void HandleEvent(base::Timestamp rcv_time);
@@ -81,6 +81,7 @@ private:
     EventCallback       callback_error_;    //错误事件回调
     EventCallbackRead   callback_read_;     //读事件回调
 
+    static const int kNone;         //无事件
     static const int kEventNormal;  //普通事件
     static const int kEventRead;    //读事件
     static const int kEventWrite;   //写事件

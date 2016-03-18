@@ -7,6 +7,7 @@
 //---------------------------------------------------------------------------
 namespace net
 {
+const int Channel::kNone        = 0;  
 const int Channel::kEventNormal = EPOLLRDHUP | EPOLLHUP | EPOLLERR;
 const int Channel::kEventRead   = EPOLLIN | EPOLLPRI;
 const int Channel::kEventWrite  = EPOLLOUT;
@@ -95,12 +96,12 @@ void Channel::Remove()
 //---------------------------------------------------------------------------
 std::string Channel::REventsToString()
 {
-    return _EventsToString(fd_, events_);
+    return _EventsToString(fd_, revents_);
 }
 //---------------------------------------------------------------------------
 std::string Channel::EventsToString()
 {
-    return _EventsToString(fd_, revents_);
+    return _EventsToString(fd_, events_);
 }
 //---------------------------------------------------------------------------
 void Channel::UpdateEvent()

@@ -83,7 +83,6 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ba
 
     TCPConnectionPtr conn_ptr = std::make_shared<TCPConnection>(loop, new_conn_name, clientfd, local_addr, client_addr);
     //初始化连接
-    conn_ptr->Initialize();
     conn_ptr->set_callback_connection(callback_connection_);
     conn_ptr->set_callback_disconnection(callback_disconnection_);
     conn_ptr->set_callback_read(callback_read_);
@@ -93,6 +92,9 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ba
     //加入到连接map中
     tcp_name_connection_map_[new_conn_name] = conn_ptr;
     
+    //只有在加入到map中后才允许该连接的事件,防止在未加入map前,该连接又close掉导致map里找不到该连接
+    conn_ptr->Initialize();
+
     //通知连接已经就绪,在conn_ptr中通知
     loop->RunInLoop(std::bind(&TCPConnection::ConnectionEstablished, conn_ptr)); 
 
@@ -111,9 +113,14 @@ void TCPServer::OnConnectionDestroyInLoop(const TCPConnectionPtr& connection_ptr
     //在TCPserver的线程销毁连接
     owner_loop_->AssertInLoopThread();
 
+    SystemLog_Debug("server name:[%s], total[%zu]- from :%s to :%s\n", 
+            name_.c_str(), tcp_name_connection_map_.size(), connection_ptr->local_addr().IPPort().c_str(),
+            connection_ptr->peer_addr().IPPort().c_str());
+
     size_t nums = tcp_name_connection_map_.erase(connection_ptr->name());
-    if(0== nums)
+    if(0 == nums)
     {
+        //因为channel disableall 设置成norml,导致接连收到close消息,坑自己~
         SystemLog_Warning("connection:%s not exist!!!", connection_ptr->name().c_str());
         assert(0);
     }
@@ -121,9 +128,6 @@ void TCPServer::OnConnectionDestroyInLoop(const TCPConnectionPtr& connection_ptr
     //通知connection已经销毁
     connection_ptr->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, connection_ptr));
 
-    SystemLog_Debug("server name:[%s], total[%zu]- from :%s to :%s\n", 
-            name_.c_str(), tcp_name_connection_map_.size(), connection_ptr->local_addr().IPPort().c_str(),
-            connection_ptr->peer_addr().IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------

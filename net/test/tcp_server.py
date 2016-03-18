@@ -26,7 +26,7 @@ def ClientDisconnect():
         cond.acquire()
         while(len(client_list) == 0):
             cond.wait();
-
+        #import pdb;pdb.set_trace();
         client = client_list.pop()
         print("disconnect num peer:", client.getpeername(), "local:", client.getsockname())
         client.close()

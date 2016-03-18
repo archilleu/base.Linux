@@ -63,12 +63,13 @@ bool TestTCPServer::Test_Normal()
     InetAddress listen_addr("127.0.0.1",  9999);
     TCPServer tcp_server(&loop, listen_addr);
     
+    tcp_server.set_event_loop_nums(4);
     tcp_server.set_callback_connection(std::bind(&TestTCPServer::OnConnection, this, std::placeholders::_1));
     tcp_server.set_callback_disconnection(std::bind(&TestTCPServer::OnDisconnection, this, std::placeholders::_1));
     tcp_server.Start();
     
     g_loop = &loop;
-    //loop.RunAfter(100, Test_Normal_Finishe);
+    loop.RunAfter(60*3, Test_Normal_Finishe);
 
     loop.Loop();
     tcp_server.Stop();
