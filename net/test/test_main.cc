@@ -8,6 +8,7 @@
 #include "test_acceptor.h"
 #include "test_buffer.h"
 #include "test_tcp_server.h"
+#include "test_tcp_connection.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;
@@ -22,7 +23,8 @@ TestMain::TestMain()
     //TEST_ADD(TestSocket);
     //TEST_ADD(TestAcceptor);
     //TEST_ADD(TestBuffer);
-    TEST_ADD(TestTCPServer);
+    //TEST_ADD(TestTCPServer);
+    TEST_ADD(TestTCPConnection);
 
 #undef TEST_ADD
 }

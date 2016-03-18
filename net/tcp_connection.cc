@@ -46,7 +46,17 @@ void TCPConnection::Initialize()
 //---------------------------------------------------------------------------
 void TCPConnection::Send(const char* dat, size_t len)
 {
-    Send(base::MemoryBlock(dat, len));
+    assert(true == connected_);
+
+    //如果在本线程调用,则直接发送
+    if(true == owner_loop_->IsInLoopThread())
+    {
+        SendInLoopB(dat, len);
+        return;
+    }
+
+    //不在线程调用,则排入本线程发送队列
+    owner_loop_->QueueInLoop(std::bind(&TCPConnection::SendInLoopA, this, base::MemoryBlock(dat, len)));
     return;
 }
 //---------------------------------------------------------------------------
@@ -57,12 +67,12 @@ void TCPConnection::Send(const base::MemoryBlock& dat)
     //如果在本线程调用,则直接发送
     if(true == owner_loop_->IsInLoopThread())
     {
-        SendInLoop(dat);
+        SendInLoopA(dat);
         return;
     }
 
     //不在线程调用,则排入本线程发送队列
-    owner_loop_->QueueInLoop(std::bind(&TCPConnection::SendInLoop, this, dat));
+    owner_loop_->QueueInLoop(std::bind(&TCPConnection::SendInLoopA, this, dat));
     return;
 }
 //---------------------------------------------------------------------------
@@ -119,28 +129,38 @@ void TCPConnection::ConnectionDestroy()
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::SendInLoop(const base::MemoryBlock& dat)
+void TCPConnection::SendInLoopA(const base::MemoryBlock dat)
+{
+    SendInLoopB(dat.dat(), dat.len());
+    return;
+}
+//---------------------------------------------------------------------------
+void TCPConnection::SendInLoopB(const char* dat, size_t len)
 {
     assert(true == connected_);
     owner_loop_->AssertInLoopThread();
 
-    ssize_t remain = _SendMostPossible(dat);
+    ssize_t remain = _SendMostPossible(dat, len);
     if(-1 == remain)
         return;
 
-    //发送完成
-    if((0==remain) && (callback_write_complete_))
+    if(0 != remain)
     {
-        owner_loop_->QueueInLoop(std::bind(callback_write_complete_, shared_from_this()));
+        //放入缓存
+        _SendDatQueueInBuffer(dat, remain);
         return;
     }
+    
+    //发送完成
+    if(callback_write_complete_)
+    {
+        owner_loop_->QueueInLoop(std::bind(callback_write_complete_, shared_from_this()));
+    }
 
-    //放入缓存
-    _SendDatQueueInBuffer(dat, remain);
     return;
 }
 //---------------------------------------------------------------------------
-ssize_t TCPConnection::_SendMostPossible(const base::MemoryBlock& dat)
+ssize_t TCPConnection::_SendMostPossible(const char* dat, size_t len)
 {
     //如果没有关注写事件,意味着写缓存为空,则可以直接发送数据
     ssize_t wlen = 0;
@@ -148,7 +168,7 @@ ssize_t TCPConnection::_SendMostPossible(const base::MemoryBlock& dat)
     {
         assert(0 == buffer_output_.ReadableBytes());
 
-        wlen = ::send(channel_->fd(), dat.dat(), dat.len(), 0) ;
+        wlen = ::send(channel_->fd(), dat, len, 0) ;
         if(0 > wlen)
         {
             //发送出错,关闭连接
@@ -162,11 +182,11 @@ ssize_t TCPConnection::_SendMostPossible(const base::MemoryBlock& dat)
         }
     }
 
-    size_t remain = dat.len() - wlen;
+    size_t remain = len - wlen;
     return remain;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::_SendDatQueueInBuffer(const base::MemoryBlock& dat, size_t remain)
+void TCPConnection::_SendDatQueueInBuffer(const char* dat, size_t remain)
 {
     //如果之前已经有缓存没有发送完成,或者这次没有发送完成,需要缓存数据等待下一次发送
     
@@ -176,7 +196,7 @@ void TCPConnection::_SendDatQueueInBuffer(const base::MemoryBlock& dat, size_t r
         owner_loop_->QueueInLoop(std::bind(callback_high_water_mark_, shared_from_this(), wait_send_size));
     
     //添加未完成发送的数据到缓存
-    buffer_output_.Append(dat.dat()-remain, remain);
+    buffer_output_.Append(dat-remain, remain);
     if(false == channel_->IsWriting())
         channel_->WriteEnable();
 

@@ -61,9 +61,10 @@ public:
 
 private:
     //如果上面的Send调用不在本io线程中调用,则转换到本线程发送数据,达到线程安全的目的
-    void    SendInLoop              (const base::MemoryBlock& dat);
-    ssize_t _SendMostPossible       (const base::MemoryBlock& dat);                 //尽可能的发送数据
-    void    _SendDatQueueInBuffer   (const base::MemoryBlock& dat, size_t remain);  //未完成发送的数据放入缓存
+    void    SendInLoopA             (const base::MemoryBlock dat);
+    void    SendInLoopB             (const char* dat, size_t len);
+    ssize_t _SendMostPossible       (const char* dat, size_t len);      //尽可能的发送数据
+    void    _SendDatQueueInBuffer   (const char* dat, size_t remain);   //未完成发送的数据放入缓存
 
     //关闭和断开连接都需要在本线程做
     void ShutdownInLoop();
