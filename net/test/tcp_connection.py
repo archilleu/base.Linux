@@ -3,6 +3,7 @@
 
 import socket
 import threading
+import random
 
 HOST = "127.0.0.1"
 PORT = 9999
@@ -12,65 +13,67 @@ client_list = []
 cond = threading.Condition()
 
 def ClientConnect():
-    for i in range(clinet_nums):
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         client.connect((HOST, PORT))
-        cond.acquire()
-        client_list.append(client)
-        cond.notify()
         print("connect nums:peer:", client.getpeername(), "local:", client.getsockname())
-        cond.release()
 
-        return client;
+        return client
 
 def ClientDisconnect():
-    for i in range(clinet_nums):
-        cond.acquire()
-        while(len(client_list) == 0):
-            cond.wait();
-        #import pdb;pdb.set_trace();
-        client = client_list.pop()
         print("disconnect num peer:", client.getpeername(), "local:", client.getsockname())
         client.close()
 
-        cond.release()
+        return
 
-def ClientSendData(conn):
-    import pdb;pdb.set_trace()
-    str_data    = "hello wo lai le!"
-    byte_data   = str_data.encode("utf-8")
-    byte_len    = len(byte_data)
+client_list = []
+def ClientSendData(tname, conn):
+    for i in range(10000):
+        print("thread name:", tname, "times:", i)
 
-    conn.send(byte_data);
-    recv_data = conn.recv(byte_len)
+        byte_data   = bytearray(random.randint(1, 1024*64))
+        byte_len    = len(byte_data)
+        for i in range(byte_len):
+            v = random.randint(0, 255);
+            byte_data[i] = v;
 
-    if str_data == recv_data.decode("utf-8"):
-        print("right\n")
-    else:
-        print("error\n")
+        conn.send(byte_data);
+        recv_data = conn.recv(byte_len)
+
+        if byte_data != recv_data:
+            assert false, "error"
+
+        #随机断线~
+        if 1 == random.randint(1, 50):
+            if("s" == tname):
+                continue
+
+            conn.close()
+            conn = ClientConnect()
+            client_list[tname] = conn
+
+    return
 
 if "__main__" == __name__:
     #测试单线程
-    client = ClientConnect()
-    ClientSendData(client);
-
-    ClientDisconnect();
-    client_list = []
+    #client = ClientConnect()
+    #ClientSendData("s", client);
+    #ClientDisconnect();
 
     #测试多线程
+    client_nums = 50
+    for i in range(client_nums):
+        client_list.append(ClientConnect())
+
     t_connect = []
-    t_disconnect = []
-    for i in range(5):
-        t_connect.append(threading.Thread(target=ClientConnect));
-        t_disconnect.append(threading.Thread(target=ClientDisconnect));
+    for i in range(client_nums):
+        t_connect.append(threading.Thread(target=ClientSendData,
+                                          args=(i, client_list[i],)))
 
-    for i in range(5):
-        t_connect[i].start();
-        t_disconnect[i].start();
+    for i in range(client_nums):
+        t_connect[i].start()
 
-    for i in range(5):
-        t_connect[i].join();
-        t_disconnect[i].join();
+    for i in range(client_nums):
+        t_connect[i].join()
 
     print("finished")
 

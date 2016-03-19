@@ -30,6 +30,7 @@ bool TestTCPConnection::Test_Normal()
     InetAddress listen_addr("127.0.0.1", 9999);
     TCPServer   server(&loop, listen_addr);
 
+    server.set_event_loop_nums(8);
     server.set_callback_connection(std::bind(&TestTCPConnection::OnConnection, this, std::placeholders::_1));
     server.set_callback_disconnection(std::bind(&TestTCPConnection::OnDisconnection, this, std::placeholders::_1));
     server.set_callback_read(std::bind(&TestTCPConnection::OnRead, this, std::placeholders::_1, std::placeholders::_2));
