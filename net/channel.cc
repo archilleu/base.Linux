@@ -48,6 +48,7 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
             callback_close_();
         }
 
+        SystemLog_Debug("Handle fd:%d event:%s", fd_, REventsToString().c_str());
         return;
     }
 
@@ -60,6 +61,7 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
             handling_ = false;
         }
 
+        SystemLog_Debug("Handle fd:%d event:%s", fd_, REventsToString().c_str());
         return;
     }
 

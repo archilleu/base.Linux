@@ -25,7 +25,8 @@ else
 endif
 #---------------------------------------------------------------------------
 objects=main.o test_base.o test_main.o test_event_loop.o test_event_loop_thread.o test_inet_address.o	\
-		test_socket.o test_acceptor.o test_buffer.o test_tcp_server.o test_tcp_connection.o test_datagram_packet.o
+		test_socket.o test_acceptor.o test_buffer.o test_tcp_server.o test_tcp_connection.o test_datagram_packet.o	\
+		test_datagram_socket.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE) $(_LIB_SHARE_INCLUDE)  $(_LIB_SHARE_NAME) $(_LIB_PUBLIC_NAME);
@@ -66,6 +67,9 @@ test_tcp_connection.o : test_tcp_connection.cc test_tcp_connection.h
 
 test_datagram_packet.o : test_datagram_packet.cc test_datagram_packet.h
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_datagram_packet.cc
+
+test_datatram_socket.o : test_datatram_socket.cc test_datatram_socket.h
+	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_datatram_socket.cc
 
 #---------------------------------------------------------------------------
 clean:	

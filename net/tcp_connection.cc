@@ -24,13 +24,13 @@ TCPConnection::TCPConnection(EventLoop* ownerloop, const std::string& tcpname, i
     assert(0 != owner_loop_);
     assert(0 < fd);
 
-    SystemLog_Debug("ctor==>name:%s, socketfd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), fd, local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    SystemLog_Debug("ctor==>name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), fd, local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------
 TCPConnection::~TCPConnection()
 {
-    SystemLog_Debug("dtor==>name:%s, socketfd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    SystemLog_Debug("dtor==>name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------
@@ -83,6 +83,7 @@ void TCPConnection::Shutdown()
     connected_ = false;
     owner_loop_->QueueInLoop(std::bind(&TCPConnection::ShutdownInLoop, shared_from_this()));
 
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------
@@ -93,6 +94,7 @@ void TCPConnection::ForceClose()
     connected_ = false;
     owner_loop_->QueueInLoop(std::bind(&TCPConnection::ForceCloseInLoop, shared_from_this()));
 
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------
@@ -106,6 +108,7 @@ void TCPConnection::ConnectionEstablished()
         callback_connection_(shared_from_this());
 
     connected_ = true;
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------
@@ -123,6 +126,8 @@ void TCPConnection::ConnectionDestroy()
     //{
     //该连接是被动调用的(客户端主动断开)
     //}
+
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     connected_ = false;
     channel_->Remove();
@@ -210,6 +215,7 @@ void TCPConnection::ShutdownInLoop()
     if(false == channel_->IsWriting())
         socket_->ShutDown();
 
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------
@@ -219,6 +225,7 @@ void TCPConnection::ForceCloseInLoop()
 
     HandleClose();
 
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------
@@ -296,9 +303,9 @@ void TCPConnection::HandleError()
 {
     owner_loop_->AssertInLoopThread();
 
-    SystemLog_Error("handle error, tcp connection:%s", name_.c_str());
     HandleClose();
 
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     assert(0);
     return;
 }
@@ -324,7 +331,7 @@ void TCPConnection::HandleClose()
         callback_destroy_(guard);
     }
 
-    SystemLog_Debug("handle close, tcp connection:%s", name_.c_str());
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------

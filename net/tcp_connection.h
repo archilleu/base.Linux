@@ -57,7 +57,8 @@ public:
     const InetAddress&  local_addr()    { return local_addr_; }
     const InetAddress&  peer_addr()     { return peer_addr_; }
 
-    EventLoop* owner_loop() { return owner_loop_; }
+    EventLoop*                      owner_loop()    { return owner_loop_; }
+    const std::shared_ptr<Socket>   socket()        { return socket_; }
 
 private:
     //如果上面的Send调用不在本io线程中调用,则转换到本线程发送数据,达到线程安全的目的

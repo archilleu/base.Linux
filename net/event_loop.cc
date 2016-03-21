@@ -59,6 +59,7 @@ void EventLoop::Loop()
     looping_ = true;
     while(looping_)
     {
+        active_channel_list_.clear();
         base::Timestamp rcv_time = poller_->Poll(5, &active_channel_list_);
         for(auto iter=active_channel_list_.begin(); active_channel_list_.end()!=iter; ++iter)
         {

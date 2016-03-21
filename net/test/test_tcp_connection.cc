@@ -6,6 +6,7 @@
 #include "../tcp_connection.h"
 #include "../acceptor.h"
 #include "../buffer.h"
+#include "../net_log.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;

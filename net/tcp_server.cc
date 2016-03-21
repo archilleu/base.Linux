@@ -78,8 +78,8 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ba
     std::string new_conn_name = base::CombineString("%s#%zu", name_.c_str(), next_connect_id_++);
     InetAddress local_addr = Socket::GetLocalAddress(clientfd);
 
-    SystemLog_Debug("accept time:%s, new connection server name:[%s], total[%zu]- from :%s to :%s\n", accept_time.Datetime(true).c_str(),
-            new_conn_name.c_str(), tcp_name_connection_map_.size()+1, local_addr.IPPort().c_str(), client_addr.IPPort().c_str());
+    SystemLog_Debug("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s\n", accept_time.Datetime(true).c_str(),
+            new_conn_name.c_str(), clientfd, tcp_name_connection_map_.size()+1, local_addr.IPPort().c_str(), client_addr.IPPort().c_str());
 
     TCPConnectionPtr conn_ptr = std::make_shared<TCPConnection>(loop, new_conn_name, clientfd, local_addr, client_addr);
     //初始化连接
@@ -103,7 +103,7 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ba
 //---------------------------------------------------------------------------
 void TCPServer::OnConnectionDestroy(const TCPConnectionPtr& connection_ptr)
 {
-    //该回调是由连接的线程回调上来的,但是销毁连接需要在TCPServer的线程中执行
+    //该回调是由连接的线程回调上来的,但是销毁连接需要在TCPServer的线程中执行(connection_ptr是拷贝的一个副本,即是是引用参数!!)
     owner_loop_->RunInLoop(std::bind(&TCPServer::OnConnectionDestroyInLoop, this, connection_ptr));
     return;
 }
@@ -113,8 +113,8 @@ void TCPServer::OnConnectionDestroyInLoop(const TCPConnectionPtr& connection_ptr
     //在TCPserver的线程销毁连接
     owner_loop_->AssertInLoopThread();
 
-    SystemLog_Debug("server name:[%s], total[%zu]- from :%s to :%s\n", 
-            name_.c_str(), tcp_name_connection_map_.size(), connection_ptr->local_addr().IPPort().c_str(),
+    SystemLog_Debug("server name:[%s], total[%zu]- name:%s,  fd:%d, from :%s to :%s\n", 
+            name_.c_str(), tcp_name_connection_map_.size(), connection_ptr->name().c_str(), connection_ptr->socket()->fd(), connection_ptr->local_addr().IPPort().c_str(),
             connection_ptr->peer_addr().IPPort().c_str());
 
     size_t nums = tcp_name_connection_map_.erase(connection_ptr->name());

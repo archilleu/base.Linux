@@ -12,12 +12,13 @@ const InetAddress InetAddress::INVALID_ADDR = InetAddress();
 //---------------------------------------------------------------------------
 InetAddress::InetAddress()
 {
-    memset(&address_, 0, sizeof(address_));
+    bzero(&address_, sizeof(address_));
     return;
 }
 //---------------------------------------------------------------------------
 InetAddress::InetAddress(short port)
 {
+    bzero(&address_, sizeof(address_));
     address_.sin_family     = AF_INET; //Address families
     address_.sin_port       = htobe16(port);
     address_.sin_addr.s_addr= 0;
@@ -33,6 +34,7 @@ InetAddress::InetAddress(const sockaddr_in& addr)
 //---------------------------------------------------------------------------
 InetAddress::InetAddress(uint32_t raw_ip, short port)
 {
+    bzero(&address_, sizeof(address_));
     address_.sin_family     = AF_INET; //Address families
     address_.sin_port       = htobe16(port);
     address_.sin_addr.s_addr= raw_ip;
@@ -42,11 +44,12 @@ InetAddress::InetAddress(uint32_t raw_ip, short port)
 //---------------------------------------------------------------------------
 InetAddress::InetAddress(const std::string& ip, short port)
 {
+    bzero(&address_, sizeof(address_));
     address_.sin_family = AF_INET; //Address families
     address_.sin_port   = htobe16(port);
 
     int error = ::inet_pton(AF_INET, ip.c_str(), &address_.sin_addr);
-    if(error > ::inet_pton(AF_INET, ip.c_str(), &address_.sin_addr))
+    if(0 > error) 
     {
         *this = InetAddress::INVALID_ADDR;
     }

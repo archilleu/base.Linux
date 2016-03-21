@@ -27,7 +27,7 @@ def ClientDisconnect():
 
 client_list = []
 def ClientSendData(tname, conn):
-    for i in range(10000):
+    for i in range(100):
         print("thread name:", tname, "times:", i)
 
         byte_data   = bytearray(random.randint(1, 1024*64))

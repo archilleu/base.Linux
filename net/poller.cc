@@ -29,10 +29,8 @@ Poller::~Poller()
 //---------------------------------------------------------------------------
 base::Timestamp Poller::Poll(int timeout, ChannelList* active_channel_list)
 {
-    active_channel_list->clear();
-
-    int             nums    = ::epoll_wait(efd_, static_cast<struct epoll_event*>(event_list_.data()), static_cast<int>(event_list_.size()), timeout*1000);
-    base::Timestamp rcv_time= base::Timestamp::Now();
+    int nums = ::epoll_wait(efd_, static_cast<struct epoll_event*>(event_list_.data()), static_cast<int>(event_list_.size()), timeout*1000);
+    base::Timestamp rcv_time = base::Timestamp::Now();
     
     //有事件
     if(0 < nums)

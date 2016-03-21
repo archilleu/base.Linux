@@ -84,11 +84,11 @@ public:
     const base::MemoryBlock&    dat()   const   { return dat_; }
     base::MemoryBlock&          dat()           { return dat_; }
 
-    const InetAddress&  address     ()                          { return address_; }
-    void                set_address (const InetAddress& addr)   { address_ = addr; }
+    const InetAddress&  address     ()                          const   { return address_; }
+    void                set_address (const InetAddress& addr)           { address_ = addr; }
 
-    size_t  effective       ()              { return effective_; }
-    void    set_effective   (size_t len)    { assert(len <= effective); effective_ = len; }
+    size_t  effective       ()  const       { return effective_; }
+    void    set_effective   (size_t len)    { assert(len <= dat_.len()); effective_ = len; }
 
 private:
     base::MemoryBlock   dat_;
