@@ -120,9 +120,9 @@ void TCPServer::OnConnectionDestroyInLoop(const TCPConnectionPtr& connection_ptr
     size_t nums = tcp_name_connection_map_.erase(connection_ptr->name());
     if(0 == nums)
     {
-        //因为channel disableall 设置成norml,导致接连收到close消息,坑自己~
+        //disable all当消息为<IN HUP ERR>时,
+        //有时候不能阻止多次接收事件消息,大部分断线只有<IN>消息~,所以直接remove
         SystemLog_Warning("connection:%s not exist!!!", connection_ptr->name().c_str());
-        getchar();
         assert(0);
     }
 

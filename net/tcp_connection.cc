@@ -315,9 +315,17 @@ void TCPConnection::HandleClose()
     owner_loop_->AssertInLoopThread();
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-    connected_ = false;
-    channel_->DisableAll();
+    /*
+    EPOLLERR
+        Error condition happened on the associated file descriptor.  epoll_wait(2) will always wait for this event; it is not necessary to set it in events.
+    EPOLLHUP
+        Hang up happened on the associated file descriptor.  epoll_wait(2) will always wait for this event; it is not necessary to set it in events.
+    */
 
+    connected_ = false;
+    //channel_->DisableAll();拯救不了不再接收事件~,原因在上
+    channel_->Remove();
+    
     TCPConnectionPtr guard(shared_from_this());
 
     //通知下线,回调给用户,原则上接到这个指令后,上层使用者不应该在对该连接操作
