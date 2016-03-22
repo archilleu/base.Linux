@@ -13,6 +13,8 @@ Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
 :   listen_sock_(new Socket(::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0))),
     channel_listen_(new Channel(owner_loop, listen_sock_->fd()))
 {
+    SystemLog_Info("Acceptor ctor");
+
     if(0 > listen_sock_->fd())
     {
         char buffer[128];
@@ -37,6 +39,8 @@ Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
 //---------------------------------------------------------------------------
 Acceptor::~Acceptor()
 {
+    SystemLog_Info("Acceptor dtor");
+
     if(!channel_listen_)
         return;
 
@@ -48,6 +52,8 @@ Acceptor::~Acceptor()
 //---------------------------------------------------------------------------
 bool Acceptor::Listen()
 {
+    SystemLog_Info("Acceptor listen");
+
     if(0 > ::listen(channel_listen_->fd(), SOMAXCONN))
     {
         char buffer[128];

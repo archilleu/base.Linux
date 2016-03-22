@@ -34,6 +34,7 @@ DatagramSocket::DatagramSocket(short port)
         assert(0);
     }
 
+    is_bind_ = true;
     return;
 }
 //---------------------------------------------------------------------------
@@ -49,6 +50,7 @@ DatagramSocket::DatagramSocket(const InetAddress& inet_addr)
         assert(0);
     }
 
+    is_bind_ = true;
     return;
 }
 //---------------------------------------------------------------------------

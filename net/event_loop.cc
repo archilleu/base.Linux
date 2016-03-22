@@ -28,6 +28,8 @@ EventLoop::EventLoop()
     is_pending_task_(false),
     poller_(new Poller())
 {
+    SystemLog_Debug("event loop create:%p, in thread tid:%u, tname:%s", this, tid_, tname_);
+
     wakeupfd_ = CreateEventFd();
     channel_wakeup_.reset(new Channel(this, wakeupfd_));
 
@@ -35,17 +37,17 @@ EventLoop::EventLoop()
     channel_wakeup_->ReadEnable();
 
     timer_task_queue_.reset(new TimerTaskQueue(this));
-    SystemLog_Debug("event loop create:%p, in thread tid:%u, tname:%s", this, tid_, tname_);
     return;
 }
 //---------------------------------------------------------------------------
 EventLoop::~EventLoop()
 {
+    SystemLog_Debug("event loop exit:%p, in thread tid:%u, tname:%s", this, tid_, tname_);
+
     channel_wakeup_->DisableAll();
     channel_wakeup_->Remove();
     ::close(wakeupfd_);
     
-    SystemLog_Debug("event loop exit:%p, in thread tid:%u, tname:%s", this, tid_, tname_);
     return;
 }
 //---------------------------------------------------------------------------
@@ -75,6 +77,8 @@ void EventLoop::Loop()
 //---------------------------------------------------------------------------
 void EventLoop::Quit()
 {
+    SystemLog_Info("%p Event loop quit", this);
+
     looping_ = false;
     
     //wakup

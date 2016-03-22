@@ -52,8 +52,7 @@ base::Timestamp Poller::Poll(int timeout, ChannelList* active_channel_list)
     if(EINTR != errno)
     {
         char buffer[128];
-        SystemLog_Error("epoll_wait error:no:%d, msg:%s", errno, strerror_r(errno, buffer, 128));
-
+        SystemLog_Error("epoll_wait error:no:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
         assert(0);
     }
 

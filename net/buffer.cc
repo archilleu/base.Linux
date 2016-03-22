@@ -24,6 +24,7 @@ int Buffer::ReadFd(int fd, int* saved_errno)
         *saved_errno = errno;
         char buffer[128];
         SystemLog_Error("readv failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        assert(0);
     }
     else if(static_cast<size_t>(rlen) <= writable)
     {

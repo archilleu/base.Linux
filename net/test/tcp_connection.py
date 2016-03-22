@@ -27,7 +27,7 @@ def ClientDisconnect():
 
 client_list = []
 def ClientSendData(tname, conn):
-    for i in range(100):
+    for i in range(10000):
         print("thread name:", tname, "times:", i)
 
         byte_data   = bytearray(random.randint(1, 1024*64))
@@ -40,7 +40,7 @@ def ClientSendData(tname, conn):
         recv_data = conn.recv(byte_len)
 
         if byte_data != recv_data:
-            assert false, "error"
+            assert False, "error"
 
         #随机断线~
         if 1 == random.randint(1, 50):

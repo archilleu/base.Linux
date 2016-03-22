@@ -10,6 +10,7 @@
 #include "test_tcp_server.h"
 #include "test_tcp_connection.h"
 #include "test_datagram_packet.h"
+#include "test_datagram_socket.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;
@@ -27,6 +28,7 @@ TestMain::TestMain()
     //TEST_ADD(TestTCPServer);
     TEST_ADD(TestTCPConnection);
     //TEST_ADD(TestDatagramPacket);
+    //TEST_ADD(TestDatagramSocket);
 
 #undef TEST_ADD
 }

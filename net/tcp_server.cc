@@ -41,16 +41,18 @@ void TCPServer::set_event_loop_nums(int nums)
 //---------------------------------------------------------------------------
 void TCPServer::Start()
 {
+    SystemLog_Info("TCPServer start");
+
     loop_thread_pool_->Start();
     owner_loop_->RunInLoop(std::bind(&Acceptor::Listen, acceptor_));
 
-    SystemLog_Debug("TCPServer start");
     return;
 }
 //---------------------------------------------------------------------------
 void TCPServer::Stop()
 {
     owner_loop_->AssertInLoopThread();
+    SystemLog_Info("TCPServer sopt");
 
     loop_thread_pool_->Stop();
 
@@ -91,13 +93,11 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ba
     
     //加入到连接map中
     tcp_name_connection_map_[new_conn_name] = conn_ptr;
+    conn_ptr->Initialize();
     
     //只有在加入到map中后才允许该连接的事件,防止在未加入map前,该连接又close掉导致map里找不到该连接
-    conn_ptr->Initialize();
-
     //通知连接已经就绪,在conn_ptr中通知
     loop->RunInLoop(std::bind(&TCPConnection::ConnectionEstablished, conn_ptr)); 
-
     return;
 }
 //---------------------------------------------------------------------------
@@ -122,12 +122,12 @@ void TCPServer::OnConnectionDestroyInLoop(const TCPConnectionPtr& connection_ptr
     {
         //因为channel disableall 设置成norml,导致接连收到close消息,坑自己~
         SystemLog_Warning("connection:%s not exist!!!", connection_ptr->name().c_str());
+        getchar();
         assert(0);
     }
 
     //通知connection已经销毁
     connection_ptr->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, connection_ptr));
-
     return;
 }
 //---------------------------------------------------------------------------

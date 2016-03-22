@@ -15,11 +15,14 @@ const int Channel::kEventWrite  = EPOLLOUT;
 Channel::Channel(EventLoop* loop, int vfd)
 :   owner_loop_(loop),
     fd_(vfd),
-    events_(kEventNormal),
+    //events_(kEventNormal),//坑大爹了,在TCPServer通知TCPConnection对应成功建立连接前,loop都不能接收任何事件
+    events_(kNone),
     revents_(0),
     status_(CHANNEL_None),
     handling_(false)
 {
+    SystemLog_Debug("Channel ctor");
+
     assert(0 != owner_loop_);
     assert(0 < fd_);
 
@@ -28,6 +31,8 @@ Channel::Channel(EventLoop* loop, int vfd)
 //---------------------------------------------------------------------------
 Channel::~Channel()
 {
+    SystemLog_Debug("Channel dtor");
+    
     assert(false == handling_);
     return;
 }
@@ -48,7 +53,6 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
             callback_close_();
         }
 
-        SystemLog_Debug("Handle fd:%d event:%s", fd_, REventsToString().c_str());
         return;
     }
 
@@ -61,7 +65,6 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
             handling_ = false;
         }
 
-        SystemLog_Debug("Handle fd:%d event:%s", fd_, REventsToString().c_str());
         return;
     }
 
@@ -124,13 +127,14 @@ void Channel::UpdateEvent()
 std::string Channel::_EventsToString(int vfd, int ev)
 {
     std::ostringstream oss;
-    oss << vfd << ": ";
+    oss << vfd << ":<";
     if(ev & EPOLLIN)    oss << "IN ";
     if(ev & EPOLLPRI)   oss << "PRI ";
     if(ev & EPOLLOUT)   oss << "OUT ";
     if(ev & EPOLLHUP)   oss << "HUP ";
     if(ev & EPOLLRDHUP) oss << "RDHUP ";
     if(ev & EPOLLERR)   oss << "ERR ";
+    oss << ">";
 
     return oss.str();
 }
