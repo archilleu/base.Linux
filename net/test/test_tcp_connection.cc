@@ -49,34 +49,34 @@ bool TestTCPConnection::Test_MultiThread()
 //---------------------------------------------------------------------------
 void TestTCPConnection::OnConnection(const TCPConnectionPtr& conn_ptr)
 {
-    std::cout << "OnConnectio name:" << conn_ptr->name()
-        << " local addr:" << conn_ptr->local_addr().IPPort()
-        << " peer addr:" << conn_ptr->peer_addr().IPPort()
-        << std::endl;
+//    std::cout << "OnConnectio name:" << conn_ptr->name()
+//        << " local addr:" << conn_ptr->local_addr().IPPort()
+//        << " peer addr:" << conn_ptr->peer_addr().IPPort()
+//        << std::endl;
 
     return;
 }
 //---------------------------------------------------------------------------
 void TestTCPConnection::OnDisconnection(const TCPConnectionPtr& conn_ptr)
 {
-    std::cout << "OnDisconnectio name:" << conn_ptr->name()
-        << " local addr:" << conn_ptr->local_addr().IPPort()
-        << " peer addr:" << conn_ptr->peer_addr().IPPort()
-        << std::endl;
+//    std::cout << "OnDisconnectio name:" << conn_ptr->name()
+//        << " local addr:" << conn_ptr->local_addr().IPPort()
+//        << " peer addr:" << conn_ptr->peer_addr().IPPort()
+//        << std::endl;
 
     return;
 }
 //---------------------------------------------------------------------------
 void TestTCPConnection::OnRead(const TCPConnectionPtr& conn_ptr, Buffer& rbuf)
 {
-    std::cout << "read name:" << conn_ptr->name()
-        << " local addr:" << conn_ptr->local_addr().IPPort()
-        << " peer addr:" << conn_ptr->peer_addr().IPPort()
-        << std::endl;
-
-    std::cout << "rbuf len:" << rbuf.ReadableBytes() << std::endl;
-    std::cout << "rbuf data:" << rbuf.Peek() << std::endl;;
-
+//    std::cout << "read name:" << conn_ptr->name()
+//        << " local addr:" << conn_ptr->local_addr().IPPort()
+//        << " peer addr:" << conn_ptr->peer_addr().IPPort()
+//        << std::endl;
+//
+//    std::cout << "rbuf len:" << rbuf.ReadableBytes() << std::endl;
+//    std::cout << "rbuf data:" << rbuf.Peek() << std::endl;;
+//
     conn_ptr->Send(rbuf.Peek(), rbuf.ReadableBytes());
     rbuf.RetrieveAll();
 

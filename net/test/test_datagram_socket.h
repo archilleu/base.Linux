@@ -24,6 +24,8 @@ public:
 
 private:
     bool Test_Normal();
+    bool Test_Anonym();
+    bool Test_Named();
 };
 
 }//namespace test

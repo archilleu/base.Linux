@@ -26,9 +26,9 @@ TestMain::TestMain()
     //TEST_ADD(TestAcceptor);
     //TEST_ADD(TestBuffer);
     //TEST_ADD(TestTCPServer);
-    TEST_ADD(TestTCPConnection);
+    //TEST_ADD(TestTCPConnection);
     //TEST_ADD(TestDatagramPacket);
-    //TEST_ADD(TestDatagramSocket);
+    TEST_ADD(TestDatagramSocket);
 
 #undef TEST_ADD
 }

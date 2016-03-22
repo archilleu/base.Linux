@@ -68,8 +68,8 @@ test_tcp_connection.o : test_tcp_connection.cc test_tcp_connection.h
 test_datagram_packet.o : test_datagram_packet.cc test_datagram_packet.h
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_datagram_packet.cc
 
-test_datatram_socket.o : test_datatram_socket.cc test_datatram_socket.h
-	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_datatram_socket.cc
+test_datagram_socket.o : test_datagram_socket.cc test_datagram_socket.h
+	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_datagram_socket.cc
 
 #---------------------------------------------------------------------------
 clean:	

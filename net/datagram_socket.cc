@@ -50,7 +50,6 @@ DatagramSocket::DatagramSocket(const InetAddress& inet_addr)
         assert(0);
     }
 
-    is_bind_ = true;
     return;
 }
 //---------------------------------------------------------------------------
@@ -60,15 +59,12 @@ DatagramSocket::~DatagramSocket()
 //---------------------------------------------------------------------------
 bool DatagramSocket::Bind(const InetAddress& inet_addr)
 {
-    if(0 > ::bind(sockfd_->fd(), reinterpret_cast<const sockaddr*>(&inet_addr.address()), sizeof(sockaddr)))
-    {
-        char buffer[128];
-        SystemLog_Error("socket bind failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
-        assert(0);
-
+    bool err_code = sockfd_->Bind(inet_addr);
+    if(false == err_code)
         return false;
-    }
 
+    local_addr_ = inet_addr;
+    is_bind_    = true;
     return true;
 }
 //---------------------------------------------------------------------------
@@ -83,12 +79,18 @@ bool DatagramSocket::Connect(const InetAddress& addr)
         return false;
     }
 
+    server_addr_= addr;
+    connected_  = true;
     return true;
 }
 //---------------------------------------------------------------------------
 bool DatagramSocket::Disconnect()
 {
-    return Connect(InetAddress::INVALID_ADDR);
+    bool err_code = Connect(InetAddress::INVALID_ADDR);
+    if(true == err_code)
+        connected_ = false;
+
+    return err_code;
 }
 //---------------------------------------------------------------------------
 void DatagramSocket::SetRcvBufferSize(int size)

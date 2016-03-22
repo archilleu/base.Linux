@@ -21,7 +21,7 @@ public:
     bool Bind(const InetAddress& inet_addr);
     bool IsBind(){ return is_bind_; }
 
-    //connect 地址(回环地址会失败)
+    //如果需要Bind, 则需要在connect之前Bind
     bool Connect(const InetAddress& server_addr);
     bool Disconnect();
     bool IsConnect() { return connected_; }
