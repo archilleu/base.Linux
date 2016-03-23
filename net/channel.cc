@@ -33,7 +33,7 @@ Channel::Channel(EventLoop* loop, int vfd)
 Channel::~Channel()
 {
     SystemLog_Debug("Channel dtor");
-    
+
     assert(false == handling_);
     return;
 }
@@ -95,6 +95,7 @@ void Channel::_HandleEvent(base::Timestamp rcv_time)
             callback_close_();
         }
 
+        handling_ = false;
         return;
     }
 
@@ -106,6 +107,7 @@ void Channel::_HandleEvent(base::Timestamp rcv_time)
             callback_error_();
         }
 
+        handling_ = false;
         return;
     }
 

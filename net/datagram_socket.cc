@@ -57,6 +57,11 @@ DatagramSocket::~DatagramSocket()
 {
 }
 //---------------------------------------------------------------------------
+int DatagramSocket::fd()
+{
+    return sockfd_->fd();
+}
+//---------------------------------------------------------------------------
 bool DatagramSocket::Bind(const InetAddress& inet_addr)
 {
     bool err_code = sockfd_->Bind(inet_addr);
@@ -194,16 +199,26 @@ int DatagramSocket::Send(const DatagramPacket& pkt)
     return static_cast<int>(wlen);
 }
 //---------------------------------------------------------------------------
+void DatagramSocket::Shutdown(bool read, bool write)
+{
+    if(true == read)
+        ::shutdown(sockfd_->fd(), SHUT_RD);
+
+    if(true == write)
+        ::shutdown(sockfd_->fd(), SHUT_WR);
+    return;
+}
+//---------------------------------------------------------------------------
 int DatagramSocket::SocketCeate()
 {
-    int fd = ::socket(AF_INET, SOCK_DGRAM, 0);
-    if(0 > fd)
+    int sockfd = ::socket(AF_INET, SOCK_DGRAM, 0);
+    if(0 > sockfd)
     {
         char buffer[128];
         SystemLog_Error("socket create failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
     }
 
-    return fd;
+    return sockfd;
 }
 //---------------------------------------------------------------------------
 }//namespace net

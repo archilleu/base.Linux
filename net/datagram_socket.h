@@ -18,6 +18,8 @@ public:
     DatagramSocket(const InetAddress& inet_addr);
     ~DatagramSocket();
 
+    int fd();
+
     bool Bind(const InetAddress& inet_addr);
     bool IsBind(){ return is_bind_; }
 
@@ -44,6 +46,8 @@ public:
     void            Receive(DatagramPacket& pkt);
 
     int Send(const DatagramPacket& pkt);
+
+    void Shutdown(bool read=true, bool write=false);
 
 private:
     int SocketCeate();

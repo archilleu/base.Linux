@@ -12,7 +12,7 @@ namespace net
 class DatagramPacket
 {
 public:
-    DatagramPacket(size_t len)
+    DatagramPacket(size_t len=0)
     :   dat_(len),
         effective_(0)
     {
