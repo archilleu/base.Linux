@@ -51,7 +51,6 @@ public:
 
     //连接就绪和销毁
     void ConnectionEstablished();
-    void ConnectionDestroy();
 
     const std::string   name()          { return name_; }
     const InetAddress&  local_addr()    { return local_addr_; }

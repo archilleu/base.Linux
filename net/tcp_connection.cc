@@ -89,7 +89,6 @@ void TCPConnection::Shutdown()
 void TCPConnection::ForceClose()
 {
     assert(true == connected_);
-
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     connected_ = false;
@@ -102,35 +101,13 @@ void TCPConnection::ConnectionEstablished()
     owner_loop_->AssertInLoopThread();
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
+    channel_->Tie(shared_from_this());
     channel_->ReadEnable();
     
     if(callback_connection_)
         callback_connection_(shared_from_this());
 
     connected_ = true;
-    return;
-}
-//---------------------------------------------------------------------------
-void TCPConnection::ConnectionDestroy()
-{
-    owner_loop_->AssertInLoopThread();
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
-
-    //如果该函数是主动调用的,该连接还没有被注销,则需要通知TCPServer中注销掉了该连接,剩下的工作由TCPConnection线程自己清理
-    if(true == connected_)
-    {
-        channel_->DisableAll();
-        callback_disconnection_(shared_from_this());
-    }
-   //else
-    //{
-    //该连接是被动调用的(客户端主动断开)
-    //}
-
-
-    connected_ = false;
-    //移除监听
-    channel_->Remove();
     return;
 }
 //---------------------------------------------------------------------------
@@ -225,7 +202,6 @@ void TCPConnection::ForceCloseInLoop()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     HandleClose();
-
     return;
 }
 //---------------------------------------------------------------------------
@@ -315,6 +291,7 @@ void TCPConnection::HandleClose()
     owner_loop_->AssertInLoopThread();
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
+    connected_ = false;
     /*
     EPOLLERR
         Error condition happened on the associated file descriptor.  epoll_wait(2) will always wait for this event; it is not necessary to set it in events.
@@ -322,8 +299,9 @@ void TCPConnection::HandleClose()
         Hang up happened on the associated file descriptor.  epoll_wait(2) will always wait for this event; it is not necessary to set it in events.
     */
 
-    connected_ = false;
+    //而且,因为在
     //channel_->DisableAll();拯救不了不再接收事件~,原因在上
+    //EventLoop中的DoPending处理函数,加入的任务和处理中的任务有一个间隔时间窗口,所以ConnectionDestroy(因为这个原因,该函数已经去掉)有可能不能在这次的poll中得到调用,导致多次触发该<HUP ERR>事件
     channel_->Remove();
     
     TCPConnectionPtr guard(shared_from_this());

@@ -63,7 +63,7 @@ void TCPServer::Stop()
         iter.second.reset();
 
         //客户端的连接需要在自己的线程中回调
-        conn_ptr->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, conn_ptr));
+        //conn_ptr->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, conn_ptr));
         conn_ptr.reset();
     }
 
@@ -120,14 +120,13 @@ void TCPServer::OnConnectionDestroyInLoop(const TCPConnectionPtr& connection_ptr
     size_t nums = tcp_name_connection_map_.erase(connection_ptr->name());
     if(0 == nums)
     {
-        //disable all当消息为<IN HUP ERR>时,
-        //有时候不能阻止多次接收事件消息,大部分断线只有<IN>消息~,所以直接remove
+        //当消息为<IN HUP ERR>时,该事件会被多次触发,所以TCPConnectioni做了相应修改(大部分断线只有<IN>消息)~,所以在TCPConnection直接remove省事点
         SystemLog_Warning("connection:%s not exist!!!", connection_ptr->name().c_str());
         assert(0);
     }
 
     //通知connection已经销毁
-    connection_ptr->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, connection_ptr));
+    //connection_ptr->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, connection_ptr));
     return;
 }
 //---------------------------------------------------------------------------

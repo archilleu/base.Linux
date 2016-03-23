@@ -26,6 +26,9 @@ public:
     Channel(EventLoop* loop, int fd);
     ~Channel();
     
+    //为防止拥有该Channel的对象析构导致自己在处理事件过程中提前析构,需要增加对Channel的保护
+    void Tie(const std::shared_ptr<void>& owner);
+
     //设置回调函数
     void set_callback_write (const EventCallback&& callback)        { callback_write_ = std::move(callback); }
     void set_callback_close (const EventCallback&& callback)        { callback_close_ = std::move(callback); }
@@ -65,7 +68,10 @@ public:
     std::string EventsToString();
 
 private:
-    void        UpdateEvent();
+    void _HandleEvent(base::Timestamp rcv_time);
+
+    void UpdateEvent();
+
     std::string _EventsToString(int fd, int ev);
 
 private:
@@ -75,6 +81,11 @@ private:
     int         revents_;   //触发的事件
     int         status_;    //Channel的状态
     bool        handling_;  //是否正在处理事件中,如果是,则该Channel不能删除
+
+    //为防止拥有该Channel的对象析构导致自己在处理事件过程中提前析构,需要增加对Channel的保护
+    bool                tied_;
+    std::weak_ptr<void> tie_;//Channel的拥有者
+
 
     EventCallback       callback_write_;    //写事件回调
     EventCallback       callback_close_;    //关闭事件回调

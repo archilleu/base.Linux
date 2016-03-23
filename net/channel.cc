@@ -19,7 +19,8 @@ Channel::Channel(EventLoop* loop, int vfd)
     events_(kNone),
     revents_(0),
     status_(CHANNEL_None),
-    handling_(false)
+    handling_(false),
+    tied_(false)
 {
     SystemLog_Debug("Channel ctor");
 
@@ -37,7 +38,49 @@ Channel::~Channel()
     return;
 }
 //---------------------------------------------------------------------------
+void Channel::Tie(const std::shared_ptr<void>& owner)
+{
+    tie_    = owner;
+    tied_   = true;
+
+    return;
+}
+//---------------------------------------------------------------------------
 void Channel::HandleEvent(base::Timestamp rcv_time)
+{
+    if(true == tied_)
+    {
+        std::shared_ptr<void> guard = tie_.lock();
+        if(guard)
+        {
+            _HandleEvent(rcv_time);
+        }
+    }
+    else
+    {
+        _HandleEvent(rcv_time);
+    }
+
+    return;
+}
+//---------------------------------------------------------------------------
+void Channel::Remove()
+{
+    owner_loop_->ChannelDel(this);
+    return;
+}
+//---------------------------------------------------------------------------
+std::string Channel::REventsToString()
+{
+    return _EventsToString(fd_, revents_);
+}
+//---------------------------------------------------------------------------
+std::string Channel::EventsToString()
+{
+    return _EventsToString(fd_, events_);
+}
+//---------------------------------------------------------------------------
+void Channel::_HandleEvent(base::Timestamp rcv_time)
 {
     //标记正在处理事件中
     handling_ = true;
@@ -49,7 +92,6 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
     {
         if(callback_close_)
         {
-            handling_ = false;  //断线即是销毁对象的时候,该函数在返回前对象就已经被销毁了
             callback_close_();
         }
 
@@ -62,7 +104,6 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
         if(callback_error_)
         {
             callback_error_();
-            handling_ = false;
         }
 
         return;
@@ -91,22 +132,6 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
 
     handling_ = false;
     return;
-}
-//---------------------------------------------------------------------------
-void Channel::Remove()
-{
-    owner_loop_->ChannelDel(this);
-    return;
-}
-//---------------------------------------------------------------------------
-std::string Channel::REventsToString()
-{
-    return _EventsToString(fd_, revents_);
-}
-//---------------------------------------------------------------------------
-std::string Channel::EventsToString()
-{
-    return _EventsToString(fd_, events_);
 }
 //---------------------------------------------------------------------------
 void Channel::UpdateEvent()
