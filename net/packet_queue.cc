@@ -16,7 +16,7 @@ void PacketQueue::Push(DatagramPacket&& pkt)
 {
     {
     std::unique_lock<std::mutex> lock(mutex_);
-    pkt_queue_.push(pkt);
+    pkt_queue_.push(std::move(pkt));
     }
     cond_.notify_one();
 
