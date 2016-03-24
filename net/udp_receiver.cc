@@ -9,11 +9,11 @@
 namespace net
 {
 //---------------------------------------------------------------------------
-UDPReceiver::UDPReceiver(EventLoop* owner_loop, const InetAddress& inet_svr, PacketQueue* pkt_queue)
+UDPReceiver::UDPReceiver(EventLoop* owner_loop, DatagramSocket* sock, PacketQueue* pkt_queue)
 :   owner_loop_(owner_loop),
     pkt_queue_(pkt_queue),
     pkt_size_(1500),
-    socket_(new DatagramSocket(inet_svr)),
+    socket_(sock),
     channel_(new Channel(owner_loop, socket_->fd()))
 {
     SystemLog_Info("UDPReceiver ctor");

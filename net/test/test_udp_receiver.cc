@@ -5,6 +5,7 @@
 #include "../callback.h"
 #include "../inet_address.h"
 #include "../packet_queue.h"
+#include "../datagram_socket.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;
@@ -30,10 +31,11 @@ void OnError()
 //---------------------------------------------------------------------------
 bool TestUDPReceiver::Test_Normal()
 {
-    EventLoop   loop;
-    InetAddress rcv_addr(RCV_IP, RCV_PORT);
-    PacketQueue pkt_queue;
-    UDPReceiver receiver(&loop, rcv_addr, &pkt_queue);
+    EventLoop       loop;
+    InetAddress     rcv_addr(RCV_IP, RCV_PORT);
+    DatagramSocket  sock(rcv_addr);
+    PacketQueue     pkt_queue;
+    UDPReceiver receiver(&loop, &sock, &pkt_queue);
     
     receiver.set_callback_error(OnError);
     receiver.Start();

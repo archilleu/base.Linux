@@ -20,7 +20,7 @@ public:
     //当接收到错误消息时,对象本身已经不可信,需要由调用者重新生成该对象
     typedef std::function<void (void)>  CallbackError;
 
-    UDPReceiver(EventLoop* owner_loop, const InetAddress& inet_svr, PacketQueue* pkt_queue);
+    UDPReceiver(EventLoop* owner_loop, DatagramSocket* sock, PacketQueue* pkt_queue);
     ~UDPReceiver();
 
     void set_callback_error(const CallbackError& callback)  { callback_error_ = callback; }
@@ -34,11 +34,11 @@ private:
     void HandleError();
 
 private:
-    EventLoop*                      owner_loop_;
-    PacketQueue*                    pkt_queue_;
-    int                             pkt_size_;
-    std::shared_ptr<DatagramSocket> socket_;
-    std::shared_ptr<Channel>        channel_;
+    EventLoop*                  owner_loop_;
+    PacketQueue*                pkt_queue_;
+    int                         pkt_size_;
+    DatagramSocket*             socket_;
+    std::shared_ptr<Channel>    channel_;
 
     CallbackError   callback_error_;
 };

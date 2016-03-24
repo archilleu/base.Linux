@@ -28,7 +28,7 @@ endif
 #---------------------------------------------------------------------------
 objects=event_loop.o net_log.o channel.o poller.o timer_task.o timer_task_queue.o event_loop_thread.o	\
 		inet_address.o socket.o acceptor.o event_loop_thread_pool.o tcp_server.o buffer.o tcp_connection.o	\
-		datagram_packet.o datagram_socket.o udp_receiver.o packet_queue.o udp_worker.o
+		datagram_packet.o datagram_socket.o udp_receiver.o packet_queue.o udp_worker.o udp_server.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
@@ -89,6 +89,9 @@ packet_queue.o : packet_queue.h packet_queue.cc
 
 udp_worker.o : udp_worker.h udp_worker.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c udp_worker.cc
+
+udp_server.o : udp_server.h udp_server.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c udp_server.cc
 
 #---------------------------------------------------------------------------
 clean:	

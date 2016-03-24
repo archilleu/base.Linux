@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------------
 namespace net
 {
-
+//TCP
 class TCPConnection;
 class Buffer;
 
@@ -21,6 +21,10 @@ typedef std::function<void (const TCPConnectionPtr&, size_t)>                   
 
 typedef std::function<void (void)>  CallbackTimerTask;
 
+//UDP
+class DatagramPacket;
+
+typedef std::function<void (const DatagramPacket& pkt)> CallbackRcvPacket;
 }//namespace net
 //---------------------------------------------------------------------------
 #endif //BASE_LINUX_NET_CALLBACK_H_

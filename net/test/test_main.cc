@@ -12,6 +12,7 @@
 #include "test_datagram_packet.h"
 #include "test_datagram_socket.h"
 #include "test_udp_receiver.h"
+#include "test_udp_server.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;
@@ -30,7 +31,8 @@ TestMain::TestMain()
     //TEST_ADD(TestTCPConnection);
     //TEST_ADD(TestDatagramPacket);
     //TEST_ADD(TestDatagramSocket);
-    TEST_ADD(TestUDPReceiver); 
+    //TEST_ADD(TestUDPReceiver); 
+    TEST_ADD(TestUDPServer); 
 
 #undef TEST_ADD
 }

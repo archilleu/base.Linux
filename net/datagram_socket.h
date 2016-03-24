@@ -46,6 +46,7 @@ public:
     void            Receive(DatagramPacket& pkt);
 
     int Send(const DatagramPacket& pkt);
+    int Send(const char* dat, size_t len, const InetAddress& to=InetAddress::INVALID_ADDR);
 
     void Shutdown(bool read=true, bool write=false);
 

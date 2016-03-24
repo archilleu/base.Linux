@@ -199,6 +199,17 @@ int DatagramSocket::Send(const DatagramPacket& pkt)
     return static_cast<int>(wlen);
 }
 //---------------------------------------------------------------------------
+int DatagramSocket::Send(const char* dat, size_t len, const InetAddress& to)
+{
+    ssize_t wlen = 0;
+    if(true == connected_)
+        wlen = ::send(sockfd_->fd(), dat, len, 0);
+    else
+        wlen = ::sendto(sockfd_->fd(), dat, len, 0, reinterpret_cast<const sockaddr*>(&to.address()), sizeof(sockaddr));
+
+    return static_cast<int>(wlen);
+}
+//---------------------------------------------------------------------------
 void DatagramSocket::Shutdown(bool read, bool write)
 {
     if(true == read)
