@@ -28,11 +28,11 @@ TestMain::TestMain()
     //TEST_ADD(TestAcceptor);
     //TEST_ADD(TestBuffer);
     //TEST_ADD(TestTCPServer);
-    //TEST_ADD(TestTCPConnection);
+    TEST_ADD(TestTCPConnection);
     //TEST_ADD(TestDatagramPacket);
     //TEST_ADD(TestDatagramSocket);
     //TEST_ADD(TestUDPReceiver); 
-    TEST_ADD(TestUDPServer); 
+    //TEST_ADD(TestUDPServer); 
 
 #undef TEST_ADD
 }

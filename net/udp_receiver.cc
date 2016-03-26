@@ -12,7 +12,7 @@ namespace net
 UDPReceiver::UDPReceiver(EventLoop* owner_loop, DatagramSocket* sock, PacketQueue* pkt_queue)
 :   owner_loop_(owner_loop),
     pkt_queue_(pkt_queue),
-    pkt_size_(1500),
+    pkt_size_(1024),
     socket_(sock),
     channel_(new Channel(owner_loop, socket_->fd()))
 {

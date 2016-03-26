@@ -46,7 +46,7 @@ void TCPConnection::Initialize()
 //---------------------------------------------------------------------------
 void TCPConnection::Send(const char* dat, size_t len)
 {
-    assert(true == connected_);
+    assert(true == connected_);//有可能被其它线程关闭
 
     //如果在本线程调用,则直接发送
     if(true == owner_loop_->IsInLoopThread())
@@ -62,7 +62,7 @@ void TCPConnection::Send(const char* dat, size_t len)
 //---------------------------------------------------------------------------
 void TCPConnection::Send(const base::MemoryBlock& dat)
 {
-    assert(true == connected_);
+    assert(true == connected_);//有可能被其它线程关闭
 
     //如果在本线程调用,则直接发送
     if(true == owner_loop_->IsInLoopThread())
@@ -78,20 +78,22 @@ void TCPConnection::Send(const base::MemoryBlock& dat)
 //---------------------------------------------------------------------------
 void TCPConnection::Shutdown()
 {
-    assert(true == connected_);
+    assert(true == connected_);//有可能被其它线程关闭
+
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-    connected_ = false;
+    //connected_ = false;
     owner_loop_->QueueInLoop(std::bind(&TCPConnection::ShutdownInLoop, shared_from_this()));
     return;
 }
 //---------------------------------------------------------------------------
 void TCPConnection::ForceClose()
 {
-    assert(true == connected_);
+    assert(true == connected_);//有可能被其它线程关闭
+
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-    connected_ = false;
+    //connected_ = false;
     owner_loop_->QueueInLoop(std::bind(&TCPConnection::ForceCloseInLoop, shared_from_this()));
     return;
 }
@@ -245,8 +247,8 @@ void TCPConnection::HandleWrite()
     owner_loop_->AssertInLoopThread();
     assert(true == connected_);
 
-    size_t  readable_len    = buffer_output_.ReadableBytes();
-    ssize_t wlen            = ::send(socket_->fd(), buffer_output_.Peek(), readable_len, 0);
+    size_t  readable_len= buffer_output_.ReadableBytes();
+    ssize_t wlen        = ::send(socket_->fd(), buffer_output_.Peek(), readable_len, 0);
     if(0 > wlen)
     {
         if((EAGAIN!=errno) || (EWOULDBLOCK!=errno))

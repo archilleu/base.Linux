@@ -5,9 +5,27 @@
 #include "timer_task_queue.h"
 #include <poll.h>
 #include <sys/eventfd.h>
+#include <signal.h>
 //---------------------------------------------------------------------------
 namespace net
 {
+//---------------------------------------------------------------------------
+class IgnoreSigPipe
+{
+public:
+    IgnoreSigPipe()
+    {
+        sigset_t signal_mask;
+        sigemptyset(&signal_mask);
+        sigaddset(&signal_mask, SIGPIPE);
+        if(-1 == pthread_sigmask(SIG_BLOCK, &signal_mask, NULL))
+        {
+            SystemLog_Error("BOLCK SIGPIPE failed");
+            assert(0);
+            return;
+        }
+    }
+}g_initPipe;
 //---------------------------------------------------------------------------
 static int CreateEventFd()
 {

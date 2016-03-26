@@ -38,7 +38,7 @@ def Test_Receiver():
     SendAndRecv()
 
     #多线程
-    thread_num = 50
+    thread_num = 500
     for i in range(thread_num):
         threading.Thread(target=SendAndRecv).start()
 
