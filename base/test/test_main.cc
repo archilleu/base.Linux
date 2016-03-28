@@ -8,6 +8,7 @@
 #include "test_append_file.h"
 #include "test_log_file.h"
 #include "test_mysql_kit.h"
+#include "test_mysql_pool.h"
 //---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
@@ -22,7 +23,8 @@ TestMain::TestMain()
     //TEST_ADD(TestThread);
     //TEST_ADD(TestAppendFile);
     //TEST_ADD(TestLogFile);
-    TEST_ADD(TestMysqlKit);
+    //TEST_ADD(TestMysqlKit);
+    TEST_ADD(TestMysqlPool);
 
 #undef TEST_ADD
 }

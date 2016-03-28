@@ -28,7 +28,7 @@ public:
 public:
     void  Set_callback_db_error(const CallbackDBError& callback)  { callback_db_error_ = callback; }
 
-    bool Connect    (const std::string& host, short port, const std::string& user, const std::string& password, const std::string& database, const std::string& charset = "utf8");
+    bool Connect    (const std::string& host, short port, const std::string& user, const std::string& password, const std::string& database, const std::string& charset="utf8");
     void Disconnect ();
 
     int Execute(const std::string& sql, int* err_no=0, int* affected_rows=0, uint64_t* last_insert_id=0);
@@ -72,6 +72,9 @@ private:
   void* mysql_;
 
   CallbackDBError callback_db_error_;
+
+protected:
+    DISALLOW_COPY_AND_ASSIGN(MysqlKit);
 };
 
 } //namespace net
