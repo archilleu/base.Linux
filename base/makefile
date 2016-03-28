@@ -24,7 +24,7 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 #---------------------------------------------------------------------------
-objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o
+objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o mysql_kit.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
@@ -46,6 +46,9 @@ append_file.o : append_file.h append_file.cc
 
 log_file.o : log_file.h log_file.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c log_file.cc 
+
+mysql_kit.o : mysql_kit.h mysql_kit.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c mysql_kit.cc 
 
 #---------------------------------------------------------------------------
 clean:	

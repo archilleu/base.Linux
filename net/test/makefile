@@ -12,7 +12,7 @@ VPATH = base
 	_LIB_SHARE=-L ../. -L ../../base/.
 	_LIB_SHARE_INCLUDE=-I ../. -I ../../base/.
 	_LIB_SHARE_NAME=-lnet.linux -lbase.linux
-	_LIB_PUBLIC_NAME=-pthread
+	_LIB_PUBLIC_NAME=-lpthread
 	CXX_COMPILER=g++
 
 	_CFLAGS=-D_REENTRANT -Wall -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Wpointer-arith -Wshadow -Wwrite-strings -std=c++11

@@ -11,7 +11,7 @@ VPATH = base
 	_SRC_PATH=.
 	_LIB_SHARE=-L ../.
 	_LIB_SHARE_NAME=-lbase.linux
-	_LIB_PUBLIC_NAME=-pthread
+	_LIB_PUBLIC_NAME=-lpthread -lmysqlclient
 	CXX_COMPILER=g++
 
 	_CFLAGS=-D_REENTRANT -Wall -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Wpointer-arith -Wshadow -Wwrite-strings -std=c++11
@@ -24,7 +24,7 @@ else
 endif
 #---------------------------------------------------------------------------
 objects=main.o test_base.o test_main.o test_memory_block.o test_timestamp.o test_function.o	\
-		test_thread.o test_append_file.o test_log_file.o
+		test_thread.o test_append_file.o test_log_file.o test_mysql_kit.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE)  $(_LIB_SHARE_NAME) $(_LIB_PUBLIC_NAME);
@@ -55,6 +55,9 @@ test_append_file.o : test_append_file.cc test_append_file.h
 
 test_log_file.o : test_log_file.cc test_log_file.h
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_log_file.cc
+
+test_mysql_kit.o : test_mysql_kit.cc test_mysql_kit.h
+	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_mysql_kit.cc
 
 #---------------------------------------------------------------------------
 clean:	

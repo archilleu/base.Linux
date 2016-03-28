@@ -7,6 +7,7 @@
 #include "test_thread.h"
 #include "test_append_file.h"
 #include "test_log_file.h"
+#include "test_mysql_kit.h"
 //---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
@@ -15,12 +16,13 @@ TestMain::TestMain()
 {
 #define TEST_ADD(TypeName)   test_obj_list_[#TypeName]=std::shared_ptr<TestBase>(dynamic_cast<TestBase*>(new TypeName))
 
-    TEST_ADD(TestMemoryBlock);
-    TEST_ADD(TestTimestamp);
-    TEST_ADD(TestFunction);
-    TEST_ADD(TestThread);
-    TEST_ADD(TestAppendFile);
-    TEST_ADD(TestLogFile);
+    //TEST_ADD(TestMemoryBlock);
+    //TEST_ADD(TestTimestamp);
+    //TEST_ADD(TestFunction);
+    //TEST_ADD(TestThread);
+    //TEST_ADD(TestAppendFile);
+    //TEST_ADD(TestLogFile);
+    TEST_ADD(TestMysqlKit);
 
 #undef TEST_ADD
 }
