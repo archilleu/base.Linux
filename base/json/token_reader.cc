@@ -79,7 +79,8 @@ bool TokenReader::ReadString(std::string& str)
 
     //第一个字符必须是'\"'
     char c = char_reader_.Next();
-    assert('\"' == c);
+    if('\"' != c)
+        return false;
 
     std::string value;
     for(;;)
@@ -141,7 +142,7 @@ bool TokenReader::ReadString(std::string& str)
                 break;
 
             case '\"':  //结束
-                break;
+                return true;
             
             default:    //普通字符
                 str.push_back(c);
@@ -149,7 +150,8 @@ bool TokenReader::ReadString(std::string& str)
         }
     }
 
-    return true;
+    //不是从 case '\"'返回的,说明字符串读取不完整,返回失败
+    return false;
 }
 //---------------------------------------------------------------------------
 bool TokenReader::ReadNumber(Number& number)
@@ -163,33 +165,35 @@ bool TokenReader::ReadNumber(Number& number)
 
     //第一个字符必须是数字或者'-'
     char c = char_reader_.Peek();
-    assert(('-'==c) || ('0'<=c) || ('9'>=c));
+    if((!CheckNumber(c)) && ('-'!=c))
+        return false;
 
-    bool has_sign = false;
+    std::string str;
+    bool        has_sign = false;
     if('-' == c)
     {
         if(!char_reader_.HasMore())
             return false;
 
         has_sign = true;
+        str.push_back(c);
         char_reader_.Next();
     }
 
-    std::string str;
-    bool        has_decimal = false;
-    short       status      = STATUS_NUMBER_INT;
+    bool    has_decimal = false;
+    short   status      = STATUS_NUMBER_INT;
     for(;;)
     {
         if(char_reader_.HasMore())
         {
             c = char_reader_.Peek();
 
-            //检查是否是数字
+            //检查是否是数字,如果不是数字,则有可能该数字不是正确的数字(例如:123a),这种情况留給上一层处理
             if(false == CheckNumber(c))
                 status = STATUS_NUMBER_END;
         }
         else
-            status = STATUS_NUMBER_END;
+            status = STATUS_NUMBER_END;//这代表JSON格式出错,但是留給上一层处理
 
         switch(status)
         {
@@ -235,30 +239,37 @@ bool TokenReader::ReadNumber(Number& number)
                 //值是小数
                 if(true == has_decimal)
                 {
-                   number.value_.u_double   = std::stod(str);
-                   number.type_             = Number::TYPE_DOUBLE;
-                   break;
+                    number.set_value(static_cast<double>(std::stod(str)));
+                    return true;
                 }
 
-                //值是有符号整数
-                if(true == has_sign)
-                {
-                    number.value_.u_int = std::stoll(str);
-                    number.type_        = Number::TYPE_INT;
-                }
-                else//无符号整数
-                {
-                    number.value_.u_uint= std::stoull(str);
-                    number.type_        = Number::TYPE_UINT;
-                }
+                if(true == has_sign)    //值是有符号整数
+                    number.set_value(static_cast<int64_t>(std::stoll(str)));
+                else                    //无符号整数
+                    number.set_value(static_cast<uint64_t>(std::stoull(str)));
 
                 return true;
         }
     }
 }
 //---------------------------------------------------------------------------
-bool TokenReader::ReadBoolean()
+bool TokenReader::ReadBoolean(bool& boolean)
 {
+    //第一个字符必须是't' or 'f'
+    char c = char_reader_.Peek();
+    if(('t'!=c') && ('f'!=c))
+        return false;
+
+    switch(c)
+    {
+         
+    }
+
+    //为true
+    if('t' == c)
+    {}
+    else if('f' ==
+
     return true;
 }
 //---------------------------------------------------------------------------

@@ -79,7 +79,7 @@ public:
     bool ReadNumber(Number& number);
 
     //布尔类型
-    bool ReadBoolean();
+    bool ReadBoolean(bool& boolean);
 
     //空类型
     bool ReadNull();
