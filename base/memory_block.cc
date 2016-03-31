@@ -83,8 +83,26 @@ MemoryBlock& MemoryBlock::operator=(MemoryBlock&& other)
 //---------------------------------------------------------------------------
 MemoryBlock::~MemoryBlock()
 {
-    if(0 != dat_)
+    if(0 != len_)
         delete[] dat_;
+
+    return;
+}
+//---------------------------------------------------------------------------
+void MemoryBlock::Resize(size_t size)
+{
+    if(0 != len_)
+    {
+        delete[] dat_;
+        len_ = 0;
+        dat_ = 0;
+    }
+
+    if(0 == size)
+        return;
+
+    dat_ = new char[size];
+    len_ = size;
 
     return;
 }

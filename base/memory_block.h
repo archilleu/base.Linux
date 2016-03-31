@@ -18,6 +18,7 @@ public:
     MemoryBlock& operator=(MemoryBlock&& other);
     ~MemoryBlock();
 
+    void Resize(size_t size);
     void Fill(char c);
 
     size_t      len() const { return len_; }

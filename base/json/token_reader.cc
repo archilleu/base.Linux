@@ -256,25 +256,54 @@ bool TokenReader::ReadNumber(Number& number)
 bool TokenReader::ReadBoolean(bool& boolean)
 {
     //第一个字符必须是't' or 'f'
-    char c = char_reader_.Peek();
-    if(('t'!=c') && ('f'!=c))
-        return false;
 
+    char c = char_reader_.Peek();
     switch(c)
     {
-         
-    }
+        case 't':
+            {
+            if(4 > char_reader_.Remain())
+                return false;
 
-    //为true
-    if('t' == c)
-    {}
-    else if('f' ==
+            std::string value = char_reader_.Next(4);
+            if("true" != value)
+                return false;
+
+            boolean = true;
+            }
+
+            break;
+
+        case 'f':
+            {
+            if(5 > char_reader_.Remain())
+                return false;
+
+            std::string value = char_reader_.Next(5);
+            if("false" != value)
+                return false;
+
+            boolean = false;
+            }
+
+            break;
+
+        default:
+            return false;
+    }
 
     return true;
 }
 //---------------------------------------------------------------------------
 bool TokenReader::ReadNull()
 {
+    if(4 > char_reader_.Remain())
+        return false;
+
+    std::string value = char_reader_.Next(4);
+    if("null" != value)
+        return false;
+
     return true;
 }
 //---------------------------------------------------------------------------

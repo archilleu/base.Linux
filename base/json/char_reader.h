@@ -24,7 +24,8 @@ public:
 
     void set_dat(MemoryBlock&& dat) { dat_ = std::move(dat); }
 
-    bool HasMore()  { return pos_ < dat_.len(); }
+    bool    HasMore()   { return pos_ < dat_.len(); }
+    size_t  Remain()    { return dat_.len() - pos_; }
 
     char Peek()
     {

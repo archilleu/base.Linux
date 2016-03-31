@@ -208,34 +208,64 @@ bool TestJson::Test_TokenReader()
 
     // err_code = reader5.ReadNumber(num);
     //MY_ASSERT(false == err_code);
-
     }
+
+    {
+    json::TokenReader reader1;
+    json::TokenReader reader2;
+    json::TokenReader reader3;
+    json::TokenReader reader4;
+    std::string t1 = "true";
+    std::string t2 = "false";
+    std::string t3 = "taaa";
+    std::string t4 = "faaa";
+    reader1.set_dat(MemoryBlock(t1.data(), t1.length()));
+    reader2.set_dat(MemoryBlock(t2.data(), t2.length()));
+    reader3.set_dat(MemoryBlock(t3.data(), t3.length()));
+    reader4.set_dat(MemoryBlock(t4.data(), t4.length()));
+
+    bool result;
+    bool err_code = reader1.ReadBoolean(result);
+    MY_ASSERT(err_code == true);
+    MY_ASSERT(result == true);
+
+    err_code = reader2.ReadBoolean(result);
+    MY_ASSERT(err_code == true);
+    MY_ASSERT(result == false);
+
+    err_code = reader3.ReadBoolean(result);
+    MY_ASSERT(err_code == false);
+
+    err_code = reader4.ReadBoolean(result);
+    MY_ASSERT(err_code == false);
+    }
+
+    {
+    json::TokenReader reader1;
+    json::TokenReader reader2;
+    json::TokenReader reader3;
+    std::string n1 = "null";
+    std::string n2 = "naul";
+    std::string n3 = "nul";
+    reader1.set_dat(MemoryBlock(n1.data(), n1.length()));
+    reader2.set_dat(MemoryBlock(n2.data(), n2.length()));
+    reader3.set_dat(MemoryBlock(n3.data(), n3.length()));
+
+    bool err_code= reader1.ReadNull();
+    MY_ASSERT(true == err_code);
+
+    err_code= reader2.ReadNull();
+    MY_ASSERT(false == err_code);
+
+    err_code= reader3.ReadNull();
+    MY_ASSERT(false == err_code);
+    }
+
     return true;
 }
 //---------------------------------------------------------------------------
 bool TestJson::Test_Normal()
 {
-    json::TokenReader reader;
-    std::string str =   "{               \
-                            \"abcd\":\"bef\"     \
-                         }";
-    MemoryBlock mb(str.data(), str.length());
-    reader.set_dat(std::move(mb));
-    
-    std::string key, value;
-    int type = reader.ReadNextToken();
-    if(json::TokenReader::TokenType::OBJECT_BEGIN == type)
-    {
-        bool err_code = reader.ReadString(key);
-        assert(true == err_code);
-        type = reader.ReadNextToken();
-        if(json::TokenReader::TokenType::SEP_COLON == type)
-        {
-            err_code = reader.ReadString(value);
-            assert(true == err_code);
-        }
-    }
-    std::cout << "pair:" << key << ":" << value << std::endl;
 
     return true;
 }

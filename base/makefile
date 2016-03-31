@@ -24,7 +24,7 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 #---------------------------------------------------------------------------
-objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o mysql_kit.o auto_transaction.o mysql_pool.o token_reader.o
+objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o mysql_kit.o auto_transaction.o mysql_pool.o token_reader.o value.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
@@ -56,9 +56,9 @@ auto_tansaction.o : auto_tansaction.h auto_tansaction.cc
 mysql_pool.o : mysql_pool.h mysql_pool.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c mysql_pool.cc 
 
-#value.o : value.h value.cc
-#	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/value.cc 
-#
+value.o : ./json/value.h ./json/value.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/value.cc 
+
 #char_reader.o : char_reader.h char_reader.cc
 #	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/char_reader.cc 
 

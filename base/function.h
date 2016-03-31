@@ -42,6 +42,9 @@ bool FileDelete (const std::string& pathname);
 bool FileDelete (const char* pathname);
 bool FileExist  (const std::string& pathname);
 bool FileExist  (const char* pathname);
+
+bool LoadFile   (const std::string& path, MemoryBlock* result);
+bool LoadFile   (const char* path, MemoryBlock* result);
 //---------------------------------------------------------------------------
 //文档（文件和文件夹）
 bool DocumentExist  (const std::string& pathname);
