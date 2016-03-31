@@ -56,6 +56,7 @@ public:
             int64_t     u_int;
             uint64_t    u_uint;
             double      u_double;
+            
         }value_;
 
         short type_;

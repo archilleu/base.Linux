@@ -7,24 +7,20 @@ namespace base
 namespace json
 {
 //---------------------------------------------------------------------------
-const char* Value::kStringNull = "";
 const Value Value::kValueNull = Value(TYPE_NULL);
 //---------------------------------------------------------------------------
-Value::Value(ValueType type)
-:   type_(type),
+Value::Value(ValueType val_type)
+:   type_(val_type),
     array_(0),
-    objects_(0)
+    pairs_(0)
 {
     value_.u_int = 0;
 
     if(type_ == TYPE_OBJECT)
-        objects_= new JsonObject;
+        pairs_= new JsonPair;
 
     if(type_ == TYPE_ARRAY)
         array_ = new JsonArray;
-
-    if(type_ == TYPE_STRING)
-        value_.u_str = const_cast<char*>(kStringNull);
 
     return;
 }
@@ -48,14 +44,14 @@ Value& Value::operator=(const Value& other)
 
     type_       = other.type_;
     array_      = 0;
-    objects_    = 0;
+    pairs_      = 0;
     value_.u_int= 0;
 
     switch(type_)
     {
         case TYPE_OBJECT:
-            objects_ = new JsonObject;
-            *objects_= *(other.objects_);
+            pairs_ = new JsonPair;
+            *pairs_= *(other.pairs_);
             break;
 
         case TYPE_ARRAY:
@@ -64,10 +60,20 @@ Value& Value::operator=(const Value& other)
             break;
 
         case TYPE_STRING:
+            if(0 == other.value_.u_str)
+                break;
+
             value_.u_str = new char[strlen(other.value_.u_str)+1];
             strcpy(value_.u_str, other.value_.u_str);
             break;
 
+        case TYPE_KEY:
+            if(0 == other.value_.u_key)
+                break;
+
+            value_.u_key = new char[strlen(other.value_.u_key)+1];
+            strcpy(value_.u_key, other.value_.u_key);
+            break;
         case TYPE_INT:
         case TYPE_UINT:
         case TYPE_REAL:
@@ -87,14 +93,14 @@ Value& Value::operator=(Value&& other)
 {
     type_       = other.type_;
     array_      = 0;
-    objects_    = 0;
+    pairs_      = 0;
     value_.u_int= 0;
 
     switch(type_)
     {
         case TYPE_OBJECT:
-            objects_        = other.objects_;;
-            other.objects_  = 0;
+            pairs_        = other.pairs_;
+            other.pairs_  = 0;
             break;
 
         case TYPE_ARRAY:
@@ -105,6 +111,11 @@ Value& Value::operator=(Value&& other)
         case TYPE_STRING:
             value_.u_str        = other.value_.u_str;
             other.value_.u_str  = 0;
+            break;
+
+        case TYPE_KEY:
+            value_.u_key        = other.value_.u_key;
+            other.value_.u_key  = 0;
             break;
 
         case TYPE_INT:
@@ -129,15 +140,16 @@ Value::~Value()
     if(TYPE_NULL == type_)
     {
         assert(0 == value_.u_str);
+        assert(0 == value_.u_key);
         assert(0 == array_);
-        assert(0 == objects_);
+        assert(0 == pairs_);
         return;
     }
 
     switch(type_)
     {
         case TYPE_OBJECT:
-            delete objects_;
+            delete pairs_;
             break;
 
         case TYPE_ARRAY:
@@ -146,6 +158,10 @@ Value::~Value()
 
         case TYPE_STRING:
             delete value_.u_str;
+            break;
+
+        case TYPE_KEY:
+            delete value_.u_key;
             break;
 
         case TYPE_INT:
@@ -164,6 +180,9 @@ Value::~Value()
 //---------------------------------------------------------------------------
 void Value::set_str(const char* value)
 {
+    if(0 != value_.u_str)
+        delete value_.u_str;
+
     value_.u_str = new char[strlen(value)+1];
     strcpy(value_.u_str, value);
 
@@ -176,69 +195,86 @@ void Value::set_str(const std::string& value)
     return;
 }
 //---------------------------------------------------------------------------
-bool Value::ObjectAdd(const std::string& key, const Value& value)
+void Value::set_key(const char* key)
 {
-    if(0 == objects_)
+    if(0 != value_.u_key)
+        delete value_.u_key;
+
+    value_.u_key = new char[strlen(key)+1];
+    strcpy(value_.u_key, key);
+
+    return;
+}
+//---------------------------------------------------------------------------
+void Value::set_key(const std::string& key)
+{
+    set_key(key.c_str());
+    return;
+}
+//---------------------------------------------------------------------------
+bool Value::PairAdd(const std::string& key, const Value& value)
+{
+    if(0 == pairs_)
     {
         assert(0);
         return false;
     }
 
-    auto pair = objects_->insert(std::make_pair(key, value));
+    auto pair = pairs_->insert(std::make_pair(key, value));
     return pair.second;
 }
 //---------------------------------------------------------------------------
-bool Value::ObjectAdd(const char* key, Value&& value)
+bool Value::PairAdd(const char* key, Value&& value)
 {
-    if(0 == objects_)
+    if(0 == pairs_)
     {
         assert(0);
         return false;
     }
 
-    auto pair = objects_->insert(std::make_pair(key, std::move(value)));
+    auto pair = pairs_->insert(std::make_pair(key, std::move(value)));
     return pair.second;
 }
 //---------------------------------------------------------------------------
-bool Value::ObjectDel(const std::string& key)
+bool Value::PairDel(const std::string& key)
 {
-    if(0 == objects_)
+    if(0 == pairs_)
     {
         assert(0);
         return false;
     }
 
-    size_t nums = objects_->erase(key);
+    size_t nums = pairs_->erase(key);
     return (1 <= nums);
 }
 //---------------------------------------------------------------------------
-bool Value::ObjectDel(const char* key)
+bool Value::PairDel(const char* key)
 {
-    if(0 == objects_)
+    if(0 == pairs_)
     {
         assert(0);
         return false;
     }
 
-    size_t nums = objects_->erase(key);
+    size_t nums = pairs_->erase(key);
     return (1 <= nums);
 }
 //---------------------------------------------------------------------------
-bool Value::ObjectGet(const std::string& key, Value* value)
+bool Value::PairGet(const std::string& key, Value* value)
 {
-    return ObjectGet(key.c_str(), value);
+    return PairGet(key.c_str(), value);
 }
 //---------------------------------------------------------------------------
-bool Value::ObjectGet(const char* key, Value* value)
+bool Value::PairGet(const char* key, Value* value)
 {
-    if(0 == objects_)
+    if(0 == pairs_)
     {
         assert(0);
         return false;
     }
 
-    auto iter = objects_->find(key);
-    if(objects_->end() == iter)
+    auto iter = pairs_->find(key);
+    if(pairs_->end() == iter)
         return false;
 
     *value = iter->second;

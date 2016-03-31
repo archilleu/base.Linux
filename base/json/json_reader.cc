@@ -49,9 +49,11 @@ bool JsonReader::ParseFile(const char* path, Value* root)
     return _Parse(root);
 }
 //---------------------------------------------------------------------------
-bool JsonReader::_Parse(Value* root)
+bool JsonReader::_Parse(Value* )
 {
-    (void)root;
+    //解析JSON栈
+    std::stack<Value> parse_stack;
+
     int status  = kSTATUS_OBJECT_BEGIN | kSTATUS_SINGLE_VALUE | kSTATUS_ARRAY_BEGIN;
     int token   = token_reader_.ReadNextToken();
     for(;;)
@@ -67,6 +69,7 @@ bool JsonReader::_Parse(Value* root)
                     return false;
 
                 //{ -> "key" or { or }
+                parse_stack.push(Value(Value::TYPE_OBJECT));
                 status = kSTATUS_OBJECT_KEY | kSTATUS_OBJECT_BEGIN | kSTATUS_OBJECT_END;
                 break;
 
@@ -79,19 +82,57 @@ bool JsonReader::_Parse(Value* root)
             case TokenReader::TokenType::ARRAY_END:
                 break;
 
-            case TokenReader::TokenType::SEP_COLON:
+            case TokenReader::TokenType::SEP_COLON: //:
+                if(!HasStatus(kSTATUS_SEP_COLON))
+                    return false;
+
+                //: -> { or [ or "value"
+                status = kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_BEGIN | kSTATUS_OBJECT_VALUE;
                 break;
 
-            case TokenReader::TokenType::SEP_COMMA:
+            case TokenReader::TokenType::SEP_COMMA: //,
+                if(!HasStatus(kSTATUS_SEP_COMMA))
+                    return false;
+
+                //, -> "key" or { or arr_val
+                status = kSTATUS_OBJECT_KEY | kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_VALUE;
                 break;
 
             case TokenReader::TokenType::STRING:
                 if(HasStatus(kSTATUS_OBJECT_KEY))
                 {
+                    std::string key;
+                    bool err_code = token_reader_.ReadString(key);
+                    if(false == err_code)
+                        return false;
+                    
+                    Value value(Value::TYPE_KEY);
+                    value.set_key(key);
+                    parse_stack.push(std::move(value));
+
+                    //期待下一个token为:
+                    status = kSTATUS_SEP_COLON;
                 }
 
                 if(HasStatus(kSTATUS_OBJECT_VALUE))
                 {
+                    Value& top = parse_stack.top();
+                    if(Value::TYPE_KEY != top.type())
+                        return false;
+
+                    std::string str;
+                    bool err_code = token_reader_.ReadString(str);
+                    if(false == err_code)
+                        return false;
+
+                    parse_stack.pop();
+                    Value& object = parse_stack.top();
+                    Value value(Value::TYPE_STRING);
+                    value.set_str(str);
+                    object.PairAdd(top.get_key(), value);
+
+                    //"value" -> , or }
+                    status = kSTATUS_SEP_COMMA | kSTATUS_OBJECT_END;
                 }
 
                 if(HasStatus(kSTATUS_ARRAY_VALUE))
