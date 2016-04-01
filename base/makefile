@@ -24,7 +24,8 @@ else
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 #---------------------------------------------------------------------------
-objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o mysql_kit.o auto_transaction.o mysql_pool.o token_reader.o value.o
+objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o mysql_kit.o auto_transaction.o \
+		mysql_pool.o token_reader.o value.o json_reader.o json_writer.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
@@ -59,11 +60,14 @@ mysql_pool.o : mysql_pool.h mysql_pool.cc
 value.o : ./json/value.h ./json/value.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/value.cc 
 
-#char_reader.o : char_reader.h char_reader.cc
-#	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/char_reader.cc 
-
 token_reader.o : ./json/token_reader.h ./json/token_reader.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/token_reader.cc 
+
+json_reader.o : ./json/json_reader.h ./json/json_reader.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/json_reader.cc 
+
+json_writer.o : ./json/json_writer.h ./json/json_writer.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/json_writer.cc 
 
 #---------------------------------------------------------------------------
 clean:	

@@ -54,26 +54,55 @@ bool JsonReader::_Parse(Value* )
     //解析JSON栈
     std::stack<Value> parse_stack;
 
-    int status  = kSTATUS_OBJECT_BEGIN | kSTATUS_SINGLE_VALUE | kSTATUS_ARRAY_BEGIN;
-    int token   = token_reader_.ReadNextToken();
+    cur_status_ = kSTATUS_OBJECT_BEGIN | kSTATUS_SINGLE_VALUE | kSTATUS_ARRAY_BEGIN;
     for(;;)
     {
+        int token = token_reader_.ReadNextToken();
         switch(token)
         {
-            case TokenReader::TokenType::DOCUMENT_END:
+            case TokenReader::TokenType::DOCUMENT_END:  // '\0'end
+                {
+                if(!HasStatus(kSTATUS_DOCUMENT_END))
+                    return false;
+
+                assert(1 == parse_stack.size());
+
+                Value root = parse_stack.top();
+                parse_stack.pop();
+                return true;
+                }
 
                 break;
 
             case TokenReader::TokenType::OBJECT_BEGIN:
+                {
                 if(!HasStatus(kSTATUS_OBJECT_BEGIN))
                     return false;
 
                 //{ -> "key" or { or }
                 parse_stack.push(Value(Value::TYPE_OBJECT));
-                status = kSTATUS_OBJECT_KEY | kSTATUS_OBJECT_BEGIN | kSTATUS_OBJECT_END;
+                cur_status_ = kSTATUS_OBJECT_KEY | kSTATUS_OBJECT_BEGIN | kSTATUS_OBJECT_END;
+                }
+
                 break;
 
-            case TokenReader::TokenType::OBJECT_END:
+            case TokenReader::TokenType::OBJECT_END:    // }
+                {
+                if(!HasStatus(kSTATUS_OBJECT_END))
+                    return false;
+
+                //栈底元素类型必须是object
+                if(Value::TYPE_OBJECT != parse_stack.top().type())
+                    return false;
+                
+                //如果是唯一元素,则JSON解析结束
+                if(1 == parse_stack.size())
+                {
+                    cur_status_ = kSTATUS_DOCUMENT_END;
+                    break;
+                }
+                }
+
                 break;
 
             case TokenReader::TokenType::ARRAY_BEGIN:
@@ -82,24 +111,31 @@ bool JsonReader::_Parse(Value* )
             case TokenReader::TokenType::ARRAY_END:
                 break;
 
-            case TokenReader::TokenType::SEP_COLON: //:
+            case TokenReader::TokenType::SEP_COLON:     // :
+                {
                 if(!HasStatus(kSTATUS_SEP_COLON))
                     return false;
 
                 //: -> { or [ or "value"
-                status = kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_BEGIN | kSTATUS_OBJECT_VALUE;
+                cur_status_ = kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_BEGIN | kSTATUS_OBJECT_VALUE;
+                }
+
                 break;
 
-            case TokenReader::TokenType::SEP_COMMA: //,
+            case TokenReader::TokenType::SEP_COMMA:     // ,
+                {
                 if(!HasStatus(kSTATUS_SEP_COMMA))
                     return false;
 
                 //, -> "key" or { or arr_val
-                status = kSTATUS_OBJECT_KEY | kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_VALUE;
+                cur_status_ = kSTATUS_OBJECT_KEY | kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_VALUE;
+                }
+
                 break;
 
-            case TokenReader::TokenType::STRING:
-                if(HasStatus(kSTATUS_OBJECT_KEY))
+            case TokenReader::TokenType::STRING:        // string
+                {
+                if(HasStatus(kSTATUS_OBJECT_KEY))   // key
                 {
                     std::string key;
                     bool err_code = token_reader_.ReadString(key);
@@ -107,37 +143,48 @@ bool JsonReader::_Parse(Value* )
                         return false;
                     
                     Value value(Value::TYPE_KEY);
-                    value.set_key(key);
+                    value.set_str(std::move(key));
                     parse_stack.push(std::move(value));
 
-                    //期待下一个token为:
-                    status = kSTATUS_SEP_COLON;
+                    //"key" - > :
+                    cur_status_ = kSTATUS_SEP_COLON;
+                    break;
                 }
 
-                if(HasStatus(kSTATUS_OBJECT_VALUE))
+                if(HasStatus(kSTATUS_OBJECT_VALUE)) // value
                 {
-                    Value& top = parse_stack.top();
-                    if(Value::TYPE_KEY != top.type())
+                    //key:value,parse_stack.size()的大小必须>=2
+                    if(2 > parse_stack.size())
                         return false;
 
+                    //key
+                    if(Value::TYPE_KEY != parse_stack.top().type())
+                        return false;
+                    std::string key = parse_stack.top().get_str();
+                    parse_stack.pop();
+
+                    //value
                     std::string str;
                     bool err_code = token_reader_.ReadString(str);
                     if(false == err_code)
                         return false;
 
-                    parse_stack.pop();
                     Value& object = parse_stack.top();
                     Value value(Value::TYPE_STRING);
-                    value.set_str(str);
-                    object.PairAdd(top.get_key(), value);
+                    value.set_str(std::move(str));
+                    object.PairAdd(key, std::move(value));
 
                     //"value" -> , or }
-                    status = kSTATUS_SEP_COMMA | kSTATUS_OBJECT_END;
+                    cur_status_ = kSTATUS_SEP_COMMA | kSTATUS_OBJECT_END;
+                    break;
                 }
 
                 if(HasStatus(kSTATUS_ARRAY_VALUE))
                 {
+                    break;
                 }
+                }
+
                 break;
 
             case TokenReader::TokenType::BOOLEAN:

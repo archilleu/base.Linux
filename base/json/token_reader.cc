@@ -77,18 +77,13 @@ bool TokenReader::ReadString(std::string& str)
     //跳过空白
     SkipWhitespace();
 
-    //第一个字符必须是'\"'
-    char c = char_reader_.Next();
-    if('\"' != c)
-        return false;
-
     std::string value;
     for(;;)
     {
         if(!char_reader_.HasMore())
             break;
 
-        c = char_reader_.Next();
+        char c = char_reader_.Next();
         switch(c)
         {
             case '\\'://转义字符

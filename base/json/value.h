@@ -3,6 +3,7 @@
 #define LINUX_BASE_JSON_VALUE_H_
 //---------------------------------------------------------------------------
 #include "../share_inc.h"
+#include <inttypes.h>
 //---------------------------------------------------------------------------
 namespace base
 {
@@ -34,6 +35,7 @@ public:
     typedef JsonPair::const_iterator        JsonPairIter;
 
 public:
+    Value();
     Value(ValueType type);
     Value(const Value& other);
     Value(Value&& other);
@@ -42,37 +44,84 @@ public:
     ~Value();
     
 public:
-    ValueType type()    { return type_; }
+    ValueType type() const
+    { return type_; }
 
-    void set_int    (int64_t value)     { assert(TYPE_INT       == type_); value_.u_int    = value; }
-    void set_uint   (uint64_t value)    { assert(TYPE_UINT      == type_); value_.u_uint   = value; }
-    void set_boolean(bool value)        { assert(TYPE_BOOLEAN   == type_); value_.u_real   = value; }
-    void set_double (double value)      { assert(TYPE_REAL      == type_); value_.u_bool   = value; }
+    void set_type(ValueType type);
 
-    int64_t     get_int()       { assert(TYPE_INT       == type_);  return value_.u_int; }
-    uint64_t    get_uint()      { assert(TYPE_UINT      == type_);  return value_.u_uint; }
-    bool        get_boolean()   { assert(TYPE_BOOLEAN   == type_);  return value_.u_real; }
-    double      get_double()    { assert(TYPE_REAL      == type_);  return value_.u_bool; }
-    char*       get_str()       { assert(TYPE_STRING    == type_);  return value_.u_str; }
-    const char* get_str() const { assert(TYPE_STRING    == type_);  return value_.u_str; }
-    char*       get_key()       { assert(TYPE_KEY       == type_);  return value_.u_key; }
-    const char* get_key() const { assert(TYPE_KEY       == type_);  return value_.u_key; }
+    //设置值
+    void set_int(int64_t value)
+    {
+        assert(TYPE_INT == type_); 
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "%" PRId64 "", value);
+        val_ = buffer;
+    }
 
-    void set_str(const char* value);
-    void set_str(const std::string& value);
-    void set_key(const char* key);
-    void set_key(const std::string& key);
+    void set_uint(uint64_t value)
+    {
+        assert(TYPE_UINT == type_); 
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "%" PRIu64 "", value);
+        val_ = buffer;
+    }
 
-    bool    PairAdd (const std::string& key, const Value& value);
+    void set_boolean(bool value)
+    {
+        assert(TYPE_BOOLEAN == type_); 
+        value ? val_ = "true": val_ = "false";
+    }
+
+    void set_double (double value)
+    {
+        assert(TYPE_INT == type_); 
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "%f", value);
+        val_ = buffer;
+    }
+
+    void set_str(const char* str)
+    {
+        if((TYPE_STRING!=type_) && (TYPE_KEY!=type_))
+        {
+            assert(0); 
+        }
+        val_ = str;
+    }
+
+    void set_str(const std::string& str)
+    {
+        if((TYPE_STRING!=type_) && (TYPE_KEY!=type_))
+        {
+            assert(0);
+        }
+        val_ = str;
+    }
+
+    void set_str(std::string&& str)
+    {
+        if((TYPE_STRING!=type_) && (TYPE_KEY!=type_))
+        {
+            assert(0);
+        }
+        val_ = str;
+    }
+
+    //获取值
+    std::string&        val()       { return val_; }
+    const std::string&  val() const { return val_; } 
+
+    bool    PairAdd (const std::string& key, Value&& value);
     bool    PairAdd (const char* key, Value&& value);
     bool    PairDel (const std::string& key);
     bool    PairDel (const char* key);
     bool    PairGet (const std::string& key, Value* value);
     bool    PairGet (const char* key, Value* value);
-    size_t  PairSize()  { if(0 == pairs_) return 0;  return pairs_->size(); }
+    size_t  PairSize()
+    { if(0 == pairs_) return 0;  return pairs_->size(); }
 
-    JsonPairIter PairIterBegin()    { return pairs_->begin(); }
-    JsonPairIter PairIterEnd()      { return pairs_->end(); }
+    JsonPairIter PairIterBegin  () const    { return pairs_->begin(); }
+    JsonPairIter PairIterEnd    () const    { return pairs_->end(); }
     
     void            ArrayReserve    (size_t size);
     void            ArraySet        (size_t index, const Value& value);
@@ -80,23 +129,15 @@ public:
     Value&          ArrayGet        (size_t index);
     const Value&    ArrayGet        (size_t index) const;
     void            ArrayZero       (size_t index);
-    size_t          ArraySize       ()  { if(0 == array_) return 0; return array_->size(); }
+    size_t          ArraySize       ()
+    { if(0 == array_) return 0; return array_->size(); }
 
-    JsonArrayIter ArrayIterBegin()  { return array_->begin(); }
-    JsonArrayIter ArrayIterEnd()    { return array_->end(); }
+    JsonArrayIter ArrayIterBegin()  const   { return array_->begin(); }
+    JsonArrayIter ArrayIterEnd()    const   { return array_->end(); }
 
 private:
-    //部分value的数据,有效内容由type_字段指出
-    union
-    {
-        int64_t     u_int;
-        uint64_t    u_uint;
-        double      u_real;
-        bool        u_bool;
-        char*       u_str;
-        char*       u_key;
-    }value_;                                //基本类型
     ValueType                       type_;  //类型
+    std::string                     val_;   //值
     std::vector<Value>*             array_; //数组
     std::map<std::string, Value>*   pairs_; //对象
 

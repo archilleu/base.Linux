@@ -1,7 +1,10 @@
 //---------------------------------------------------------------------------
 #include "test_json.h"
 #include "../json/token_reader.h"
+#include "../json/json_reader.h"
+#include "../json/value.h"
 #include "../memory_block.h"
+#include "../json/json_writer.h"
 //---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
@@ -11,6 +14,7 @@ bool TestJson::DoTest()
     if(false == Test_Value())       return false;
     if(false == Test_CharReader())  return false;
     if(false == Test_TokenReader()) return false;
+    if(false == Test_Json())        return false;
     if(false == Test_Normal())      return false;
 
     return true;
@@ -144,15 +148,12 @@ bool TestJson::Test_TokenReader()
     {
     json::TokenReader reader1;
     json::TokenReader reader2;
-    json::TokenReader reader3;
     json::TokenReader reader4;
-    std::string str         = "\"normal\"";
-    std::string str_err1    = "\"a";
-    std::string str_err2    = "a\"";
+    std::string str         = "normal\"";
+    std::string str_err1    = "a";
     std::string str_err3    = "a";
     reader1.set_dat(MemoryBlock(str.data(), str.length()));
     reader2.set_dat(MemoryBlock(str_err1.data(), str_err1.length()));
-    reader3.set_dat(MemoryBlock(str_err2.data(), str_err2.length()));
     reader4.set_dat(MemoryBlock(str_err3.data(), str_err3.length()));
 
     std::string key;
@@ -161,9 +162,6 @@ bool TestJson::Test_TokenReader()
     MY_ASSERT(key == "normal");
 
     err_code = reader2.ReadString(key);
-    MY_ASSERT(false == err_code);
-
-    err_code = reader3.ReadString(key);
     MY_ASSERT(false == err_code);
 
     err_code = reader4.ReadString(key);
@@ -264,8 +262,21 @@ bool TestJson::Test_TokenReader()
     return true;
 }
 //---------------------------------------------------------------------------
+bool TestJson::Test_Json()
+{
+    return true;
+}
+//---------------------------------------------------------------------------
 bool TestJson::Test_Normal()
 {
+    json::JsonReader reader;
+    std::string str = "{\"key\":\"value\"}";
+
+    json::Value* root = 0;
+    bool err_code = reader.Parse(str, root);
+    MY_ASSERT(true == err_code);
+
+    //json::JsonWriter::ToString(
 
     return true;
 }

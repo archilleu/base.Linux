@@ -9,19 +9,25 @@ namespace json
 //---------------------------------------------------------------------------
 const Value Value::kValueNull = Value(TYPE_NULL);
 //---------------------------------------------------------------------------
+Value::Value()
+:   type_(TYPE_NULL),
+    array_(0),
+    pairs_(0)
+{
+}
+//---------------------------------------------------------------------------
 Value::Value(ValueType val_type)
 :   type_(val_type),
     array_(0),
     pairs_(0)
 {
-    value_.u_int = 0;
-
     if(type_ == TYPE_OBJECT)
         pairs_= new JsonPair;
 
     if(type_ == TYPE_ARRAY)
         array_ = new JsonArray;
 
+    val_ = "null";
     return;
 }
 //---------------------------------------------------------------------------
@@ -42,10 +48,9 @@ Value& Value::operator=(const Value& other)
     if(this == &other)
         return *this;
 
-    type_       = other.type_;
-    array_      = 0;
-    pairs_      = 0;
-    value_.u_int= 0;
+    type_   = other.type_;
+    array_  = 0;
+    pairs_  = 0;
 
     switch(type_)
     {
@@ -59,27 +64,14 @@ Value& Value::operator=(const Value& other)
             *array_ = *(other.array_);
             break;
 
-        case TYPE_STRING:
-            if(0 == other.value_.u_str)
-                break;
-
-            value_.u_str = new char[strlen(other.value_.u_str)+1];
-            strcpy(value_.u_str, other.value_.u_str);
-            break;
-
         case TYPE_KEY:
-            if(0 == other.value_.u_key)
-                break;
-
-            value_.u_key = new char[strlen(other.value_.u_key)+1];
-            strcpy(value_.u_key, other.value_.u_key);
-            break;
+        case TYPE_STRING:
         case TYPE_INT:
         case TYPE_UINT:
         case TYPE_REAL:
         case TYPE_BOOLEAN:
         case TYPE_NULL:
-            value_ = other.value_;
+            val_ = other.val_;
             break;
 
         default:
@@ -91,10 +83,9 @@ Value& Value::operator=(const Value& other)
 //---------------------------------------------------------------------------
 Value& Value::operator=(Value&& other)
 {
-    type_       = other.type_;
-    array_      = 0;
-    pairs_      = 0;
-    value_.u_int= 0;
+    type_   = other.type_;
+    array_  = 0;
+    pairs_  = 0;
 
     switch(type_)
     {
@@ -108,30 +99,21 @@ Value& Value::operator=(Value&& other)
             other.array_= 0;
             break;
 
-        case TYPE_STRING:
-            value_.u_str        = other.value_.u_str;
-            other.value_.u_str  = 0;
-            break;
-
         case TYPE_KEY:
-            value_.u_key        = other.value_.u_key;
-            other.value_.u_key  = 0;
-            break;
-
+        case TYPE_STRING:
         case TYPE_INT:
         case TYPE_UINT:
         case TYPE_REAL:
         case TYPE_BOOLEAN:
         case TYPE_NULL:
-            value_ = other.value_;
+            val_ = std::move(other.val_);
             break;
 
         default:
             assert(0);
     }
 
-    other.type_         = TYPE_NULL;
-    other.value_.u_int  = 0;
+    other.type_ = TYPE_NULL;
     return *this;
 }
 //---------------------------------------------------------------------------
@@ -139,10 +121,9 @@ Value::~Value()
 {
     if(TYPE_NULL == type_)
     {
-        assert(0 == value_.u_str);
-        assert(0 == value_.u_key);
         assert(0 == array_);
         assert(0 == pairs_);
+        assert("null" == val_);
         return;
     }
 
@@ -155,15 +136,9 @@ Value::~Value()
         case TYPE_ARRAY:
             delete array_;
             break;
-
-        case TYPE_STRING:
-            delete value_.u_str;
-            break;
-
+        
         case TYPE_KEY:
-            delete value_.u_key;
-            break;
-
+        case TYPE_STRING:
         case TYPE_INT:
         case TYPE_UINT:
         case TYPE_REAL:
@@ -178,50 +153,24 @@ Value::~Value()
     return;
 }
 //---------------------------------------------------------------------------
-void Value::set_str(const char* value)
+void Value::set_type(ValueType type_val)
 {
-    if(0 != value_.u_str)
-        delete value_.u_str;
+    assert(TYPE_NULL == type_);
 
-    value_.u_str = new char[strlen(value)+1];
-    strcpy(value_.u_str, value);
+    type_ = type_val;
 
-    return;
-}
-//---------------------------------------------------------------------------
-void Value::set_str(const std::string& value)
-{
-    set_str(value.c_str());
-    return;
-}
-//---------------------------------------------------------------------------
-void Value::set_key(const char* key)
-{
-    if(0 != value_.u_key)
-        delete value_.u_key;
+    if(type_ == TYPE_OBJECT)
+        pairs_= new JsonPair;
 
-    value_.u_key = new char[strlen(key)+1];
-    strcpy(value_.u_key, key);
+    if(type_ == TYPE_ARRAY)
+        array_ = new JsonArray;
 
     return;
 }
 //---------------------------------------------------------------------------
-void Value::set_key(const std::string& key)
+bool Value::PairAdd(const std::string& key, Value&& value)
 {
-    set_key(key.c_str());
-    return;
-}
-//---------------------------------------------------------------------------
-bool Value::PairAdd(const std::string& key, const Value& value)
-{
-    if(0 == pairs_)
-    {
-        assert(0);
-        return false;
-    }
-
-    auto pair = pairs_->insert(std::make_pair(key, value));
-    return pair.second;
+    return PairAdd(key.c_str(), std::move(value));
 }
 //---------------------------------------------------------------------------
 bool Value::PairAdd(const char* key, Value&& value)
