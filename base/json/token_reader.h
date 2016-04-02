@@ -3,14 +3,17 @@
 #define LINUX_BASE_JSON_TOKEN_READER_H_
 //---------------------------------------------------------------------------
 #include "../share_inc.h"
-#include "char_reader.h"
 #include "../memory_block.h"
+#include "value.h"
+#include "char_reader.h"
 //---------------------------------------------------------------------------
 namespace base
 {
 
 namespace json
 {
+
+class Value;
 
 class TokenReader
 {
@@ -48,36 +51,8 @@ public:
     //读取字符串等值
     bool ReadString(std::string& str);
 
-    //数值类型
-    struct Number
-    {
-        union
-        {
-            int64_t     u_int;
-            uint64_t    u_uint;
-            double      u_double;
-            
-        }value_;
-
-        short type_;
-        enum
-        {
-            TYPE_INT = 1,
-            TYPE_UINT,
-            TYPE_DOUBLE,
-            TYPE_UDOUBLE
-        };
-
-        void set_value(int64_t value)   { type_ = TYPE_INT;     value_.u_int    = value; }
-        void set_value(uint64_t value)  { type_ = TYPE_UINT;    value_.u_uint   = value; }
-        void set_value(double value)    { type_ = TYPE_DOUBLE;  value_.u_double = value; }
-
-        int64_t     get_int()       { assert(TYPE_INT       == type_);  return value_.u_int; }
-        uint64_t    get_uint()      { assert(TYPE_UINT      == type_);  return value_.u_uint; }
-        double      get_double()    { assert(TYPE_DOUBLE    == type_);  return value_.u_double; }
-    };
     //读取数值类型
-    bool ReadNumber(Number& number);
+    bool ReadNumber(std::string& num, Value::ValueType& type);
 
     //布尔类型
     bool ReadBoolean(bool& boolean);

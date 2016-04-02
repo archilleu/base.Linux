@@ -24,6 +24,7 @@ public:
         TYPE_INT,       //有符号整形
         TYPE_UINT,      //无符号整形
         TYPE_REAL,      //浮点型
+        TYPE_NUMBER,    //数字类型统称
         TYPE_BOOLEAN,   //布伦
         TYPE_NULL,      //空
     };
@@ -72,12 +73,33 @@ public:
         value ? val_ = "true": val_ = "false";
     }
 
-    void set_double (double value)
+    void set_double(double value)
     {
         assert(TYPE_INT == type_); 
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "%f", value);
         val_ = buffer;
+    }
+
+    //注意:仅供json_reader调用
+    void set_number(const std::string& number, ValueType num_type)
+    {
+       val_ = number;
+       type_= num_type;
+    }
+
+    //注意:仅供json_reader调用
+    void set_number(const char* number, ValueType num_type)
+    {
+       val_ = number;
+       type_= num_type;
+    }
+
+    //注意:仅供json_reader调用
+    void set_number(std::string&& number, ValueType num_type)
+    {
+       val_ = std::move(number);
+       type_= num_type;
     }
 
     void set_str(const char* str)
@@ -112,6 +134,7 @@ public:
     const std::string&  val() const { return val_; } 
 
     bool    PairAdd (const std::string& key, Value&& value);
+    bool    PairAdd (std::string&& key, Value&& value);
     bool    PairAdd (const char* key, Value&& value);
     bool    PairDel (const std::string& key);
     bool    PairDel (const char* key);
@@ -128,6 +151,8 @@ public:
     void            ArraySet        (size_t index, const Value&& value);
     Value&          ArrayGet        (size_t index);
     const Value&    ArrayGet        (size_t index) const;
+    void            ArrayAdd        (const Value& value);
+    void            ArrayAdd        (Value&& value);
     void            ArrayZero       (size_t index);
     size_t          ArraySize       ()
     { if(0 == array_) return 0; return array_->size(); }

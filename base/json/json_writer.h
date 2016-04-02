@@ -23,8 +23,14 @@ public:
     }
 
     static std::string ToString(const Value& value);
+
 private:
-    static std::string _ToString(const Value& value);
+    static void ToString        (const Value& value, std::string& str);
+    static void ObjectToString  (const Value& value, std::string& str);
+    static void ArrayToString   (const Value& value, std::string& str);
+    static void NumberToString  (const Value& value, std::string& str);
+    static void BooleanToString (const Value& value, std::string& str);
+    static void NullToString    (const Value& value, std::string& str);
 };
 
 }//namespace json

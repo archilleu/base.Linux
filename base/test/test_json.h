@@ -26,8 +26,9 @@ public:
     bool Test_Value();
     bool Test_CharReader();
     bool Test_TokenReader();
-    bool Test_Json();
-    bool Test_Normal();
+    bool Test_Json_KV();
+    bool Test_Json_Array();
+    bool Test_Json_Object();
 };
 
 }//namespace test

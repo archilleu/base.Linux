@@ -33,12 +33,24 @@ private:
     bool HasStatus(int status)  { return (cur_status_ & status); }
 
 private:
+    bool CaseStatusObjectBegin  (std::stack<Value>& parse_stack, Value* root);
+    bool CaseStatusObjectKey    (std::stack<Value>& parse_stack, Value* root);
+    bool CaseStatusObjectValue  (std::stack<Value>& parse_stack, Value* root, int type);
+    bool CaseStatusObjectEnd    (std::stack<Value>& parse_stack, Value* root);
+    bool CaseStatusArrayBegin   (std::stack<Value>& parse_stack, Value* root);
+    bool CaseStatusArrayValue   (std::stack<Value>& parse_stack, Value* root, int type);
+    bool CaseStatusArrayEnd     (std::stack<Value>& parse_stack, Value* root);
+    bool CaseStatusSepColon     (std::stack<Value>& parse_stack, Value* root);
+    bool CaseStatusSepComma     (std::stack<Value>& parse_stack, Value* root);
+    bool CaseStatusSignalValue  (std::stack<Value>& parse_stack, Value* root, int type);
+    bool CaseStatusDocumentEnd  (std::stack<Value>& parse_stack, Value* root);
+
+private:
     TokenReader token_reader_;
     int         cur_status_;
 
 private:
     //解析过程中的状态
-    static const int kSTATUS_DOCUMENT_END = 0x0000;     //期待JSON解析结束
     static const int kSTATUS_OBJECT_BEGIN = 0x0001;     //期待对象
     static const int kSTATUS_OBJECT_KEY   = 0x0002;     //期待对象key值
     static const int kSTATUS_OBJECT_VALUE = 0x0004;     //期待对象Value值
@@ -49,6 +61,7 @@ private:
     static const int kSTATUS_SEP_COLON    = 0x0080;     //期待:
     static const int kSTATUS_SEP_COMMA    = 0x0100;     //期待,
     static const int kSTATUS_SINGLE_VALUE = 0x0200;     //期待单个值
+    static const int kSTATUS_DOCUMENT_END = 0x0400;     //期待JSON解析结束
 
 protected:
     DISALLOW_COPY_AND_ASSIGN(JsonReader);

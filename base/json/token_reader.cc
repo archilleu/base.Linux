@@ -46,12 +46,12 @@ TokenReader::TokenType TokenReader::ReadNextToken()
             return STRING;
 
         case 'n':
-            char_reader_.Next();
+//            char_reader_.Next();
             return NUL;
 
         case 't':
         case 'f':
-            char_reader_.Next();
+//           char_reader_.Next();
             return BOOLEAN;
 
         case '-':
@@ -65,7 +65,7 @@ TokenReader::TokenType TokenReader::ReadNextToken()
         case '7':
         case '8':
         case '9':
-            char_reader_.Next();
+//            char_reader_.Next();
             return NUMBER;
     }
 
@@ -149,7 +149,7 @@ bool TokenReader::ReadString(std::string& str)
     return false;
 }
 //---------------------------------------------------------------------------
-bool TokenReader::ReadNumber(Number& number)
+bool TokenReader::ReadNumber(std::string& number, Value::ValueType& type)
 {
     //数值分为2个部分构成
     //整数部分和小数部分(不支持指数表示)
@@ -232,16 +232,17 @@ bool TokenReader::ReadNumber(Number& number)
                 }
 
                 //值是小数
+                number = std::move(str);
                 if(true == has_decimal)
                 {
-                    number.set_value(static_cast<double>(std::stod(str)));
+                    type = Value::TYPE_REAL;
                     return true;
                 }
 
                 if(true == has_sign)    //值是有符号整数
-                    number.set_value(static_cast<int64_t>(std::stoll(str)));
+                    type = Value::TYPE_INT;
                 else                    //无符号整数
-                    number.set_value(static_cast<uint64_t>(std::stoull(str)));
+                    type = Value::TYPE_UINT;
 
                 return true;
         }

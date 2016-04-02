@@ -14,6 +14,8 @@ Value::Value()
     array_(0),
     pairs_(0)
 {
+    val_ = "null";
+    return;
 }
 //---------------------------------------------------------------------------
 Value::Value(ValueType val_type)
@@ -49,6 +51,7 @@ Value& Value::operator=(const Value& other)
         return *this;
 
     type_   = other.type_;
+    val_    = other.val_;
     array_  = 0;
     pairs_  = 0;
 
@@ -71,7 +74,6 @@ Value& Value::operator=(const Value& other)
         case TYPE_REAL:
         case TYPE_BOOLEAN:
         case TYPE_NULL:
-            val_ = other.val_;
             break;
 
         default:
@@ -84,6 +86,7 @@ Value& Value::operator=(const Value& other)
 Value& Value::operator=(Value&& other)
 {
     type_   = other.type_;
+    val_    = std::move(other.val_);
     array_  = 0;
     pairs_  = 0;
 
@@ -106,7 +109,6 @@ Value& Value::operator=(Value&& other)
         case TYPE_REAL:
         case TYPE_BOOLEAN:
         case TYPE_NULL:
-            val_ = std::move(other.val_);
             break;
 
         default:
@@ -123,7 +125,6 @@ Value::~Value()
     {
         assert(0 == array_);
         assert(0 == pairs_);
-        assert("null" == val_);
         return;
     }
 
@@ -171,6 +172,18 @@ void Value::set_type(ValueType type_val)
 bool Value::PairAdd(const std::string& key, Value&& value)
 {
     return PairAdd(key.c_str(), std::move(value));
+}
+//---------------------------------------------------------------------------
+bool Value::PairAdd(std::string&& key, Value&& value)
+{
+    if(0 == pairs_)
+    {
+        assert(0);
+        return false;
+    }
+
+    auto pair = pairs_->insert(std::make_pair(std::move(key), std::move(value)));
+    return pair.second;
 }
 //---------------------------------------------------------------------------
 bool Value::PairAdd(const char* key, Value&& value)
@@ -262,7 +275,7 @@ void Value::ArraySet(size_t index, const Value&& value)
         return;
     }
 
-    array_->at(index) = value;
+    array_->at(index) = std::move(value);
     return;
 }
 //---------------------------------------------------------------------------
@@ -285,6 +298,30 @@ const Value& Value::ArrayGet(size_t index) const
     }
 
     return array_->at(index); 
+}
+//---------------------------------------------------------------------------
+void Value::ArrayAdd(const Value& value)
+{
+    if(0 == array_)
+    {
+        assert(0);
+        return;
+    }
+
+    array_->push_back(value);
+    return;
+}
+//---------------------------------------------------------------------------
+void Value::ArrayAdd(Value&& value)
+{
+    if(0 == array_)
+    {
+        assert(0);
+        return;
+    }
+
+    array_->push_back(std::move(value));
+    return;
 }
 //---------------------------------------------------------------------------
 void Value::ArrayZero(size_t index)
