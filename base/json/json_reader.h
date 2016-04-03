@@ -33,17 +33,17 @@ private:
     bool HasStatus(int status)  { return (cur_status_ & status); }
 
 private:
-    bool CaseStatusObjectBegin  (std::stack<Value>& parse_stack, Value* root);
-    bool CaseStatusObjectKey    (std::stack<Value>& parse_stack, Value* root);
-    bool CaseStatusObjectValue  (std::stack<Value>& parse_stack, Value* root, int type);
-    bool CaseStatusObjectEnd    (std::stack<Value>& parse_stack, Value* root);
-    bool CaseStatusArrayBegin   (std::stack<Value>& parse_stack, Value* root);
-    bool CaseStatusArrayValue   (std::stack<Value>& parse_stack, Value* root, int type);
-    bool CaseStatusArrayEnd     (std::stack<Value>& parse_stack, Value* root);
-    bool CaseStatusSepColon     (std::stack<Value>& parse_stack, Value* root);
-    bool CaseStatusSepComma     (std::stack<Value>& parse_stack, Value* root);
-    bool CaseStatusSignalValue  (std::stack<Value>& parse_stack, Value* root, int type);
-    bool CaseStatusDocumentEnd  (std::stack<Value>& parse_stack, Value* root);
+    bool CaseStatusObjectBegin  (std::stack<Value>& parse_stack);
+    bool CaseStatusObjectKey    (std::stack<Value>& parse_stack);
+    bool CaseStatusObjectValue  (std::stack<Value>& parse_stack, int type);
+    bool CaseStatusObjectEnd    (std::stack<Value>& parse_stack);
+    bool CaseStatusArrayBegin   (std::stack<Value>& parse_stack);
+    bool CaseStatusArrayValue   (std::stack<Value>& parse_stack, int type);
+    bool CaseStatusArrayEnd     (std::stack<Value>& parse_stack);
+    bool CaseStatusSepColon     (std::stack<Value>& parse_stack);
+    bool CaseStatusSepComma     (std::stack<Value>& parse_stack);
+    bool CaseStatusSignalValue  (std::stack<Value>& parse_stack, int type);
+    bool CaseStatusDocumentEnd  (std::stack<Value>& parse_stack);
 
 private:
     TokenReader token_reader_;

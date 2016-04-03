@@ -6,18 +6,20 @@
 #include "../memory_block.h"
 #include "../json/json_writer.h"
 #include "../json/value.h"
+#include "../function.h"
 //---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
 //---------------------------------------------------------------------------
 bool TestJson::DoTest()
 {
-    if(false == Test_Value())       return false;
-    if(false == Test_CharReader())  return false;
-    if(false == Test_TokenReader()) return false;
-    if(false == Test_Json_KV())     return false;
-    if(false == Test_Json_Array())  return false;
-    if(false == Test_Json_Object()) return false;
+    if(false == Test_Value())           return false;
+    if(false == Test_CharReader())      return false;
+    if(false == Test_TokenReader())     return false;
+    if(false == Test_Json_KV())         return false;
+    if(false == Test_Json_Array())      return false;
+    if(false == Test_Json_Object())     return false;
+    if(false == Test_Json_ArrayObject())return false;
     //if(false == Test_Json())        return false;
     //if(false == Test_Normal())      return false;
 
@@ -40,9 +42,8 @@ bool TestJson::Test_CharReader()
 
     for(char c=char_reader.Peek(); true==char_reader.HasMore(); c=char_reader.Next())
     {
-        std::cout << c;
+        (void)c;
     }
-    std::cout << std::endl;
 
     return true;
 }
@@ -269,6 +270,20 @@ bool TestJson::Test_TokenReader()
 //---------------------------------------------------------------------------
 bool TestJson::Test_Json_KV()
 {
+    //null kv
+    {
+    json::JsonReader reader;
+    std::string str = "{}";
+
+    std::string j_str;
+    json::Value root;
+    bool err_code = reader.Parse(str, &root);
+    MY_ASSERT(true == err_code);
+
+    j_str = json::JsonWriter::ToString(root);
+    assert(j_str == str);
+    }
+
     //string
     {
     json::JsonReader reader;
@@ -281,7 +296,6 @@ bool TestJson::Test_Json_KV()
 
     j_str = json::JsonWriter::ToString(root);
     assert(j_str == str);
-    std::cout << j_str << std::endl;
     }
 
     //number
@@ -295,7 +309,6 @@ bool TestJson::Test_Json_KV()
     
     std::string j_str = json::JsonWriter::ToString(root);
     assert(j_str == str);
-    std::cout << j_str << std::endl;
     }
 
     //boolean
@@ -309,7 +322,6 @@ bool TestJson::Test_Json_KV()
     
     std::string j_str = json::JsonWriter::ToString(root);
     assert(j_str == str);
-    std::cout << j_str << std::endl;
     }
 
     //null
@@ -323,7 +335,6 @@ bool TestJson::Test_Json_KV()
     
     std::string j_str = json::JsonWriter::ToString(root);
     assert(j_str == str);
-    std::cout << j_str << std::endl;
     }
 
     return true;
@@ -331,6 +342,33 @@ bool TestJson::Test_Json_KV()
 //---------------------------------------------------------------------------
 bool TestJson::Test_Json_Array()
 {
+    //nll
+    {
+    json::JsonReader reader;
+    std::string str = "[]";
+
+    json::Value root;
+    bool err_code = reader.Parse(str, &root);
+    MY_ASSERT(true == err_code);
+
+    std::string j_str = json::JsonWriter::ToString(root);
+    assert(j_str == str);
+    }
+
+    //杂七杂八
+    {
+    json::JsonReader reader;
+    std::string str = "[1,\"value2\",null,true,false,1.1,-1]";
+
+    json::Value root;
+    bool err_code = reader.Parse(str, &root);
+    MY_ASSERT(true == err_code);
+
+    std::string j_str = json::JsonWriter::ToString(root);
+    assert(j_str == str);
+    
+    }
+
     //string
     {
     json::JsonReader reader;
@@ -342,7 +380,6 @@ bool TestJson::Test_Json_Array()
 
     std::string j_str = json::JsonWriter::ToString(root);
     assert(j_str == str);
-    std::cout << j_str << std::endl;
     }
 
     //number
@@ -356,7 +393,6 @@ bool TestJson::Test_Json_Array()
 
     std::string j_str = json::JsonWriter::ToString(root);
     assert(j_str == str);
-    std::cout << j_str << std::endl;
     }
 
     //boolean
@@ -370,7 +406,6 @@ bool TestJson::Test_Json_Array()
 
     std::string j_str = json::JsonWriter::ToString(root);
     assert(j_str == str);
-    std::cout << j_str << std::endl;
     }
 
     //null
@@ -384,7 +419,6 @@ bool TestJson::Test_Json_Array()
 
     std::string j_str = json::JsonWriter::ToString(root);
     assert(j_str == str);
-    std::cout << j_str << std::endl;
     }
 
     return true;
@@ -392,6 +426,79 @@ bool TestJson::Test_Json_Array()
 //---------------------------------------------------------------------------
 bool TestJson::Test_Json_Object()
 {
+    //string
+    {
+    json::JsonReader reader;
+    std::string str = "{\"key\":{\"objkey1\":\"obj_value1\",\"objkey2\":\"obj_value2\"}}";
+
+    json::Value root;
+    bool err_code = reader.Parse(str, &root);
+    MY_ASSERT(true == err_code);
+
+    std::string j_str = json::JsonWriter::ToString(root);
+    assert(j_str == str);
+    }
+
+    //nmber
+    {
+    json::JsonReader reader;
+    std::string str = "{\"key\":{\"objkey1\":1,\"objkey2\":-1,\"objkey3\":1234.5678}}";
+
+    json::Value root;
+    bool err_code = reader.Parse(str, &root);
+    MY_ASSERT(true == err_code);
+
+    std::string j_str = json::JsonWriter::ToString(root);
+    assert(j_str == str);
+    }
+
+    //boolean
+    {
+    json::JsonReader reader;
+    std::string str = "{\"key\":{\"objkey1\":true,\"objkey2\":false}}";
+
+    json::Value root;
+    bool err_code = reader.Parse(str, &root);
+    MY_ASSERT(true == err_code);
+
+    std::string j_str = json::JsonWriter::ToString(root);
+    assert(j_str == str);
+    }
+
+    //null
+    {
+    json::JsonReader reader;
+    std::string str = "{\"key\":{\"objkey1\":null,\"objkey2\":null}}";
+
+    json::Value root;
+    bool err_code = reader.Parse(str, &root);
+    MY_ASSERT(true == err_code);
+
+    std::string j_str = json::JsonWriter::ToString(root);
+    assert(j_str == str);
+    }
+
+    return true;
+}
+//---------------------------------------------------------------------------
+bool TestJson::Test_Json_ArrayObject()
+{
+    {
+    json::JsonReader reader;
+    MemoryBlock mb;
+    if(false == base::LoadFile("./test_file/json.txt", &mb))
+        return false;
+    std::string str = mb.dat();
+
+    json::Value root;
+    bool err_code = reader.Parse(str, &root);
+    MY_ASSERT(true == err_code);
+
+    std::string j_str = json::JsonWriter::ToString(root);
+    if (false == base::SaveFile("./test_file/json.txt.b", j_str.c_str(), j_str.length()))
+        return false;
+
+    }
 
     return true;
 }

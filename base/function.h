@@ -45,6 +45,8 @@ bool FileExist  (const char* pathname);
 
 bool LoadFile   (const std::string& path, MemoryBlock* result);
 bool LoadFile   (const char* path, MemoryBlock* result);
+bool SaveFile   (const std::string& path, const char* dat, size_t len);
+bool SaveFile   (const char* path, const char* dat, size_t len);
 //---------------------------------------------------------------------------
 //文档（文件和文件夹）
 bool DocumentExist  (const std::string& pathname);

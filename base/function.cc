@@ -372,6 +372,36 @@ bool LoadFile(const char* path, MemoryBlock* result)
     return true;
 }
 //---------------------------------------------------------------------------
+bool SaveFile(const std::string& path, const char* dat, size_t len)
+{
+    return SaveFile(path.c_str(), dat, len);
+}
+//---------------------------------------------------------------------------
+bool SaveFile(const char* path, const char* dat, size_t len)
+{
+    int fd = open(path, O_WRONLY|O_CREAT|O_TRUNC, 777);
+    if(0 == fd)
+        return false;
+
+    size_t offset = 0;
+    for(;0<len;)
+    {
+        ssize_t wlen = write(fd, dat+offset, len);
+        if(0 > wlen)
+        {
+            close(fd);
+            unlink(path);
+            return false;
+        }
+
+        offset  += wlen;
+        len     -= wlen;
+    }
+
+    close(fd);
+    return true;
+}
+//---------------------------------------------------------------------------
 //文档
 bool DocumentExist(const std::string& pathname)
 {

@@ -29,6 +29,7 @@ public:
     bool Test_Json_KV();
     bool Test_Json_Array();
     bool Test_Json_Object();
+    bool Test_Json_ArrayObject();
 };
 
 }//namespace test

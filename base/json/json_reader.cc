@@ -64,8 +64,11 @@ bool JsonReader::_Parse(Value* root)
             // '\0'end
             case TokenReader::TokenType::DOCUMENT_END:
                 {
-                if(false == CaseStatusDocumentEnd(parse_stack, root))
+                if(false == CaseStatusDocumentEnd(parse_stack))
                     return false;
+
+                *root = parse_stack.top();
+                parse_stack.pop();
 
                 return true;
                 }
@@ -73,7 +76,7 @@ bool JsonReader::_Parse(Value* root)
             // {
             case TokenReader::TokenType::OBJECT_BEGIN:
                 {
-                if(false == CaseStatusObjectBegin(parse_stack, root))
+                if(false == CaseStatusObjectBegin(parse_stack))
                     return false;
 
                 break;
@@ -82,7 +85,7 @@ bool JsonReader::_Parse(Value* root)
             // }
             case TokenReader::TokenType::OBJECT_END:
                 {
-                if(false == CaseStatusObjectEnd(parse_stack, root))
+                if(false == CaseStatusObjectEnd(parse_stack))
                     return false;
 
                 break;
@@ -91,7 +94,7 @@ bool JsonReader::_Parse(Value* root)
             // [
             case TokenReader::TokenType::ARRAY_BEGIN:
                 {
-                if(false == CaseStatusArrayBegin(parse_stack, root))
+                if(false == CaseStatusArrayBegin(parse_stack))
                     return false;
 
                 break;
@@ -100,7 +103,7 @@ bool JsonReader::_Parse(Value* root)
             // ]
             case TokenReader::TokenType::ARRAY_END:
                 {
-                if(false == CaseStatusArrayEnd(parse_stack, root))
+                if(false == CaseStatusArrayEnd(parse_stack))
                     return false;
 
                 break;
@@ -109,7 +112,7 @@ bool JsonReader::_Parse(Value* root)
             // :
             case TokenReader::TokenType::SEP_COLON:
                 {
-                if(false == CaseStatusSepColon(parse_stack, root))
+                if(false == CaseStatusSepColon(parse_stack))
                     return false;
 
                 break;
@@ -118,7 +121,7 @@ bool JsonReader::_Parse(Value* root)
             // ,
             case TokenReader::TokenType::SEP_COMMA:
                 {
-                if(false == CaseStatusSepComma(parse_stack, root))
+                if(false == CaseStatusSepComma(parse_stack))
                     return false;
 
                 break;
@@ -129,7 +132,7 @@ bool JsonReader::_Parse(Value* root)
                 {
                 if(HasStatus(kSTATUS_OBJECT_KEY))   // key
                 {
-                    if(false == CaseStatusObjectKey(parse_stack, root))
+                    if(false == CaseStatusObjectKey(parse_stack))
                         return false;
 
                     break;
@@ -137,7 +140,7 @@ bool JsonReader::_Parse(Value* root)
 
                 if(HasStatus(kSTATUS_OBJECT_VALUE)) // obj value
                 {
-                    if(false == CaseStatusObjectValue(parse_stack, root, Value::TYPE_STRING))
+                    if(false == CaseStatusObjectValue(parse_stack, Value::TYPE_STRING))
                         return false;
 
                     break;
@@ -145,7 +148,7 @@ bool JsonReader::_Parse(Value* root)
 
                 if(HasStatus(kSTATUS_ARRAY_VALUE))  // array value
                 {
-                    if(false == CaseStatusArrayValue(parse_stack, root, Value::TYPE_STRING))
+                    if(false == CaseStatusArrayValue(parse_stack, Value::TYPE_STRING))
                         return false;
 
                     break;
@@ -160,7 +163,7 @@ bool JsonReader::_Parse(Value* root)
                 
                 if(HasStatus(kSTATUS_OBJECT_VALUE)) // obj value
                 {
-                    if(false == CaseStatusObjectValue(parse_stack, root, Value::TYPE_BOOLEAN))
+                    if(false == CaseStatusObjectValue(parse_stack, Value::TYPE_BOOLEAN))
                         return false;
 
                     break;
@@ -168,7 +171,7 @@ bool JsonReader::_Parse(Value* root)
 
                 if(HasStatus(kSTATUS_ARRAY_VALUE))  // array value
                 {
-                    if(false == CaseStatusArrayValue(parse_stack, root, Value::TYPE_BOOLEAN))
+                    if(false == CaseStatusArrayValue(parse_stack, Value::TYPE_BOOLEAN))
                         return false;
 
                     break;
@@ -181,7 +184,7 @@ bool JsonReader::_Parse(Value* root)
 
                 if(HasStatus(kSTATUS_OBJECT_VALUE)) // obj value
                 {
-                    if(false == CaseStatusObjectValue(parse_stack, root, Value::TYPE_NUMBER))
+                    if(false == CaseStatusObjectValue(parse_stack, Value::TYPE_NUMBER))
                         return false;
 
                     break;
@@ -189,7 +192,7 @@ bool JsonReader::_Parse(Value* root)
 
                 if(HasStatus(kSTATUS_ARRAY_VALUE))  // array value
                 {
-                    if(false == CaseStatusArrayValue(parse_stack, root, Value::TYPE_NUMBER))
+                    if(false == CaseStatusArrayValue(parse_stack, Value::TYPE_NUMBER))
                         return false;
 
                     break;
@@ -202,7 +205,7 @@ bool JsonReader::_Parse(Value* root)
 
                 if(HasStatus(kSTATUS_OBJECT_VALUE)) // obj value
                 {
-                    if(false == CaseStatusObjectValue(parse_stack, root, Value::TYPE_NULL))
+                    if(false == CaseStatusObjectValue(parse_stack, Value::TYPE_NULL))
                         return false;
 
                     break;
@@ -210,7 +213,7 @@ bool JsonReader::_Parse(Value* root)
 
                 if(HasStatus(kSTATUS_ARRAY_VALUE))  // array value
                 {
-                    if(false == CaseStatusArrayValue(parse_stack, root, Value::TYPE_NULL))
+                    if(false == CaseStatusArrayValue(parse_stack, Value::TYPE_NULL))
                         return false;
 
                     break;
@@ -227,19 +230,20 @@ bool JsonReader::_Parse(Value* root)
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusObjectBegin(std::stack<Value>& parse_stack, Value* root)
+bool JsonReader::CaseStatusObjectBegin(std::stack<Value>& parse_stack)
 {
     if(!HasStatus(kSTATUS_OBJECT_BEGIN))
         return false;
 
-    root->set_type(Value::TYPE_OBJECT);
+    Value value(Value::TYPE_OBJECT);
+    parse_stack.push(std::move(value));
+
     //{ -> "key" or { or }
-    parse_stack.push(*root);
     cur_status_ = kSTATUS_OBJECT_KEY | kSTATUS_OBJECT_BEGIN | kSTATUS_OBJECT_END;
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusObjectKey(std::stack<Value>& parse_stack, Value*)
+bool JsonReader::CaseStatusObjectKey(std::stack<Value>& parse_stack)
 {
     std::string key;
     bool err_code = token_reader_.ReadString(key);
@@ -255,7 +259,7 @@ bool JsonReader::CaseStatusObjectKey(std::stack<Value>& parse_stack, Value*)
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusObjectValue(std::stack<Value>& parse_stack, Value*, int type)
+bool JsonReader::CaseStatusObjectValue(std::stack<Value>& parse_stack, int type)
 {
     //key:value,parse_stack.size()>=2
     if(2 > parse_stack.size())
@@ -327,7 +331,7 @@ bool JsonReader::CaseStatusObjectValue(std::stack<Value>& parse_stack, Value*, i
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusObjectEnd(std::stack<Value>& parse_stack, Value*)
+bool JsonReader::CaseStatusObjectEnd(std::stack<Value>& parse_stack)
 {
     if(!HasStatus(kSTATUS_OBJECT_END))
         return false;
@@ -338,14 +342,48 @@ bool JsonReader::CaseStatusObjectEnd(std::stack<Value>& parse_stack, Value*)
     
     //如果是唯一元素,则JSON解析结束
     if(1 == parse_stack.size())
+    {
         cur_status_ = kSTATUS_DOCUMENT_END;
-    else
-        cur_status_ = kSTATUS_SEP_COLON;
+        return true;
+    }
     
+    //栈顶对象先弹出
+    Value object = parse_stack.top();
+    parse_stack.pop();
+
+    //此刻当前栈元素必须>=2
+    if(2 > parse_stack.size())
+        return false;
+
+    //如果当前栈顶元素是key,则说明是{key1:{key2:value}}这种情况,添加{key2:value}到key1所属于的对象中
+    if(Value::TYPE_KEY == parse_stack.top().type())
+    {
+        std::string key = parse_stack.top().val();
+        parse_stack.pop();
+
+        parse_stack.top().PairAdd(std::move(key), std::move(object));
+
+        //此时栈顶是个对象,期待下个元素是, or }
+        cur_status_ = kSTATUS_SEP_COMMA | kSTATUS_OBJECT_END;
+        return true;
+    }
+
+    //如果当前栈顶元素是array,
+    //则说明是{Key1:[{key2:value}]}这种情况,添加{key2:value}到所属数组中
+    if(Value::TYPE_ARRAY == parse_stack.top().type())
+    {
+        parse_stack.top().ArrayAdd(std::move(object));
+
+        //此时栈顶为数组,期待下个元素是, or ]
+        cur_status_ = kSTATUS_SEP_COMMA | kSTATUS_ARRAY_END;
+        return true;
+    }
+
+    assert(0);
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusArrayBegin(std::stack<Value>& parse_stack, Value*)
+bool JsonReader::CaseStatusArrayBegin(std::stack<Value>& parse_stack)
 {
     if(!HasStatus(kSTATUS_ARRAY_BEGIN))
         return false;
@@ -358,11 +396,11 @@ bool JsonReader::CaseStatusArrayBegin(std::stack<Value>& parse_stack, Value*)
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusArrayValue(std::stack<Value>& parse_stack, Value*, int type)
+bool JsonReader::CaseStatusArrayValue(std::stack<Value>& parse_stack, int type)
 {
     //key:[array], parse_stack.size()>=3
-    if(3 > parse_stack.size())
-        return false;
+    //if(3 > parse_stack.size())    [1,2,3]也是合法的
+    //    return false;
     
     //value
     Value       value;
@@ -424,10 +462,17 @@ bool JsonReader::CaseStatusArrayValue(std::stack<Value>& parse_stack, Value*, in
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusArrayEnd(std::stack<Value>& parse_stack, Value*)
+bool JsonReader::CaseStatusArrayEnd(std::stack<Value>& parse_stack)
 {
     if(false == HasStatus(kSTATUS_ARRAY_END))
         return false;
+ 
+    //[1,2,3]也是合法的
+    if(1 == parse_stack.size())
+    {
+        cur_status_ = kSTATUS_DOCUMENT_END;
+        return true;
+    }
 
     //key:[array] parse_stack.size()>=3
     if(3 > parse_stack.size())
@@ -449,7 +494,7 @@ bool JsonReader::CaseStatusArrayEnd(std::stack<Value>& parse_stack, Value*)
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusSepColon(std::stack<Value>&, Value*)
+bool JsonReader::CaseStatusSepColon(std::stack<Value>&)
 {
     if(!HasStatus(kSTATUS_SEP_COLON))
         return false;
@@ -459,7 +504,7 @@ bool JsonReader::CaseStatusSepColon(std::stack<Value>&, Value*)
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusSepComma(std::stack<Value>&, Value*)
+bool JsonReader::CaseStatusSepComma(std::stack<Value>&)
 {
     if(!HasStatus(kSTATUS_SEP_COMMA))
         return false;
@@ -482,20 +527,18 @@ bool JsonReader::CaseStatusSepComma(std::stack<Value>&, Value*)
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusSignalValue(std::stack<Value>& , Value* , int )
+bool JsonReader::CaseStatusSignalValue(std::stack<Value>&, int)
 {
     return true;
 }
 //---------------------------------------------------------------------------
-bool JsonReader::CaseStatusDocumentEnd(std::stack<Value>& parse_stack, Value* root)
+bool JsonReader::CaseStatusDocumentEnd(std::stack<Value>& parse_stack)
 {
     if(!HasStatus(kSTATUS_DOCUMENT_END))
         return false;
 
+    (void)parse_stack;
     assert(1 == parse_stack.size());
-
-    *root = parse_stack.top();
-    parse_stack.pop();
 
     return true;
 }

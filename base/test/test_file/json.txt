@@ -1,0 +1,37 @@
+{
+    "key1": [
+        {
+            "arr1_obj1": "arr1_obj1_value",
+            "arr1_obj2": "arr1_obj2_value",
+            "arr1_obj3": "arr1_obj3_value"
+        },
+        {
+            "arr2_obj1": "arr2_obj1_value",
+            "arr2_obj2": "arr2_obj2_value",
+            "arr2_obj3": "arr2_obj3_value"
+        },
+        true,
+        false,
+        null,
+        1,
+        -1,
+        1.1
+    ],
+    "key2": {
+        "obj1_str": "obj1_value_str",
+        "obj1_int": -1,
+        "obj1_uint": 1,
+        "obj1_readl": 1234.5678,
+        "obj1_arr": [
+            1,
+            2,
+            3,
+            4,
+            5
+        ],
+        "obj1_obj": {
+            "obj1_obj_key1": "value1",
+            "obj1_obj_key2": 222
+        }
+    }
+}
