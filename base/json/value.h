@@ -38,6 +38,13 @@ public:
 public:
     Value();
     Value(ValueType type);
+    Value(const std::string& value);
+    Value(std::string&& value);
+    Value(const char* value);
+    Value(int64_t value);
+    Value(uint64_t value);
+    Value(double value);
+    Value(bool value);
     Value(const Value& other);
     Value(Value&& other);
     Value& operator=(const Value& other);
@@ -73,33 +80,38 @@ public:
         value ? val_ = "true": val_ = "false";
     }
 
+    //小数点最多6位
     void set_double(double value)
     {
-        assert(TYPE_INT == type_); 
+        assert(TYPE_REAL == type_); 
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "%f", value);
         val_ = buffer;
     }
 
-    //注意:仅供json_reader调用
-    void set_number(const std::string& number, ValueType num_type)
+    int64_t get_int()
     {
-       val_ = number;
-       type_= num_type;
+        assert(TYPE_INT == type_);
+        return std::stoll(val_);
     }
 
-    //注意:仅供json_reader调用
-    void set_number(const char* number, ValueType num_type)
+    uint64_t get_uint()
     {
-       val_ = number;
-       type_= num_type;
+        assert(TYPE_UINT == type_);
+        return std::stoull(val_);
     }
 
-    //注意:仅供json_reader调用
-    void set_number(std::string&& number, ValueType num_type)
+    bool get_boolean()
     {
-       val_ = std::move(number);
-       type_= num_type;
+        assert(TYPE_BOOLEAN == type_);
+        return (val_ == "true");
+    }
+
+    //小数点最多6位
+    double get_double()
+    {
+        assert(TYPE_REAL == type_);
+        return std::stod(val_);
     }
 
     void set_str(const char* str)
@@ -133,9 +145,9 @@ public:
     std::string&        val()       { return val_; }
     const std::string&  val() const { return val_; } 
 
-    bool    PairAdd (const std::string& key, Value&& value);
-    bool    PairAdd (std::string&& key, Value&& value);
-    bool    PairAdd (const char* key, Value&& value);
+    void    PairAdd (const std::string& key, Value&& value);
+    void    PairAdd (std::string&& key, Value&& value);
+    void    PairAdd (const char* key, Value&& value);
     bool    PairDel (const std::string& key);
     bool    PairDel (const char* key);
     bool    PairGet (const std::string& key, Value* value);
@@ -146,7 +158,7 @@ public:
     JsonPairIter PairIterBegin  () const    { return pairs_->begin(); }
     JsonPairIter PairIterEnd    () const    { return pairs_->end(); }
     
-    void            ArrayReserve    (size_t size);
+    void            ArrayResize     (size_t size);
     void            ArraySet        (size_t index, const Value& value);
     void            ArraySet        (size_t index, const Value&& value);
     Value&          ArrayGet        (size_t index);
@@ -160,14 +172,36 @@ public:
     JsonArrayIter ArrayIterBegin()  const   { return array_->begin(); }
     JsonArrayIter ArrayIterEnd()    const   { return array_->end(); }
 
+public:
+    const static Value kValueNull;
+
+public:
+    //注意:仅供json_reader调用
+    void set_number(const std::string& number, ValueType num_type)
+    {
+       val_ = number;
+       type_= num_type;
+    }
+
+    //注意:仅供json_reader调用
+    void set_number(const char* number, ValueType num_type)
+    {
+       val_ = number;
+       type_= num_type;
+    }
+
+    //注意:仅供json_reader调用
+    void set_number(std::string&& number, ValueType num_type)
+    {
+       val_ = std::move(number);
+       type_= num_type;
+    }
+
 private:
     ValueType                       type_;  //类型
     std::string                     val_;   //值
     std::vector<Value>*             array_; //数组
     std::map<std::string, Value>*   pairs_; //对象
-
-private:
-    const static Value kValueNull;
 };
 
 }//namespace json

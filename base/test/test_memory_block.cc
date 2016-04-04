@@ -118,6 +118,11 @@ bool TestMemoryBlock::Legal()
     }
 
 
+    {
+    MemoryBlock mbr;
+    mbr.Resize(10);
+    mbr[0] = 'a';
+    }
     }
 
     return true;

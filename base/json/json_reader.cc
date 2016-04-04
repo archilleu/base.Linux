@@ -55,7 +55,7 @@ bool JsonReader::_Parse(Value* root)
     std::stack<Value> parse_stack;
 
     //初始状态
-    cur_status_ = kSTATUS_OBJECT_BEGIN | kSTATUS_SINGLE_VALUE | kSTATUS_ARRAY_BEGIN;
+    cur_status_ = kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_BEGIN;
     for(;;)
     {
         int token = token_reader_.ReadNextToken();

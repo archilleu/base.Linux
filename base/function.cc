@@ -357,7 +357,7 @@ bool LoadFile(const char* path, MemoryBlock* result)
     size_t size     = file_info.st_size;
     for(;0<size;)
     {
-        ssize_t rlen = read(fd, result->dat()+offset, UNIT_KB);
+        ssize_t rlen = read(fd, result->dat()+offset, size);
         if(0 > rlen)
         {
             close(fd);

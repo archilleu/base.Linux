@@ -6,7 +6,7 @@ namespace base
 //---------------------------------------------------------------------------
 MemoryBlock::MemoryBlock(size_t size)
 :   len_(size),
-    dat_(0)
+    dat_(nullptr)
 {
     if(0 < len_)
         dat_ = new char[len_];
@@ -17,13 +17,18 @@ MemoryBlock::MemoryBlock(size_t size)
 MemoryBlock::MemoryBlock(const char* data, size_t size)
 :   len_(size)
 {
-    dat_ = new char[len_];
-    memcpy(dat_, data, len_);
+    if(0 < len_)
+    {
+        dat_ = new char[len_];
+        memcpy(dat_, data, len_);
+    }
+
+    return;
 }
 //---------------------------------------------------------------------------
 MemoryBlock::MemoryBlock(const MemoryBlock& other)
 :   len_(other.len_),
-    dat_(0)
+    dat_(nullptr)
 {
     if(0 < len_)
     {
@@ -42,7 +47,7 @@ MemoryBlock& MemoryBlock::operator=(const MemoryBlock& other)
             delete[] dat_;
 
         len_ = other.len_;
-        dat_ = 0;
+        dat_ = nullptr;
         if(0 < len_)
         {
             dat_ = new char[len_];
@@ -58,7 +63,7 @@ MemoryBlock::MemoryBlock(MemoryBlock&& other)
     dat_ = other.dat_;
     len_ = other.len_;
 
-    other.dat_ = 0;
+    other.dat_ = nullptr;
     other.len_ = 0;
 
     return;
@@ -74,7 +79,7 @@ MemoryBlock& MemoryBlock::operator=(MemoryBlock&& other)
         dat_ = other.dat_;
         len_ = other.len_;
 
-        other.dat_ = 0;
+        other.dat_ = nullptr;
         other.len_ = 0;
     }
 
@@ -95,14 +100,14 @@ void MemoryBlock::Resize(size_t size)
     {
         delete[] dat_;
         len_ = 0;
-        dat_ = 0;
+        dat_ = nullptr;
     }
 
-    if(0 == size)
-        return;
-
-    dat_ = new char[size];
-    len_ = size;
+    if(0 < size)
+    {
+        dat_ = new char[size];
+        len_ = size;
+    }
 
     return;
 }

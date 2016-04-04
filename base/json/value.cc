@@ -33,6 +33,69 @@ Value::Value(ValueType val_type)
     return;
 }
 //---------------------------------------------------------------------------
+Value::Value(const std::string& value)
+:   type_(TYPE_STRING),
+    array_(0),
+    pairs_(0)
+{
+    val_ = value;
+    return;
+}
+//---------------------------------------------------------------------------
+Value::Value(std::string&& value)
+:   type_(TYPE_STRING),
+    array_(0),
+    pairs_(0)
+{
+    val_ = std::move(value);
+    return;
+}
+//---------------------------------------------------------------------------
+Value::Value(const char* value)
+:   type_(TYPE_STRING),
+    array_(0),
+    pairs_(0)
+{
+    val_ = value;
+    return;
+}
+//---------------------------------------------------------------------------
+Value::Value(int64_t value)
+:   type_(TYPE_INT),
+    array_(0),
+    pairs_(0)
+{
+    set_int(value);
+    return;
+}
+//---------------------------------------------------------------------------
+Value::Value(uint64_t value)
+:   type_(TYPE_UINT),
+    array_(0),
+    pairs_(0)
+{
+    set_uint(value);
+    return;
+}
+//---------------------------------------------------------------------------
+Value::Value(double value)
+:   type_(TYPE_REAL),
+    array_(0),
+    pairs_(0)
+{
+    set_double(value);
+    return;
+}
+//---------------------------------------------------------------------------
+Value::Value(bool value)
+:   type_(TYPE_BOOLEAN),
+    array_(0),
+    pairs_(0)
+{
+    set_boolean(value);
+    return;
+}
+//---------------------------------------------------------------------------
 Value::Value(const Value& other)
 {
     *this = other;
@@ -85,10 +148,11 @@ Value& Value::operator=(const Value& other)
 //---------------------------------------------------------------------------
 Value& Value::operator=(Value&& other)
 {
-    type_   = other.type_;
-    val_    = std::move(other.val_);
-    array_  = 0;
-    pairs_  = 0;
+    type_       = other.type_;
+    val_        = std::move(other.val_);
+    other.val_  = "null";
+    array_      = 0;
+    pairs_      = 0;
 
     switch(type_)
     {
@@ -125,6 +189,7 @@ Value::~Value()
     {
         assert(0 == array_);
         assert(0 == pairs_);
+        assert("null" == val_);
         return;
     }
 
@@ -169,33 +234,34 @@ void Value::set_type(ValueType type_val)
     return;
 }
 //---------------------------------------------------------------------------
-bool Value::PairAdd(const std::string& key, Value&& value)
+void Value::PairAdd(const std::string& key, Value&& value)
 {
-    return PairAdd(key.c_str(), std::move(value));
+    PairAdd(key.c_str(), std::move(value));
+    return;
 }
 //---------------------------------------------------------------------------
-bool Value::PairAdd(std::string&& key, Value&& value)
+void Value::PairAdd(std::string&& key, Value&& value)
 {
     if(0 == pairs_)
     {
         assert(0);
-        return false;
+        return;
     }
 
-    auto pair = pairs_->insert(std::make_pair(std::move(key), std::move(value)));
-    return pair.second;
+    (*pairs_)[std::move(key)] = std::move(value);
+    return;
 }
 //---------------------------------------------------------------------------
-bool Value::PairAdd(const char* key, Value&& value)
+void Value::PairAdd(const char* key, Value&& value)
 {
     if(0 == pairs_)
     {
         assert(0);
-        return false;
+        return;
     }
 
-    auto pair = pairs_->insert(std::make_pair(key, std::move(value)));
-    return pair.second;
+    (*pairs_)[key] = std::move(value);
+    return;
 }
 //---------------------------------------------------------------------------
 bool Value::PairDel(const std::string& key)
@@ -243,7 +309,7 @@ bool Value::PairGet(const char* key, Value* value)
     return true;
 }
 //---------------------------------------------------------------------------
-void Value::ArrayReserve(size_t size)
+void Value::ArrayResize(size_t size)
 {
     if(0 == array_)
     {
@@ -251,7 +317,7 @@ void Value::ArrayReserve(size_t size)
         return;
     }
 
-    array_->reserve(size);
+    array_->resize(size);
     return;
 }
 //---------------------------------------------------------------------------

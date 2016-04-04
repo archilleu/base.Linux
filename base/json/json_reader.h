@@ -60,8 +60,7 @@ private:
     static const int kSTATUS_ARRAY_END    = 0x0040;     //期待数组结束
     static const int kSTATUS_SEP_COLON    = 0x0080;     //期待:
     static const int kSTATUS_SEP_COMMA    = 0x0100;     //期待,
-    static const int kSTATUS_SINGLE_VALUE = 0x0200;     //期待单个值
-    static const int kSTATUS_DOCUMENT_END = 0x0400;     //期待JSON解析结束
+    static const int kSTATUS_DOCUMENT_END = 0x0200;     //期待JSON解析结束
 
 protected:
     DISALLOW_COPY_AND_ASSIGN(JsonReader);

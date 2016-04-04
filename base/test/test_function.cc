@@ -12,6 +12,7 @@ bool TestFunction::DoTest()
     if(false == Test_BinChar())     return false;
     if(false == Test_Path())        return false;
     if(false == Test_Document())    return false;
+    if(false == Test_File())        return false;
 
     return true;
 }
@@ -80,5 +81,14 @@ bool TestFunction::Test_Path()
 bool TestFunction::Test_Document()
 {
     return true;
+}
+//---------------------------------------------------------------------------
+bool TestFunction::Test_File()
+{
+    MemoryBlock mb;
+    if(false == LoadFile("./test_file/json.txt", &mb))
+        return false;
+
+    return true; 
 }
 //---------------------------------------------------------------------------
