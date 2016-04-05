@@ -84,7 +84,7 @@ bool TokenReader::ReadString(std::string& str)
         switch(c)
         {
             case '\\'://转义字符
-            {
+                {
                 if(!char_reader_.HasMore())
                     break;
 
@@ -130,7 +130,7 @@ bool TokenReader::ReadString(std::string& str)
                     default:
                         return false;
                 }
-            }
+                }
                 break;
 
             case '\"':  //结束

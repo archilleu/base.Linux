@@ -34,6 +34,8 @@ private:
         for(int i=0; i<deep; i++)
             str.push_back('\t');
     }
+
+    static void AddString(const std::string& from, std::string& str);
 };
 
 }//namespace json

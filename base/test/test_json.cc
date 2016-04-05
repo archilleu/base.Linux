@@ -15,15 +15,16 @@ using namespace base::json;
 //---------------------------------------------------------------------------
 bool TestJson::DoTest()
 {
-    if(false == Test_Value_Base())      return false;
-    if(false == Test_Value_Obj())       return false;
-    if(false == Test_Value_Array())     return false;
-    if(false == Test_CharReader())      return false;
-    if(false == Test_TokenReader())     return false;
-    if(false == Test_Json_KV())         return false;
-    if(false == Test_Json_Array())      return false;
-    if(false == Test_Json_Object())     return false;
+    //if(false == Test_Value_Base())      return false;
+    //if(false == Test_Value_Obj())       return false;
+    //if(false == Test_Value_Array())     return false;
+    //if(false == Test_CharReader())      return false;
+    //if(false == Test_TokenReader())     return false;
+    //if(false == Test_Json_KV())         return false;
+    //if(false == Test_Json_Array())      return false;
+    //if(false == Test_Json_Object())     return false;
     if(false == Test_Json_ArrayObject())return false;
+    if(false == Test_json_Format())     return false;
 
     return true;
 }
@@ -1057,7 +1058,7 @@ bool TestJson::Test_Json_ArrayObject()
         {
             if('f' == ent->d_name[0])
                 fail_file_list.push_back(ent->d_name);
-            else
+            else if('p' == ent->d_name[0])
                 pass_file_list.push_back(ent->d_name);
         }
     }
@@ -1081,9 +1082,25 @@ bool TestJson::Test_Json_ArrayObject()
         MY_ASSERT(true == err_code);
 
         std::string str = json::JsonWriter::ToString(root, true);
-        SaveFile("./test_file/"+std::string("b.")+*i, str.data(), str.length());
+        std::string save_file = "./test_file/"+std::string("b.")+*i;
+        FileDelete(save_file);
+        SaveFile(save_file, str.data(), str.length());
     }
 
+    return true;
+}
+//---------------------------------------------------------------------------
+bool TestJson::Test_json_Format()
+{
+    std::string         file    = "./test_file/tostring.json";
+    json::Value         root;
+    json::JsonReader    reader;
+    bool err_code = reader.ParseFile(file, &root);
+    if(false == err_code)
+        return false;
+
+    std::string format_str = json::JsonWriter::ToString(root, true);
+    std::cout << format_str << std::endl; 
     return true;
 }
 //---------------------------------------------------------------------------

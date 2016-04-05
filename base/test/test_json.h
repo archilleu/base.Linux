@@ -32,6 +32,7 @@ public:
     bool Test_Json_Array();
     bool Test_Json_Object();
     bool Test_Json_ArrayObject();
+    bool Test_json_Format();
 };
 
 }//namespace test
