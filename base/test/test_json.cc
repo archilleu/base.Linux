@@ -7,6 +7,7 @@
 #include "../json/json_writer.h"
 #include "../json/value.h"
 #include "../function.h"
+#include <dirent.h>
 //---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
@@ -23,8 +24,6 @@ bool TestJson::DoTest()
     if(false == Test_Json_Array())      return false;
     if(false == Test_Json_Object())     return false;
     if(false == Test_Json_ArrayObject())return false;
-    //if(false == Test_Json())        return false;
-    //if(false == Test_Normal())      return false;
 
     return true;
 }
@@ -703,18 +702,29 @@ bool TestJson::Test_TokenReader()
     {
     json::TokenReader reader1;
     json::TokenReader reader2;
+    json::TokenReader reader3;
     json::TokenReader reader4;
-    std::string str         = "normal\"";
+    std::string str         = " normal\"";
+    std::string str_spe     = "\\b\\f\\n\\r\\t \\\\ `1~!@#$%^&*()_+-={':[,]}|;.</>? / & \\/ \\\" \"";
     std::string str_err1    = "a";
     std::string str_err3    = "a";
     reader1.set_dat(MemoryBlock(str.data(), str.length()));
     reader2.set_dat(MemoryBlock(str_err1.data(), str_err1.length()));
+    reader3.set_dat(MemoryBlock(str_spe.data(), str_spe.length()));
     reader4.set_dat(MemoryBlock(str_err3.data(), str_err3.length()));
 
     std::string key;
     bool err_code = reader1.ReadString(key);
     MY_ASSERT(true == err_code);
-    MY_ASSERT(key == "normal");
+    MY_ASSERT(key == " normal");
+
+    key.clear();
+    err_code = reader3.ReadString(key);
+    MY_ASSERT(true == err_code);
+    std::cout << "---" << std::endl;
+    std::cout << key <<std::endl;
+    std::cout << "---" << std::endl;
+    //MY_ASSERT(key == str_spe);
 
     err_code = reader2.ReadString(key);
     MY_ASSERT(false == err_code);
@@ -1033,21 +1043,45 @@ bool TestJson::Test_Json_Object()
 //---------------------------------------------------------------------------
 bool TestJson::Test_Json_ArrayObject()
 {
+    //测试一个文件夹下的数据
+    
+    DIR* dir = opendir("./test_file");
+    if(0 == dir)
+        return false;
+    
+    std::list<std::string> pass_file_list;
+    std::list<std::string> fail_file_list;
+    for(struct dirent* ent=readdir(dir); 0!=ent; ent=readdir(dir))
     {
-    json::JsonReader reader;
-    MemoryBlock mb;
-    if(false == base::LoadFile("./test_file/json.txt", &mb))
-        return false;
-    std::string str(mb.dat(), mb.len());
+        if(DT_REG & ent->d_type)
+        {
+            if('f' == ent->d_name[0])
+                fail_file_list.push_back(ent->d_name);
+            else
+                pass_file_list.push_back(ent->d_name);
+        }
+    }
+    closedir(dir);
 
-    json::Value root;
-    bool err_code = reader.Parse(str, &root);
-    MY_ASSERT(true == err_code);
+    //错误的文件
+    for(auto i=fail_file_list.begin(); i!=fail_file_list.end(); ++i)
+    {
+        json::Value         root;
+        json::JsonReader    reader;
+        bool err_code = reader.ParseFile("./test_file/"+*i, &root);
+        MY_ASSERT(false == err_code);
+    }
 
-    std::string j_str = json::JsonWriter::ToString(root);
-    if (false == base::SaveFile("./test_file/json.txt.b", j_str.c_str(), j_str.length()))
-        return false;
+    //正确的文件
+    for(auto i=pass_file_list.begin(); i!=pass_file_list.end(); ++i)
+    {
+        json::Value         root;
+        json::JsonReader    reader;
+        bool err_code = reader.ParseFile("./test_file/"+*i, &root);
+        MY_ASSERT(true == err_code);
 
+        std::string str = json::JsonWriter::ToString(root, true);
+        SaveFile("./test_file/"+std::string("b.")+*i, str.data(), str.length());
     }
 
     return true;

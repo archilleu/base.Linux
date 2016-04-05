@@ -74,9 +74,6 @@ TokenReader::TokenType TokenReader::ReadNextToken()
 //---------------------------------------------------------------------------
 bool TokenReader::ReadString(std::string& str)
 {
-    //跳过空白
-    SkipWhitespace();
-
     std::string value;
     for(;;)
     {
@@ -107,23 +104,23 @@ bool TokenReader::ReadString(std::string& str)
                         break;
 
                     case 'b':
-                        str.push_back('b');
+                        str.push_back('\b');
                         break;
 
                     case 'f'://换页
-                        str.push_back('f');
+                        str.push_back('\f');
                         break;
 
                     case 'n':
-                        str.push_back('n');
+                        str.push_back('\n');
                         break;
 
                     case 'r':
-                        str.push_back('r');
+                        str.push_back('\r');
                         break;
 
                     case 't':
-                        str.push_back('t');
+                        str.push_back('\t');
                         break;
 
                     case 'u'://unicode字符
@@ -240,9 +237,21 @@ bool TokenReader::ReadNumber(std::string& number, Value::ValueType& type)
                 }
 
                 if(true == has_sign)    //值是有符号整数
+                {
+                    //数字不能以0开头
+                    if((2<number.size()) && ('0'==number[1]))
+                        return false;
+
                     type = Value::TYPE_INT;
+                }
                 else                    //无符号整数
+                {
+                    //数字不能以0开头
+                    if((1<number.size()) &&('0'==number[0]))
+                        return false;
+
                     type = Value::TYPE_UINT;
+                }
 
                 return true;
         }

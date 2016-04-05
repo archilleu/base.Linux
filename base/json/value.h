@@ -145,6 +145,7 @@ public:
     std::string&        val()       { return val_; }
     const std::string&  val() const { return val_; } 
 
+    //Par
     void    PairAdd (const std::string& key, Value&& value);
     void    PairAdd (std::string&& key, Value&& value);
     void    PairAdd (const char* key, Value&& value);
@@ -158,6 +159,7 @@ public:
     JsonPairIter PairIterBegin  () const    { return pairs_->begin(); }
     JsonPairIter PairIterEnd    () const    { return pairs_->end(); }
     
+    //array
     void            ArrayResize     (size_t size);
     void            ArraySet        (size_t index, const Value& value);
     void            ArraySet        (size_t index, const Value&& value);

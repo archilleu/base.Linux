@@ -71,7 +71,7 @@ private:
 
     bool CheckNumber(char c)
     {
-        if((isdigit(c)) || ('.'==c) || ('e'==c) || ('E'==c))
+        if((isdigit(c)) || ('.'==c))// || ('e'==c) || ('E'==c))暂时不解析e
             return true;
 
         return false;

@@ -45,23 +45,24 @@ bool JsonReader::ParseFile(const char* path, Value* root)
     if(false == base::LoadFile(path, &dat))
         return false;
 
-    token_reader_.set_dat(std::move(dat));
-    return _Parse(root);
+    return Parse(std::move(dat), root);
 }
 //---------------------------------------------------------------------------
 bool JsonReader::_Parse(Value* root)
 {
     //解析栈
+    //每当遇到"Key",{Object,[array就生成一个Value入栈
+    //每当遇到Object}, array]就把Value出栈,同时如果当前栈底是key值的话,还要把key同对应的object出栈
     std::stack<Value> parse_stack;
 
     //初始状态
-    cur_status_ = kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_BEGIN;
+    cur_status_ = kEXP_STATUS_OBJECT_BEGIN | kEXP_STATUS_ARRAY_BEGIN;
     for(;;)
     {
         int token = token_reader_.ReadNextToken();
         switch(token)
         {
-            // '\0'end
+            // end
             case TokenReader::TokenType::DOCUMENT_END:
                 {
                 if(false == CaseStatusDocumentEnd(parse_stack))
@@ -128,9 +129,13 @@ bool JsonReader::_Parse(Value* root)
                 }
 
             // string
+            // 这个时候可以匹配的状态有3个,需要根据上一个匹配状态来决定当前要读取的是key,还是object的值,还是array的值
+            // 如果要读取的是key值,则上一次设定的期待状态是KEY,
+            // 如果是object的值,则在上一次设定期待的值是object_value,
+            // 如果是array的值,则上一次设定期待的值是array_value,否则是失败,返回错误
             case TokenReader::TokenType::STRING:
                 {
-                if(HasStatus(kSTATUS_OBJECT_KEY))   // key
+                if(HasStatus(kEXP_STATUS_OBJECT_KEY))   // key
                 {
                     if(false == CaseStatusObjectKey(parse_stack))
                         return false;
@@ -138,7 +143,7 @@ bool JsonReader::_Parse(Value* root)
                     break;
                 }
 
-                if(HasStatus(kSTATUS_OBJECT_VALUE)) // obj value
+                if(HasStatus(kEXP_STATUS_OBJECT_VALUE)) // object value
                 {
                     if(false == CaseStatusObjectValue(parse_stack, Value::TYPE_STRING))
                         return false;
@@ -146,7 +151,7 @@ bool JsonReader::_Parse(Value* root)
                     break;
                 }
 
-                if(HasStatus(kSTATUS_ARRAY_VALUE))  // array value
+                if(HasStatus(kEXP_STATUS_ARRAY_VALUE))  // array value
                 {
                     if(false == CaseStatusArrayValue(parse_stack, Value::TYPE_STRING))
                         return false;
@@ -154,14 +159,14 @@ bool JsonReader::_Parse(Value* root)
                     break;
                 }
 
-                assert(0);
-                break;
+                return false;
                 }
 
             //t or f
+            //原因同上面的string
             case TokenReader::TokenType::BOOLEAN:
-                
-                if(HasStatus(kSTATUS_OBJECT_VALUE)) // obj value
+                {
+                if(HasStatus(kEXP_STATUS_OBJECT_VALUE)) // obj value
                 {
                     if(false == CaseStatusObjectValue(parse_stack, Value::TYPE_BOOLEAN))
                         return false;
@@ -169,7 +174,7 @@ bool JsonReader::_Parse(Value* root)
                     break;
                 }
 
-                if(HasStatus(kSTATUS_ARRAY_VALUE))  // array value
+                if(HasStatus(kEXP_STATUS_ARRAY_VALUE))  // array value
                 {
                     if(false == CaseStatusArrayValue(parse_stack, Value::TYPE_BOOLEAN))
                         return false;
@@ -177,12 +182,14 @@ bool JsonReader::_Parse(Value* root)
                     break;
                 }
                 
-                break;
+                return false;
+                }
 
             //- or [0-9]
+            //原因同上面的string
             case TokenReader::TokenType::NUMBER:
-
-                if(HasStatus(kSTATUS_OBJECT_VALUE)) // obj value
+                {
+                if(HasStatus(kEXP_STATUS_OBJECT_VALUE)) // obj value
                 {
                     if(false == CaseStatusObjectValue(parse_stack, Value::TYPE_NUMBER))
                         return false;
@@ -190,7 +197,7 @@ bool JsonReader::_Parse(Value* root)
                     break;
                 }
 
-                if(HasStatus(kSTATUS_ARRAY_VALUE))  // array value
+                if(HasStatus(kEXP_STATUS_ARRAY_VALUE))  // array value
                 {
                     if(false == CaseStatusArrayValue(parse_stack, Value::TYPE_NUMBER))
                         return false;
@@ -198,12 +205,14 @@ bool JsonReader::_Parse(Value* root)
                     break;
                 }
 
-                break;
+                return false;
+                }
 
             //null
+            //原因同上面的string
             case TokenReader::TokenType::NUL:
-
-                if(HasStatus(kSTATUS_OBJECT_VALUE)) // obj value
+                {
+                if(HasStatus(kEXP_STATUS_OBJECT_VALUE)) // obj value
                 {
                     if(false == CaseStatusObjectValue(parse_stack, Value::TYPE_NULL))
                         return false;
@@ -211,7 +220,7 @@ bool JsonReader::_Parse(Value* root)
                     break;
                 }
 
-                if(HasStatus(kSTATUS_ARRAY_VALUE))  // array value
+                if(HasStatus(kEXP_STATUS_ARRAY_VALUE))  // array value
                 {
                     if(false == CaseStatusArrayValue(parse_stack, Value::TYPE_NULL))
                         return false;
@@ -219,11 +228,12 @@ bool JsonReader::_Parse(Value* root)
                     break;
                 }
 
-                break;
+                return false;
+                }
 
-            //
+            //非法状态
             case TokenReader::TokenType::INVALID:
-                break;
+                return false;
         }
     }
 
@@ -232,14 +242,14 @@ bool JsonReader::_Parse(Value* root)
 //---------------------------------------------------------------------------
 bool JsonReader::CaseStatusObjectBegin(std::stack<Value>& parse_stack)
 {
-    if(!HasStatus(kSTATUS_OBJECT_BEGIN))
+    if(!HasStatus(kEXP_STATUS_OBJECT_BEGIN))
         return false;
 
     Value value(Value::TYPE_OBJECT);
     parse_stack.push(std::move(value));
 
     //{ -> "key" or { or }
-    cur_status_ = kSTATUS_OBJECT_KEY | kSTATUS_OBJECT_BEGIN | kSTATUS_OBJECT_END;
+    cur_status_ = kEXP_STATUS_OBJECT_KEY | kEXP_STATUS_OBJECT_BEGIN | kEXP_STATUS_OBJECT_END;
     return true;
 }
 //---------------------------------------------------------------------------
@@ -255,7 +265,7 @@ bool JsonReader::CaseStatusObjectKey(std::stack<Value>& parse_stack)
     parse_stack.push(std::move(value));
 
     //"key" - > :
-    cur_status_ = kSTATUS_SEP_COLON;
+    cur_status_ = kEXP_STATUS_SEP_COLON;
     return true;
 }
 //---------------------------------------------------------------------------
@@ -292,8 +302,8 @@ bool JsonReader::CaseStatusObjectValue(std::stack<Value>& parse_stack, int type)
             Value::ValueType num_type;
             if(false == token_reader_.ReadNumber(str, num_type))
                 return false;
-            value.set_number(str, num_type);
 
+            value.set_number(str, num_type);
             break;
             }
 
@@ -319,6 +329,7 @@ bool JsonReader::CaseStatusObjectValue(std::stack<Value>& parse_stack, int type)
             }
 
         default:
+            assert(0);
             break;
     }
 
@@ -327,13 +338,13 @@ bool JsonReader::CaseStatusObjectValue(std::stack<Value>& parse_stack, int type)
     object.PairAdd(std::move(key), std::move(value));
 
     //"value" -> , or }
-    cur_status_ = kSTATUS_SEP_COMMA | kSTATUS_OBJECT_END;
+    cur_status_ = kEXP_STATUS_SEP_COMMA | kEXP_STATUS_OBJECT_END;
     return true;
 }
 //---------------------------------------------------------------------------
 bool JsonReader::CaseStatusObjectEnd(std::stack<Value>& parse_stack)
 {
-    if(!HasStatus(kSTATUS_OBJECT_END))
+    if(!HasStatus(kEXP_STATUS_OBJECT_END))
         return false;
 
     //栈底元素类型必须是object
@@ -343,39 +354,42 @@ bool JsonReader::CaseStatusObjectEnd(std::stack<Value>& parse_stack)
     //如果是唯一元素,则JSON解析结束
     if(1 == parse_stack.size())
     {
-        cur_status_ = kSTATUS_DOCUMENT_END;
+        cur_status_ = kEXP_STATUS_DOCUMENT_END;
         return true;
     }
     
-    //栈顶对象先弹出
     Value object = parse_stack.top();
     parse_stack.pop();
-
-    //此刻当前栈元素必须>=2
-    if(2 > parse_stack.size())
-        return false;
 
     //如果当前栈顶元素是key,则说明是{key1:{key2:value}}这种情况,添加{key2:value}到key1所属于的对象中
     if(Value::TYPE_KEY == parse_stack.top().type())
     {
+        //此刻当前栈元素必须>=2
+        if(2 > parse_stack.size())
+            return false;
+
         std::string key = parse_stack.top().val();
         parse_stack.pop();
 
         parse_stack.top().PairAdd(std::move(key), std::move(object));
 
         //此时栈顶是个对象,期待下个元素是, or }
-        cur_status_ = kSTATUS_SEP_COMMA | kSTATUS_OBJECT_END;
+        cur_status_ = kEXP_STATUS_SEP_COMMA | kEXP_STATUS_OBJECT_END;
         return true;
     }
 
     //如果当前栈顶元素是array,
-    //则说明是{Key1:[{key2:value}]}这种情况,添加{key2:value}到所属数组中
+    //则说明是[{key2:value}]这种情况,添加{key2:value}到所属数组中
     if(Value::TYPE_ARRAY == parse_stack.top().type())
     {
+        //此刻栈顶元素必须>1
+        if(1 > parse_stack.size())
+            return false;
+
         parse_stack.top().ArrayAdd(std::move(object));
 
         //此时栈顶为数组,期待下个元素是, or ]
-        cur_status_ = kSTATUS_SEP_COMMA | kSTATUS_ARRAY_END;
+        cur_status_ = kEXP_STATUS_SEP_COMMA | kEXP_STATUS_ARRAY_END;
         return true;
     }
 
@@ -385,14 +399,14 @@ bool JsonReader::CaseStatusObjectEnd(std::stack<Value>& parse_stack)
 //---------------------------------------------------------------------------
 bool JsonReader::CaseStatusArrayBegin(std::stack<Value>& parse_stack)
 {
-    if(!HasStatus(kSTATUS_ARRAY_BEGIN))
+    if(!HasStatus(kEXP_STATUS_ARRAY_BEGIN))
         return false;
 
     //添加array
     parse_stack.push(Value(Value::TYPE_ARRAY));
 
     //[ -> " or [0-9] or { or [ or ]
-    cur_status_ = kSTATUS_ARRAY_VALUE | kSTATUS_ARRAY_BEGIN | kSTATUS_ARRAY_END | kSTATUS_OBJECT_BEGIN;
+    cur_status_ = kEXP_STATUS_ARRAY_VALUE | kEXP_STATUS_ARRAY_BEGIN | kEXP_STATUS_ARRAY_END | kEXP_STATUS_OBJECT_BEGIN;
     return true;
 }
 //---------------------------------------------------------------------------
@@ -458,83 +472,103 @@ bool JsonReader::CaseStatusArrayValue(std::stack<Value>& parse_stack, int type)
     object.ArrayAdd(std::move(value));
 
     //"value" -> , or ]
-    cur_status_ = kSTATUS_SEP_COMMA | kSTATUS_ARRAY_END;
+    cur_status_ = kEXP_STATUS_SEP_COMMA | kEXP_STATUS_ARRAY_END;
     return true;
 }
 //---------------------------------------------------------------------------
 bool JsonReader::CaseStatusArrayEnd(std::stack<Value>& parse_stack)
 {
-    if(false == HasStatus(kSTATUS_ARRAY_END))
+    if(false == HasStatus(kEXP_STATUS_ARRAY_END))
         return false;
  
     //[1,2,3]也是合法的
     if(1 == parse_stack.size())
     {
-        cur_status_ = kSTATUS_DOCUMENT_END;
+        cur_status_ = kEXP_STATUS_DOCUMENT_END;
         return true;
     }
 
-    //key:[array] parse_stack.size()>=3
-    if(3 > parse_stack.size())
+    //[[array]]
+    //key:[array] parse_stack.size()>=2
+    if(2 > parse_stack.size())
         return false;
 
     //array
     Value array = parse_stack.top();
     parse_stack.pop();
 
-    //key
-    std::string key = parse_stack.top().val();
-    parse_stack.pop();
+    //如果当前栈顶元素是key,则说明是{key1:[value]}这种情况,添加[value]到key1所属于的对象中
+    if(Value::TYPE_KEY == parse_stack.top().type())
+    {
+        //此刻当前栈元素必须>=2
+        if(2 > parse_stack.size())
+            return false;
 
-    //key:[array]添加到object中
-    parse_stack.top().PairAdd(std::move(key), std::move(array));
+        std::string key = parse_stack.top().val();
+        parse_stack.pop();
 
-    //] -> , or }
-    cur_status_ = kSTATUS_SEP_COMMA | kSTATUS_OBJECT_END;
+        parse_stack.top().PairAdd(std::move(key), std::move(array));
+
+        //此时栈顶是个object,期待下个元素是, or }
+        cur_status_ = kEXP_STATUS_SEP_COMMA | kEXP_STATUS_OBJECT_END;
+        return true;
+    }
+
+    //如果当前栈顶元素是array,
+    //则说明是[[key2:value]]这种情况,添加[key2:value]到所属数组中
+    if(Value::TYPE_ARRAY == parse_stack.top().type())
+    {
+        //此刻栈顶元素必须>1
+        if(1 > parse_stack.size())
+            return false;
+
+        parse_stack.top().ArrayAdd(std::move(array));
+
+        //此时栈顶为数组,期待下个元素是, or ]
+        cur_status_ = kEXP_STATUS_SEP_COMMA | kEXP_STATUS_ARRAY_END;
+        return true;
+    }
+
+    assert(0);
     return true;
 }
 //---------------------------------------------------------------------------
 bool JsonReader::CaseStatusSepColon(std::stack<Value>&)
 {
-    if(!HasStatus(kSTATUS_SEP_COLON))
+    if(!HasStatus(kEXP_STATUS_SEP_COLON))
         return false;
 
     //: -> { or [ or "value"
-    cur_status_ = kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_BEGIN | kSTATUS_OBJECT_VALUE;
+    cur_status_ = kEXP_STATUS_OBJECT_BEGIN | kEXP_STATUS_ARRAY_BEGIN | kEXP_STATUS_OBJECT_VALUE;
     return true;
 }
 //---------------------------------------------------------------------------
 bool JsonReader::CaseStatusSepComma(std::stack<Value>&)
 {
-    if(!HasStatus(kSTATUS_SEP_COMMA))
+    if(!HasStatus(kEXP_STATUS_SEP_COMMA))
         return false;
 
     ///, -> "key" or [ or { or arr_val
-    //如果当前状态同时期待kSTATUS_OBJECT_END,代表当前处于key:value状态
-    if(HasStatus(kSTATUS_OBJECT_END))
+    //如果当前状态同时期待kEXP_STATUS_OBJECT_END,代表当前处于key:value状态
+    if(HasStatus(kEXP_STATUS_OBJECT_END))
     {
-        cur_status_ = kSTATUS_OBJECT_KEY;
+        cur_status_ = kEXP_STATUS_OBJECT_KEY;
         return true;
     }
 
-    //如果当前状态同时期待kSTATUS_ARRAY_END,代表当前处于key:[array]状态
-    if(HasStatus(kSTATUS_ARRAY_END))
+    //如果当前状态同时期待kEXP_STATUS_ARRAY_END,代表当前处于key:[array]状态
+    if(HasStatus(kEXP_STATUS_ARRAY_END))
     {
-        cur_status_ = kSTATUS_OBJECT_BEGIN | kSTATUS_ARRAY_BEGIN | kSTATUS_ARRAY_VALUE;
+        cur_status_ = kEXP_STATUS_OBJECT_BEGIN | kEXP_STATUS_ARRAY_BEGIN | kEXP_STATUS_ARRAY_VALUE;
         return true;
     }
 
-    return true;
-}
-//---------------------------------------------------------------------------
-bool JsonReader::CaseStatusSignalValue(std::stack<Value>&, int)
-{
     return true;
 }
 //---------------------------------------------------------------------------
 bool JsonReader::CaseStatusDocumentEnd(std::stack<Value>& parse_stack)
 {
-    if(!HasStatus(kSTATUS_DOCUMENT_END))
+    if(!HasStatus(kEXP_STATUS_DOCUMENT_END))
         return false;
 
     (void)parse_stack;

@@ -9,33 +9,37 @@ namespace base
 namespace json
 {
 //---------------------------------------------------------------------------
-std::string JsonWriter::ToString(const Value& value)
+std::string JsonWriter::ToString(const Value& value, bool format)
 {
     std::string str;
-    ToString(value, str); 
+    int         deep = 0;
+    ToString(value, str, format, deep); 
 
     return str;
 }
 //---------------------------------------------------------------------------
-void JsonWriter::ToString(const Value& value, std::string& str)
+void JsonWriter::ToString(const Value& value, std::string& str, bool format, int deep)
 {
     int type = value.type();
     if(Value::TYPE_OBJECT == type)
     {
-        ObjectToString(value, str);
+        ObjectToString(value, str, format, deep);
     }
 
     if(Value::TYPE_ARRAY == type)
     {
-        ArrayToString(value, str);
+        ArrayToString(value, str, format, deep);
     }
 
     return;
 }
 //---------------------------------------------------------------------------
-void JsonWriter::ObjectToString(const Value& value, std::string& str)
+void JsonWriter::ObjectToString(const Value& value, std::string& str, bool format, int deep)
 {
-    str.push_back('{');
+    if(format)  AddTab(str, deep);
+        str.push_back('{');
+    if(format)  str.push_back('\n');
+    if(format)  deep++;
 
     for(auto iter=value.PairIterBegin(); iter!=value.PairIterEnd(); ++iter)
     {
@@ -49,7 +53,9 @@ void JsonWriter::ObjectToString(const Value& value, std::string& str)
         {
             case Value::TYPE_OBJECT:
             case Value::TYPE_ARRAY:
-                ToString(iter->second, str);
+                if(format)
+                    str.push_back('\n');
+                ToString(iter->second, str, format, deep+1);
                 break;
 
             case Value::TYPE_STRING:
@@ -64,6 +70,8 @@ void JsonWriter::ObjectToString(const Value& value, std::string& str)
             case Value::TYPE_BOOLEAN:
             case Value::TYPE_NULL:
             case Value::TYPE_KEY:
+                if(format)
+                    AddTab(str, deep);
                 str += iter->second.val();
                 break;
 
@@ -72,18 +80,28 @@ void JsonWriter::ObjectToString(const Value& value, std::string& str)
          }
 
         str.push_back(',');
+        if(format)
+            str.push_back('\n');
     }
-    if(',' == str.back())
-        str.pop_back();
+    if(format)              if('\n' == str.back())  str.pop_back();
+    if(',' == str.back())   str.pop_back();
 
+    if(format)
+    {
+        str.push_back('\n');
+        AddTab(str, deep--);
+    }
     str.push_back('}');
 
     return;
 }
 //---------------------------------------------------------------------------
-void JsonWriter::ArrayToString(const Value& value, std::string& str)
+void JsonWriter::ArrayToString(const Value& value, std::string& str, bool format, int deep)
 {
-    str.push_back('[');
+    if(format)  AddTab(str, deep);
+        str.push_back('[');
+    if(format)  str.push_back('\n');
+    if(format)  deep ++;
 
     for(auto iter=value.ArrayIterBegin(); value.ArrayIterEnd()!=iter; ++iter)
     {
@@ -92,7 +110,9 @@ void JsonWriter::ArrayToString(const Value& value, std::string& str)
         {
             case Value::TYPE_OBJECT:
             case Value::TYPE_ARRAY:
-                ToString(*iter, str);
+                if(format)
+                    str.push_back('\n');
+                ToString(*iter, str, format, deep+1);
                 break;
 
             case Value::TYPE_STRING:
@@ -107,6 +127,8 @@ void JsonWriter::ArrayToString(const Value& value, std::string& str)
             case Value::TYPE_BOOLEAN:
             case Value::TYPE_NULL:
             case Value::TYPE_KEY:
+                if(format)
+                    AddTab(str, deep);
                 str += iter->val();
                 break;
 
@@ -115,25 +137,20 @@ void JsonWriter::ArrayToString(const Value& value, std::string& str)
         }
         
         str.push_back(',');
+        if(format)
+            str.push_back('\n');
     }
-    if(',' == str.back())
-        str.pop_back();
+    if(format)              if('\n' == str.back())  str.pop_back();
+    if(',' == str.back())   str.pop_back();
 
+    if(format)
+    {
+        str.push_back('\n');
+        AddTab(str, deep--);
+    }
     str.push_back(']');
 
     return;
-}
-//---------------------------------------------------------------------------
-void JsonWriter::NumberToString(const Value& value, std::string& str)
-{
-}
-//---------------------------------------------------------------------------
-void JsonWriter::BooleanToString(const Value& value, std::string& str)
-{
-}
-//---------------------------------------------------------------------------
-void JsonWriter::NullToString(const Value& value, std::string& str)
-{
 }
 //---------------------------------------------------------------------------
 }//namespace json
