@@ -15,14 +15,15 @@ using namespace base::json;
 //---------------------------------------------------------------------------
 bool TestJson::DoTest()
 {
-    //if(false == Test_Value_Base())      return false;
-    //if(false == Test_Value_Obj())       return false;
-    //if(false == Test_Value_Array())     return false;
-    //if(false == Test_CharReader())      return false;
-    //if(false == Test_TokenReader())     return false;
-    //if(false == Test_Json_KV())         return false;
-    //if(false == Test_Json_Array())      return false;
-    //if(false == Test_Json_Object())     return false;
+    if(false == Test_Value_Base())      return false;
+    if(false == Test_Value_Obj())       return false;
+    if(false == Test_Value_Array())     return false;
+    if(false == Test_Value_Overload())  return false;
+    if(false == Test_CharReader())      return false;
+    if(false == Test_TokenReader())     return false;
+    if(false == Test_Json_KV())         return false;
+    if(false == Test_Json_Array())      return false;
+    if(false == Test_Json_Object())     return false;
     if(false == Test_Json_ArrayObject())return false;
     if(false == Test_json_Format())     return false;
 
@@ -576,6 +577,109 @@ bool TestJson::Test_Value_Array()
     Value val_assg = value;
     Value val_move_copy(std::move(val_copy));
     Value val_move_asg = std::move(val_assg);
+    }
+
+    return true;
+}
+//---------------------------------------------------------------------------
+bool TestJson::Test_Value_Overload()
+{
+    {
+    Value v1 = "string";
+    std::cout << v1.ToString(true) << std::endl;
+    std::cout << v1.ToString() << std::endl;
+
+    Value v2 = 1;
+    std::cout << v2.ToString(true) << std::endl;
+    std::cout << v2.ToString() << std::endl;
+
+    Value v3 = -1;
+    std::cout << v3.ToString(true) << std::endl;
+    std::cout << v3.ToString() << std::endl;
+
+    Value v4 = true;
+    std::cout << v4.ToString(true) << std::endl;
+    std::cout << v4.ToString() << std::endl;
+
+    Value v5 = false;
+    std::cout << v5.ToString(true) << std::endl;
+    std::cout << v5.ToString() << std::endl;
+
+    Value v6;
+    std::cout << v6.ToString(true) << std::endl;
+    std::cout << v6.ToString() << std::endl;
+    }
+
+    {
+    std::cout << "object :" << std::endl;
+    Value obj(Value::TYPE_OBJECT);
+    obj["k1"] = "string";
+    obj["k2"] = 1;
+    obj["k3"] = -1;
+    obj["k4"] = true;
+    obj["k5"] = false;
+    obj["k6"] = Value();
+    std::cout << obj.ToString(true) << std::endl;
+    std::cout << obj.ToString() << std::endl;
+    }
+
+    {
+    std::cout << "array:" << std::endl;
+    Value obj(Value::TYPE_ARRAY);
+    obj.ArrayResize(6);
+    obj[0] = Value();
+    obj[1] = "string";
+    obj[2] = 1;
+    obj[3] = -1;
+    obj[4] = true;
+    obj[5] = false;
+    std::cout << obj.ToString(true) << std::endl;
+    std::cout << obj.ToString() << std::endl;;
+    }
+
+    {
+    std::cout << "object array:" << std::endl;
+
+    Value array(Value::TYPE_ARRAY);
+    array.ArrayResize(2);
+    array[0] = "string0";
+    array[1] = "string1";
+
+    Value object(Value::TYPE_OBJECT);
+    object["k1"] = 1;
+    object["k2"] = 1;
+    object["array1"] = std::move(array);
+    object["array2"] = array;
+
+    std::cout << object.ToString() << std::endl;
+    std::cout << object.ToString(true) << std::endl;
+    }
+
+    {
+    std::cout << "object array:" << std::endl;
+
+    Value array(Value::TYPE_ARRAY);
+    array.ArrayResize(2);
+
+    Value object(Value::TYPE_OBJECT);
+    object["k1"] = 1;
+    object["k2"] = 1;
+    object["array1"] = Value(Value::TYPE_ARRAY);
+    object["array2"] = Value(Value::TYPE_ARRAY);
+    object["array1"].ArrayResize(2);
+    object["array1"][0] = "array1.0";
+    object["array1"][1] = "array1.1";
+    object["array2"].ArrayAdd(1);
+    object["array2"].ArrayAdd(-1);
+    object["array2"].ArrayAdd(true);
+    object["array2"].ArrayAdd(false);
+    object["array2"].ArrayAdd(1.1);
+    object["array2"].ArrayAdd("str");
+
+    array[0] = object;
+    array[1] = object;
+    std::cout << array.ToString() << std::endl;
+    std::cout << array.ToString(true) << std::endl;
     }
 
     return true;

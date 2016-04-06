@@ -41,6 +41,7 @@ public:
     Value(const std::string& value);
     Value(std::string&& value);
     Value(const char* value);
+    Value(int value);
     Value(int64_t value);
     Value(uint64_t value);
     Value(double value);
@@ -145,34 +146,53 @@ public:
     std::string&        val()       { return val_; }
     const std::string&  val() const { return val_; } 
 
-    //Par
+    //Pair
+    void    PairAdd (const std::string& key, const Value& value);
+    void    PairAdd (std::string&& key, const Value& value);
+    void    PairAdd (const char* key, const Value& value);
     void    PairAdd (const std::string& key, Value&& value);
     void    PairAdd (std::string&& key, Value&& value);
     void    PairAdd (const char* key, Value&& value);
+
     bool    PairDel (const std::string& key);
     bool    PairDel (const char* key);
+
     bool    PairGet (const std::string& key, Value* value);
     bool    PairGet (const char* key, Value* value);
-    size_t  PairSize()
-    { if(0 == pairs_) return 0;  return pairs_->size(); }
+
+    size_t  PairSize()  { if(0 == pairs_) return 0;  return pairs_->size(); }
 
     JsonPairIter PairIterBegin  () const    { return pairs_->begin(); }
     JsonPairIter PairIterEnd    () const    { return pairs_->end(); }
     
     //array
-    void            ArrayResize     (size_t size);
-    void            ArraySet        (size_t index, const Value& value);
-    void            ArraySet        (size_t index, const Value&& value);
-    Value&          ArrayGet        (size_t index);
-    const Value&    ArrayGet        (size_t index) const;
-    void            ArrayAdd        (const Value& value);
-    void            ArrayAdd        (Value&& value);
-    void            ArrayZero       (size_t index);
-    size_t          ArraySize       ()
-    { if(0 == array_) return 0; return array_->size(); }
+    void            ArrayResize (size_t size);
+    size_t          ArraySize   ()              { if(0 == array_) return 0; return array_->size(); }
+
+    void            ArraySet    (size_t index, const Value& value);
+    void            ArraySet    (size_t index, const Value&& value);
+
+    Value&          ArrayGet    (size_t index);
+    const Value&    ArrayGet    (size_t index) const;
+
+    void            ArrayAdd    (const Value& value);
+    void            ArrayAdd    (Value&& value);
+
+    void            ArrayZero   (size_t index);
 
     JsonArrayIter ArrayIterBegin()  const   { return array_->begin(); }
     JsonArrayIter ArrayIterEnd()    const   { return array_->end(); }
+
+//重载[]操作符
+public:
+    //Value& operator[] (const char* key);和下标0冲突....
+    Value& operator[] (const std::string& key);
+
+    Value&          operator[] (size_t index);
+    const Value&    operator[] (size_t index) const;
+
+public:
+    std::string ToString(bool format=false);
 
 public:
     const static Value kValueNull;

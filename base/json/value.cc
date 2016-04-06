@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------
 #include "value.h"
+#include "json_writer.h"
 //---------------------------------------------------------------------------
 namespace base
 {
@@ -57,6 +58,15 @@ Value::Value(const char* value)
     pairs_(0)
 {
     val_ = value;
+    return;
+}
+//---------------------------------------------------------------------------
+Value::Value(int value)
+:   type_(TYPE_INT),
+    array_(0),
+    pairs_(0)
+{
+    set_int(value);
     return;
 }
 //---------------------------------------------------------------------------
@@ -234,6 +244,36 @@ void Value::set_type(ValueType type_val)
     return;
 }
 //---------------------------------------------------------------------------
+void Value::PairAdd(const std::string& key, const Value& value)
+{
+    PairAdd(key.c_str(), value);
+    return;
+}
+//---------------------------------------------------------------------------
+void Value::PairAdd(std::string&& key, const Value& value)
+{
+    if(0 == pairs_)
+    {
+        assert(0);
+        return;
+    }
+
+    (*pairs_)[std::move(key)] = value;
+    return;
+}
+//---------------------------------------------------------------------------
+void Value::PairAdd(const char* key, const Value& value)
+{
+    if(0 == pairs_)
+    {
+        assert(0);
+        return;
+    }
+
+    (*pairs_)[key] = value;
+    return;
+}
+//---------------------------------------------------------------------------
 void Value::PairAdd(const std::string& key, Value&& value)
 {
     PairAdd(key.c_str(), std::move(value));
@@ -400,6 +440,42 @@ void Value::ArrayZero(size_t index)
 
     array_->at(index) = kValueNull;
     return;
+}
+//---------------------------------------------------------------------------
+//Value& Value::operator[](const char* key)
+//{
+//    assert(TYPE_OBJECT == type_);
+//    
+//    Value& value = (*pairs_)[key];
+//    return value;
+//}
+//---------------------------------------------------------------------------
+Value& Value::operator[](const std::string& key)
+{
+    assert(TYPE_OBJECT == type_);
+    
+    Value& value = (*pairs_)[key];
+    return value;
+}
+//---------------------------------------------------------------------------
+Value& Value::operator[](size_t index)
+{
+    assert(TYPE_ARRAY == type_);
+
+    return (*array_)[index];
+}
+//---------------------------------------------------------------------------
+const Value& Value::operator[](size_t index) const
+//---------------------------------------------------------------------------
+{
+    assert(TYPE_ARRAY == type_);
+
+    return (*array_)[index];
+}
+//---------------------------------------------------------------------------
+std::string Value::ToString(bool format)
+{
+    return JsonWriter::ToString(*this, format);
 }
 //---------------------------------------------------------------------------
 }//namespace json
