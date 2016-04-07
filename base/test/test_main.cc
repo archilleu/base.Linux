@@ -10,6 +10,7 @@
 #include "test_mysql_kit.h"
 #include "test_mysql_pool.h"
 #include "test_json.h"
+#include "test_md5.h"
 //---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
@@ -26,7 +27,8 @@ TestMain::TestMain()
     //TEST_ADD(TestLogFile);
     //TEST_ADD(TestMysqlKit);
     //TEST_ADD(TestMysqlPool);
-    TEST_ADD(TestJson);
+    //TEST_ADD(TestJson);
+    TEST_ADD(TestMD5);
     
 #undef TEST_ADD
 }
