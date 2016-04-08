@@ -25,7 +25,7 @@ else
 endif
 #---------------------------------------------------------------------------
 objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o mysql_kit.o auto_transaction.o \
-		mysql_pool.o token_reader.o value.o json_reader.o json_writer.o md5.o
+		mysql_pool.o token_reader.o value.o json_reader.o json_writer.o md5.o semaphore.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
@@ -71,6 +71,9 @@ json_writer.o : ./json/json_writer.h ./json/json_writer.cc
 
 md5.o : md5.h md5.cc
 	$(CXX_COMPILER) $(CXX_FLAGS) -c md5.cc 
+
+semaphore.o : semaphore.h semaphore.cc
+	$(CXX_COMPILER) $(CXX_FLAGS) -c semaphore.cc 
 
 #---------------------------------------------------------------------------
 clean:	
