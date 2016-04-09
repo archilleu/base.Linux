@@ -12,6 +12,7 @@
 #include "test_json.h"
 #include "test_md5.h"
 #include "test_semaphore.h"
+#include "test_computer_info.h"
 //---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
@@ -30,7 +31,9 @@ TestMain::TestMain()
     //TEST_ADD(TestMysqlPool);
     //TEST_ADD(TestJson);
     //TEST_ADD(TestMD5);
-    TEST_ADD(TestSemaphore);
+    //TEST_ADD(TestSemaphore);
+    TEST_ADD(TestComputerInfo);
+
     
 #undef TEST_ADD
 }
