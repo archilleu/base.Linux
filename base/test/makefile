@@ -25,7 +25,7 @@ endif
 #---------------------------------------------------------------------------
 objects=main.o test_base.o test_main.o test_memory_block.o test_timestamp.o test_function.o	\
 		test_thread.o test_append_file.o test_log_file.o test_mysql_kit.o test_mysql_pool.o	\
-		test_json.o test_md5.o test_semaphore.o test_computer_info.o
+		test_json.o test_md5.o test_semaphore.o test_computer_info.o test_thread_local.o
 #---------------------------------------------------------------------------
 main : $(objects)
 	$(CXX_COMPILER) -o $(_OBJ_NAME) $(objects) $(_LIB_SHARE)  $(_LIB_SHARE_NAME) $(_LIB_PUBLIC_NAME);
@@ -74,6 +74,9 @@ test_semaphore.o : test_semaphore.cc test_semaphore.h
 
 test_computer_info.o : test_computer_info.cc test_computer_info.h
 	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_computer_info.cc
+
+test_thread_local.o : test_thread_local.cc test_thread_local.h
+	$(CXX_COMPILER) $(CXX_FLAGS) $(_LIB_SHARE_HEADER) -c $(_SRC_PATH)/test_thread_local.cc
 
 #---------------------------------------------------------------------------
 clean:	

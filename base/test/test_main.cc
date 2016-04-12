@@ -13,6 +13,7 @@
 #include "test_md5.h"
 #include "test_semaphore.h"
 #include "test_computer_info.h"
+#include "test_thread_local.h"
 //---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
@@ -32,7 +33,8 @@ TestMain::TestMain()
     //TEST_ADD(TestJson);
     //TEST_ADD(TestMD5);
     //TEST_ADD(TestSemaphore);
-    TEST_ADD(TestComputerInfo);
+    //TEST_ADD(TestComputerInfo);
+    TEST_ADD(TestThreadLocal);
 
     
 #undef TEST_ADD
