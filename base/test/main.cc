@@ -6,6 +6,7 @@ int main(int argc, char** argv)
     base::test::TestMain test;
     test.StartTest();
     
+    getchar();
     return 0;
 }
 //---------------------------------------------------------------------------

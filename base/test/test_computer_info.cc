@@ -7,6 +7,7 @@ using namespace base::test;
 //---------------------------------------------------------------------------
 bool TestComputerInfo::DoTest()
 {
+
     if(false == Test_Normal())  return false;
 
     return true;
@@ -50,6 +51,13 @@ bool TestComputerInfo::Test_Normal()
         "sockets:" << cpu.sockets << std::endl <<
         "core_per_socket:" << cpu.core_per_socket << std::endl <<
         "thread_per_core:" << cpu.thread_per_core << std::endl;
+
+    ComputerInfo::InitCPUUsage();
+    for(int i=0; i<10; i++)
+    {
+        std::cout<< "current usage:" << ComputerInfo::GetCPUUsage() << std::endl;
+        sleep(1);
+    }
     }
 
     return true;

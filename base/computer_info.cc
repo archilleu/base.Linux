@@ -3,9 +3,12 @@
 #include <mntent.h>
 #include <sys/vfs.h>
 #include <sys/utsname.h>
+#include <sys/sysinfo.h>
 //---------------------------------------------------------------------------
 namespace base
 {
+//---------------------------------------------------------------------------
+unsigned long long ComputerInfo::last_[4] = {0};
 //---------------------------------------------------------------------------
 ComputerInfo::ComputerInfo()
 {
@@ -68,47 +71,21 @@ std::vector<ComputerInfo::DiskspaceInfo> ComputerInfo::GetDiskspaceInfo()
 //---------------------------------------------------------------------------
 ComputerInfo::MemoryInfo ComputerInfo::GetMemoryInfo()
 {
-    MemoryInfo info;
-    bzero(&info, sizeof(MemoryInfo));
+    //also can read from /proc/meminfo
 
-    FILE* fp = fopen("/proc/meminfo", "r");
-    if(0 == fp)
-        return info;
+    MemoryInfo mem_info;
+    bzero(&mem_info, sizeof(MemoryInfo));
 
-    char buffer[64];
-    while(true)
-    {
-        //line format "field:   value",more info man /proc
-        if(0 == fgets(buffer, sizeof(buffer), fp))
-            break;
+    struct sysinfo sys_info;
+    if(0 > sysinfo(&sys_info))
+        return mem_info;
 
-        if(0 == info.mem_total)
-        {
-            info.mem_total = GetMemoryValue(buffer, "MemTotal");
-            continue;
-        }
-
-        if(0 == info.mem_free)
-        {
-            info.mem_free = GetMemoryValue(buffer, "MemFree");
-            continue;
-        }
-
-        if(0 == info.swap_total)
-        {
-            info.swap_total = GetMemoryValue(buffer, "SwapTotal");
-            continue;
-        }
-
-        if(0 == info.swap_free)
-        {
-            info.swap_free = GetMemoryValue(buffer, "SwapFree");
-            continue;
-        }
-    }
-
-    fclose(fp);
-    return info;
+    mem_info.mem_total  = sys_info.totalram * sys_info.mem_unit / UNIT_KB;
+    mem_info.mem_free   = sys_info.freeram * sys_info.mem_unit / UNIT_KB;
+    mem_info.swap_total = sys_info.totalswap * sys_info.mem_unit / UNIT_KB;
+    mem_info.swap_free  = sys_info.freeswap * sys_info.mem_unit / UNIT_KB;
+ 
+    return mem_info;
 }
 //---------------------------------------------------------------------------
 ComputerInfo::CPUInfo ComputerInfo::GetCPUInfo()
@@ -195,22 +172,55 @@ ComputerInfo::CPUInfo ComputerInfo::GetCPUInfo()
             }
         }
     }
-
+    
+    fclose(fp);
     info.sockets        = static_cast<int>((sockets.size() > 0) ? sockets.size() : 1);
     info.thread_per_core= info.thread_per_core / info.core_per_socket;
     return info;
 }
 //---------------------------------------------------------------------------
-size_t ComputerInfo::GetMemoryValue(const char* line, const char* field)
+void ComputerInfo::InitCPUUsage()
 {
-    if(0 != memcmp(field, line, strlen(field)))
-        return 0;
-                
-    unsigned long value = 0;
-    if(1 != sscanf(line, "%*s%lu", &value))
-        return 0;
+    GetCPUValue(last_);
+}
+//---------------------------------------------------------------------------
+float ComputerInfo::GetCPUUsage()
+{
+    unsigned long long current[4];
+    GetCPUValue(current);
+
+    float percent = 0.0;
+    //prevent overflow
+    if( (current[0]>=last_[0]) &&
+        (current[1]>=last_[1]) &&
+        (current[2]>=last_[2]) &&
+        (current[3]>=last_[3]))
+    {
+        unsigned long long usage = (current[0]-last_[0]) + (current[1]-last_[1]) + (current[2]-last_[2]);
+        unsigned long long total = usage + (current[3]-last_[3]);
+        if(0 != total)
+            percent = (static_cast<float>(usage)/static_cast<float>(total)) * 100;
+    }
+
+    //update last
+    last_[0] = current[0];
+    last_[1] = current[1];
+    last_[2] = current[2];
+    last_[3] = current[3];
+     
+    return percent;
+}
+//---------------------------------------------------------------------------
+void ComputerInfo::GetCPUValue(unsigned long long value[4])
+{
+    bzero(value, sizeof(unsigned long long)*4);
+
+    FILE* fp = fopen("/proc/stat", "r");
+    if(0 == fp)
+        return;
     
-    return value;
+    fscanf(fp, "cpu %llu %llu %llu %llu", &value[0], &value[1], &value[2], &value[3]);
+    fclose(fp);
 }
 //---------------------------------------------------------------------------
 }//namespace base

@@ -56,8 +56,16 @@ public:
     };
     static CPUInfo GetCPUInfo();
 
+    //CPU current usage
+    static void     InitCPUUsage();
+    static float    GetCPUUsage();
+
 private:
-    static size_t GetMemoryValue(const char* line, const char* field);
+    static void GetCPUValue(unsigned long long value[4]);
+
+private:
+    //more info man /proc
+    static unsigned long long last_[4];
 };
 
 }//namespace base
