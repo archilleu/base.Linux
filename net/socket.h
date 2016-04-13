@@ -7,8 +7,6 @@
 //---------------------------------------------------------------------------
 /*
  * Socket 内部维护的描述符不是由自己创建的,但是由自己销毁
- * 理由:Socket类本来是为TCP设计的,tcp server accept 返回的是一个描述符
- * 打脸:客户端的描述符是自己创建的,为毛要这么设计
  */
 //---------------------------------------------------------------------------
 namespace net
@@ -46,6 +44,8 @@ public:
 public:
     static InetAddress GetLocalAddress(int sockfd);
     static InetAddress GetPeerAddress(int sockfd);
+    
+    static int GetSocketError(int sockfd);
 
 private:
    int fd_;

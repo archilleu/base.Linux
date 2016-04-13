@@ -219,4 +219,16 @@ InetAddress Socket::GetPeerAddress(int sockfd)
     return peer_address;
 }
 //---------------------------------------------------------------------------
+int Socket::GetSocketError(int sockfd)
+{
+    int         optval;
+    socklen_t   optlen = static_cast<socklen_t>(sizeof optval);
+    if(0 > ::getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &optval, &optlen))
+    {
+        SystemLog_Error("getsocket failed, errno:%d, msg:%s", errno, strerror(errno));
+        return errno;
+    }
+    
+    return optval;
+}
 }//namespace net

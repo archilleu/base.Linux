@@ -49,7 +49,7 @@ public:
     //强制断线
     void ForceClose();
 
-    //连接就绪和销毁
+    //连接就绪
     void ConnectionEstablished();
 
     const std::string   name()          { return name_; }
