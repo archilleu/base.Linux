@@ -24,6 +24,11 @@ public:
     virtual bool DoTest();
 
 private:
+    void OnConnection   (const TCPConnectionPtr& conn);
+    void OnRead         (const TCPConnectionPtr& conn, Buffer& buffer, base::Timestamp rcv_time);
+    void OnWriteComplete(const TCPConnectionPtr& conn);
+
+private:
     bool Test_Normal();
 };
 

@@ -48,7 +48,7 @@ private:
 
     std::mutex                  mutex_;//保护connection_
     TCPConnectionPtr            connection_;
-    std::shared_ptr<Connector>  connector_;
+    std::shared_ptr<Connector>  connector_; //Before calling shared_from_this() your class needs to be stored in a shared_ptr
 
     CallbackConnection      callback_connection_;
     CallbackRead            callback_read_;

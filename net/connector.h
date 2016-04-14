@@ -22,6 +22,7 @@ public:
     void set_callbakc_new_connection_(const CallbackNewConnection& callback)    { callback_new_connection_ = callback; }
 
     void Start();
+    void Restart();
     void Stop();
 
     const InetAddress& svr_addr() const { return svr_addr_; }

@@ -87,6 +87,7 @@ void TCPClient::NewConnection(short sockfd)
     conn->set_callback_read(callback_read_);
     conn->set_callback_write_complete(callback_write_complete_);
     conn->set_callback_disconnection(std::bind(&TCPClient::RemoveConnection, this, std::placeholders::_1));
+    conn->Initialize();
 
     {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -103,16 +104,16 @@ void TCPClient::RemoveConnection(const TCPConnectionPtr& conn)
 
     {
     std::lock_guard<std::mutex> lock(mutex_);
-    assert(connection_ == conn);
+    assert(connection_.get() == conn.get());
     connection_.reset();
     }
 
-    loop_->QueueInLoop(std::bind(&TCPConnection::ForceClose, conn));
+    loop_->QueueInLoop(std::bind(&TCPConnection::ConnectionDestroy, conn));
 
     if(retry_ && connect_)
     {
         SystemLog_Info("connect[%s] reconnect to %s", name_.c_str(), connector_->svr_addr().IPPort().c_str());
-        connector_->Start();
+        connector_->Restart();
     }
 
     return;

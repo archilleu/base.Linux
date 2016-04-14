@@ -25,6 +25,7 @@ public:
     ~TCPConnection();
 
     //各种回调
+    //注意:connection 回调不能在回调里面发送数据
     void set_callback_connection        (const CallbackConnection& callback)        { callback_connection_      = std::move(callback); }
     void set_callback_disconnection     (const CallbackDisconnection& callback)     { callback_disconnection_   = std::move(callback); }
     void set_callback_destroy           (const CalllbackDestroy& callback)          { callback_destroy_         = std::move(callback); }
@@ -51,6 +52,7 @@ public:
 
     //连接就绪
     void ConnectionEstablished();
+    void ConnectionDestroy();
 
     const std::string   name()          { return name_; }
     const InetAddress&  local_addr()    { return local_addr_; }

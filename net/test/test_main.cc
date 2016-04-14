@@ -31,7 +31,7 @@ TestMain::TestMain()
     //TEST_ADD(TestBuffer);
     //TEST_ADD(TestTCPServer);
     //TEST_ADD(TestTCPConnection);
-    TEST_ADD(TestConnector);
+    //TEST_ADD(TestConnector);
     TEST_ADD(TestTCPClient);
     //TEST_ADD(TestDatagramPacket);
     //TEST_ADD(TestDatagramSocket);

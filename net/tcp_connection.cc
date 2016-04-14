@@ -113,6 +113,16 @@ void TCPConnection::ConnectionEstablished()
     return;
 }
 //---------------------------------------------------------------------------
+void TCPConnection::ConnectionDestroy()
+{
+    owner_loop_->AssertInLoopThread();
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+
+    connected_ = false;
+    channel_->Remove();
+    return;
+}
+//---------------------------------------------------------------------------
 void TCPConnection::SendInLoopA(const base::MemoryBlock dat)
 {
     SendInLoopB(dat.dat(), dat.len());
@@ -283,8 +293,6 @@ void TCPConnection::HandleError()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     HandleClose();
-    assert(0);
-
     return;
 }
 //---------------------------------------------------------------------------

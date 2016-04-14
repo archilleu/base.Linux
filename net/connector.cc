@@ -37,6 +37,17 @@ void Connector::Start()
     return;
 }
 //---------------------------------------------------------------------------
+void Connector::Restart()
+{
+    loop_->AssertInLoopThread();
+    states_     = DISCONNECTED;
+    retry_delay_= kInitRetryDelay;
+    running_    = true;
+
+    StartInLoop();
+    return;
+}
+//---------------------------------------------------------------------------
 void Connector::Stop()
 {
     running_ = false;
@@ -79,9 +90,11 @@ void Connector::Connect()
         return;
     }
 
-    int err_code = ::connect(sockfd, reinterpret_cast<const sockaddr*>(&(svr_addr_.address())), sizeof(sockaddr));
-    switch(err_code)
+    int err_code= ::connect(sockfd, reinterpret_cast<const sockaddr*>(&(svr_addr_.address())), sizeof(sockaddr));
+    int err_no  = (0==err_code) ? 0 : errno;
+    switch(err_no)
     {
+        case 0:
         case EINPROGRESS:
         case EINTR:
         case EISCONN:
@@ -89,7 +102,7 @@ void Connector::Connect()
             break;
 
         default:
-            SystemLog_Error("connect failed, errno:%d, msg:%s", errno, strerror(errno));
+            SystemLog_Error("connect failed, errno:%d, msg:%s", err_no, strerror(err_no));
             break;
     }
 
@@ -105,6 +118,7 @@ void Connector::Connecting(int sockfd)
     channel_.reset(new Channel(loop_, sockfd));
     channel_->set_callback_write(std::bind(&Connector::HandleWrite, this));
     channel_->set_callback_error(std::bind(&Connector::HandleError, this));
+    channel_->set_callback_close(std::bind(&Connector::HandleError, this));
 
     channel_->WriteEnable();
     return;
@@ -146,8 +160,8 @@ void Connector::HandleError()
 
     if(CONNECTINTG == states_)
     {
-        int sockfd = RemoveAndResetChannel();
-        int err_code = Socket::GetSocketError(sockfd);
+        int sockfd  = RemoveAndResetChannel();
+        int err_code= Socket::GetSocketError(sockfd);
         SystemLog_Error("connect error, errno:%d, msg:%s", err_code, strerror(err_code));
         ::close(sockfd);
         Retry();
