@@ -9,9 +9,9 @@ PORT = 9981
 
 def SendAndRecv(conn):
 
+    print("connet start")
     while True:
         try:
-            import pdb; pdb.set_trace()
             data = conn.recv(1024)
             if data:
                 conn.send(data)
@@ -29,4 +29,4 @@ print("start svr")
 while True:
     client = s.accept();
     print("accept client:", client[1])
-    threading.Thread(target=SendAndRecv)
+    threading.Thread(target=SendAndRecv, args=(client[0],)).start()
