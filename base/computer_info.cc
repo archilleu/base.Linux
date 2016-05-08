@@ -219,7 +219,9 @@ void ComputerInfo::GetCPUValue(unsigned long long value[4])
     if(0 == fp)
         return;
     
-    fscanf(fp, "cpu %llu %llu %llu %llu", &value[0], &value[1], &value[2], &value[3]);
+    int count = fscanf(fp, "cpu %llu %llu %llu %llu", &value[0], &value[1], &value[2], &value[3]);
+    assert(count == 4);
+    (void)count;
     fclose(fp);
 }
 //---------------------------------------------------------------------------
