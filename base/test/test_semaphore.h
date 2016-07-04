@@ -3,7 +3,7 @@
 #define LINUX_BASE_TEST_TEST_SEMAPHORE_H_
 //---------------------------------------------------------------------------
 #include "test_base.h"
-#include "../semaphore.h"
+#include "../sem.h"
 #include "../thread.h"
 //---------------------------------------------------------------------------
 namespace base

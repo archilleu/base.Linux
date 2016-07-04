@@ -1,88 +1,46 @@
 #---------------------------------------------------------------------------
-#param debug=y表示编译debug版本
-VPATH = base
-#_OBJ_NAME			:目标名字
-#_SRC_PATH			:源码路径
-#_LIB_SHARE			:包含库
-#_LIB_SHARE_HEADER	:包含库头文件
-#CXX_COMPILER		:编译器
-#CXX_FLAGS			:编译选项
-#CXX_COMPILER_LIB	:编译指令
-	_OBJ_NAME=libbase.linux.a
-	_SRC_PATH=./base
-	_LIB_SHARE=""			
-	_LIB_SHARE_HEADER=""	
-	CXX_COMPILER_LIB=ar cvr
-	CXX_COMPILER=g++
+#SOURCE 			目录下所有的C++文件
+#OBJS				SOURCE对应的中间文件
+#CXX				编译器
+#CFLAGS 			编译选项
+#LDFLAGS 			链接动态库
+#CXX_COMPILER_LIB	编译指令
+#TARGET_NAME		目标名字
+#TARGET_HEADER		头文件
 #---------------------------------------------------------------------------
-	_CFLAGS=-D_REENTRANT -Wall -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Wpointer-arith -Wshadow -Wwrite-strings -std=c++11
+SOURCE := $(wildcard *.cc)
+OBJS := $(patsubst %.cc,%.o,$(SOURCE))
+CXX=g++
+LDFLAGS+=
+CXX_COMPILER_LIB=ar cvr
+TARGET_NAME=libbase.a
+CXX_FLAGS+=-D_REENTRANT -Wall -DCHECK_PTHREAD_RETURN_VALUE -D_FILE_OFFSET_BITS=64 -Wextra -Werror -Wconversion -Wno-unused-parameter -Wold-style-cast -Wpointer-arith -Wshadow -Wwrite-strings -std=c++11
 ifeq ($(debug),y)
-	CXX_FLAGS=$(_CFLAGS)
 	CXX_FLAGS+=-g -D_DEBUG
 else
-	CXX_FLAGS=$(_CFLAGS)
 	CXX_FLAGS+=-O2 -DNDEBUG
 endif
 #---------------------------------------------------------------------------
-objects=memory_block.o timestamp.o function.o thread.o append_file.o log_file.o mysql_kit.o auto_transaction.o \
-		mysql_pool.o token_reader.o value.o json_reader.o json_writer.o md5.o semaphore.o computer_info.o	\
-		thread_local.o
-#---------------------------------------------------------------------------
-main : $(objects)
-	$(CXX_COMPILER_LIB) $(_OBJ_NAME) $(objects)
+all:$(TARGET_NAME)
 
-memory_block.o : memory_block.h memory_block.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c memory_block.cc
+%.o: %.cc
+	$(CXX) $(CXX_FLAGS) -c $<
 
-timestamp.o : timestamp.h timestamp.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c timestamp.cc 
+$(TARGET_NAME):$(OBJS)
+	$(CXX_COMPILER_LIB) $(TARGET_NAME) $(OBJS)
 
-function.o : function.h function.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c function.cc 
+.PHONY:clean
+clean:
+	rm -f *.o *.d $(TARGET_NAME)
+	rm -rf ./bin
 
-thread.o : thread.h thread.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c thread.cc 
+.PHONY:install
+install:
+	rm -rf ./bin
+	@if [ ! -d "./bin" ]; then\
+		mkdir bin;\
+	fi
 
-append_file.o : append_file.h append_file.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c append_file.cc 
+	cp *.h $(TARGET_NAME) ./bin
 
-log_file.o : log_file.h log_file.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c log_file.cc 
-
-mysql_kit.o : mysql_kit.h mysql_kit.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c mysql_kit.cc 
-
-auto_tansaction.o : auto_tansaction.h auto_tansaction.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c auto_tansaction.cc 
-
-mysql_pool.o : mysql_pool.h mysql_pool.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c mysql_pool.cc 
-
-value.o : ./json/value.h ./json/value.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/value.cc 
-
-token_reader.o : ./json/token_reader.h ./json/token_reader.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/token_reader.cc 
-
-json_reader.o : ./json/json_reader.h ./json/json_reader.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/json_reader.cc 
-
-json_writer.o : ./json/json_writer.h ./json/json_writer.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c ./json/json_writer.cc 
-
-md5.o : md5.h md5.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c md5.cc 
-
-semaphore.o : semaphore.h semaphore.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c semaphore.cc 
-
-computer_info.o : computer_info.h computer_info.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c computer_info.cc 
-
-thread_local.o : thread_local.h thread_local.cc
-	$(CXX_COMPILER) $(CXX_FLAGS) -c thread_local.cc 
-
-#---------------------------------------------------------------------------
-clean:	
-	-@ rm *.o *.a
 #---------------------------------------------------------------------------

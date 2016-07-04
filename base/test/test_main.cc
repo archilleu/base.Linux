@@ -9,9 +9,8 @@
 #include "test_log_file.h"
 #include "test_mysql_kit.h"
 #include "test_mysql_pool.h"
-#include "test_json.h"
 #include "test_md5.h"
-#include "test_semaphore.h"
+//#include "test_semaphore.h"
 #include "test_computer_info.h"
 #include "test_thread_local.h"
 //---------------------------------------------------------------------------
@@ -25,7 +24,7 @@ TestMain::TestMain()
     //TEST_ADD(TestMemoryBlock);
     //TEST_ADD(TestTimestamp);
     //TEST_ADD(TestFunction);
-    //TEST_ADD(TestThread);
+    TEST_ADD(TestThread);
     //TEST_ADD(TestAppendFile);
     //TEST_ADD(TestLogFile);
     //TEST_ADD(TestMysqlKit);
@@ -34,7 +33,7 @@ TestMain::TestMain()
     //TEST_ADD(TestMD5);
     //TEST_ADD(TestSemaphore);
     //TEST_ADD(TestComputerInfo);
-    TEST_ADD(TestThreadLocal);
+    //TEST_ADD(TestThreadLocal);
 
     
 #undef TEST_ADD
