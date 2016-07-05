@@ -6,6 +6,7 @@
 #include "poller.h"
 #include "callback.h"
 #include "timer_task.h"
+#include <atomic>
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -18,19 +19,29 @@ class EventLoop
 {
 public:
     typedef std::function<void (void)> Task;
+    typedef std::function<void (void)> SignalFunc;
 
     EventLoop();
     ~EventLoop();
 
+    void set_sig_int_callback(SignalFunc&& callback)     { sig_int_callback_    = std::move(callback); }
+    void set_sig_quit_callback(SignalFunc&& callback)    { sig_quit_callback_   = std::move(callback); }
+    void set_sig_usr1_callback(SignalFunc&& callback)    { sig_usr1_callback_   = std::move(callback); }
+    void set_sig_usr2_callback(SignalFunc&& callback)    { sig_usr2_callback_   = std::move(callback); }
+
     void Loop();
     void Quit();
+
+    void SetAsSignalHandleEventLoop();
+
+    uint64_t iteration() const { return iteration_; }
 
     void AssertInLoopThread();
     bool IsInLoopThread();
 
     //线程安全方法,如果调用着的线程是本EventLoop线程,则RunInLoop会立刻执行,否则排队到QueueInLoop
-    void RunInLoop  (const Task& task);
-    void QueueInLoop(const Task& task);
+    void RunInLoop  (Task&& task);
+    void QueueInLoop(Task&& task);
 
     //定时任务
     TimerTask::Ptr  RunAt       (const base::Timestamp when, const CallbackTimerTask& callback);
@@ -38,7 +49,11 @@ public:
     TimerTask::Ptr  RunInterval (int intervalS, const CallbackTimerTask& callback);
     void            RunCancel   (TimerTask::Ptr timer_task);
 
-    //改变监控的Channel状态,一般由connection通过Channel发起改变请求,Channel再通过EventLoop向poller请求改变
+public:
+    static EventLoop* GetEventLoopOfCurrentThread();
+
+public:
+    //改变监控的Channel状态,一般由connection通过Channel发起改变请求,Channel再通过EventLoop向poller请求改变,只由内部类调用
     void ChannelAdd(Channel* channel);
     void ChannelMod(Channel* channel);
     void ChannelDel(Channel* channel);
@@ -49,29 +64,44 @@ private:
     //当poll没有外在事件发生时,poll阻塞返回需要最长5s,QueueInLoop和RunInLoop也因此需要5s
     //为避免发生这样的情况,使用额外的手动事件来触发poll
     void Wakeup();
-    void HandleRead();
+    void HandleWakeup();
+    void HandleSignal();
 
     //处理RunInLoop和QueueInLoop的请求
     void DoPendingTasks();
 
+    void PrintActiveChannels() const;
+
 private:
-    bool        looping_;
-    uint32_t    tid_;
-    const char* tname_;
+    std::atomic<bool>   looping_;
+    int                 tid_;
+    const char*         tname_;
+    int64_t             iteration_;
     
     //wakeup
     int                         wakeupfd_;
     std::shared_ptr<Channel>    channel_wakeup_;
 
     //Task队列
-    std::list<Task> task_list_;
-    std::mutex      mutex_;
-    bool            is_pending_task_;
-
+    std::list<Task>     task_list_;
+    std::mutex          mutex_;
+    std::atomic<bool>   need_wakup_;
 
     Poller::ChannelList             active_channel_list_;
     std::shared_ptr<Poller>         poller_;
     std::shared_ptr<TimerTaskQueue> timer_task_queue_;
+
+    //signal
+    int sig_fd_;
+    SignalFunc  sig_int_callback_;
+    SignalFunc  sig_quit_callback_;
+    SignalFunc  sig_usr1_callback_;
+    SignalFunc  sig_usr2_callback_;
+    std::shared_ptr<Channel> channel_sig_;
+
+    //for debug
+    bool        d_event_handling_;
+    Channel*    d_current_active_channel_;
 
 protected:
     DISALLOW_COPY_AND_ASSIGN(EventLoop);

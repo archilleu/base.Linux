@@ -15,12 +15,12 @@ bool TestEventLoopThread::DoTest()
 //---------------------------------------------------------------------------
 void RunTimerTask()
 {
-    printf("pid:%d, tid=%d\n", getpid(), base::CurrentThread::Tid());
+    printf("pid:%d, tid=%d\n", getpid(), base::CurrentThread::tid());
     printf("run timer task\n");
 }
 bool TestEventLoopThread::Test_TaskTimer()
 {
-    printf("pid:%d, tid=%d\n", getpid(), base::CurrentThread::Tid());
+    printf("pid:%d, tid=%d\n", getpid(), base::CurrentThread::tid());
 
     EventLoopThread loop_thread;
     EventLoop*      loop =  loop_thread.StartLoop();

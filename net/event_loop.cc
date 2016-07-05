@@ -6,72 +6,105 @@
 #include <poll.h>
 #include <sys/eventfd.h>
 #include <signal.h>
+#include <sys/signalfd.h>
 //---------------------------------------------------------------------------
 namespace net
 {
 //---------------------------------------------------------------------------
-class IgnoreSigPipe
+namespace
+{
+//---------------------------------------------------------------------------
+const int           kPollTimeS              = 5;
+__thread EventLoop* t_loop_in_current_thread= 0;
+//---------------------------------------------------------------------------
+class HandleSignal 
 {
 public:
-    IgnoreSigPipe()
+    HandleSignal()
     {
+        //block sigpipe
         sigset_t signal_mask;
         sigemptyset(&signal_mask);
         sigaddset(&signal_mask, SIGPIPE);
         if(-1 == pthread_sigmask(SIG_BLOCK, &signal_mask, NULL))
         {
             SystemLog_Error("BOLCK SIGPIPE failed");
-            assert(0);
+            abort();
+            return;
+        }
+
+        sigemptyset(&signal_mask);
+        sigaddset(&signal_mask, SIGINT);
+        sigaddset(&signal_mask, SIGQUIT);
+        sigaddset(&signal_mask, SIGUSR1);
+        sigaddset(&signal_mask, SIGUSR2);
+        if(-1 == pthread_sigmask(SIG_BLOCK, &signal_mask, NULL))
+        {
+            SystemLog_Error("BOLCK SIGPIPE failed");
+            abort();
             return;
         }
     }
-}g_initPipe;
+}g_handle_signal;
 //---------------------------------------------------------------------------
-static int CreateEventFd()
+int CreateEventFd()
 {
     int fd = ::eventfd(0, EFD_NONBLOCK|EFD_CLOEXEC);
     if(0 > fd)
     {
-        char buffer[128];
-        SystemLog_Error("eventfd create failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, 128));
+        SystemLog_Error("eventfd create failed, errno:%d, msg:%s", errno, strerror(errno));
+        abort();
     }
 
     return fd;
 }
+}//namespace
 //---------------------------------------------------------------------------
 EventLoop::EventLoop()
 :   looping_(false),
-    tid_(base::CurrentThread::Tid()),
-    tname_(base::CurrentThread::ThreadName()),
-    is_pending_task_(false),
-    poller_(new Poller())
+    tid_(base::CurrentThread::tid()),
+    tname_(base::CurrentThread::tname()),
+    iteration_(0),
+    wakeupfd_(CreateEventFd()),
+    channel_wakeup_(new Channel(this, wakeupfd_)),
+    need_wakup_(true),
+    poller_(new Poller()),
+    timer_task_queue_(new TimerTaskQueue(this)),
+    sig_fd_(0),
+    d_event_handling_(false),
+    d_current_active_channel_(nullptr)
 {
-    SystemLog_Debug("event loop create:%p, in thread tid:%u, tname:%s", this, tid_, tname_);
+    SystemLog_Info("event loop create:%p, in thread tid:%d, tname:%s", this, tid_, tname_);
 
-    wakeupfd_ = CreateEventFd();
-    channel_wakeup_.reset(new Channel(this, wakeupfd_));
-
-    channel_wakeup_->set_callback_read(std::bind(&EventLoop::HandleRead, this));
+    if(t_loop_in_current_thread)
+    {
+        SystemLog_Error("another event loop in this thread, loop:%p, tid:%d, tname:%s", t_loop_in_current_thread, tid_, tname_);
+        assert(0);
+        return;
+    }
+    
+    channel_wakeup_->set_callback_read(std::bind(&EventLoop::HandleWakeup, this));
     channel_wakeup_->ReadEnable();
 
-    timer_task_queue_.reset(new TimerTaskQueue(this));
+    t_loop_in_current_thread = this;
     return;
 }
 //---------------------------------------------------------------------------
 EventLoop::~EventLoop()
 {
-    SystemLog_Debug("event loop exit:%p, in thread tid:%u, tname:%s", this, tid_, tname_);
+    SystemLog_Info("event loop exit:%p, in thread tid:%d, tname:%s", this, tid_, tname_);
 
     channel_wakeup_->DisableAll();
     channel_wakeup_->Remove();
     ::close(wakeupfd_);
-    
+
+    t_loop_in_current_thread = 0;
     return;
 }
 //---------------------------------------------------------------------------
 void EventLoop::Loop()
 {
-    assert(!looping_);
+    assert(((void)"already looping!", !looping_));
     AssertInLoopThread();
 
     SystemLog_Info("%p Event loop start", this);
@@ -80,11 +113,27 @@ void EventLoop::Loop()
     while(looping_)
     {
         active_channel_list_.clear();
-        base::Timestamp rcv_time = poller_->Poll(5, &active_channel_list_);
-        for(auto iter=active_channel_list_.begin(); active_channel_list_.end()!=iter; ++iter)
-        {
-            (*iter)->HandleEvent(rcv_time);
-        }
+        base::Timestamp time = poller_->Poll(kPollTimeS, &active_channel_list_);
+        ++iteration_;
+        
+    #ifdef _DEBUG
+        PrintActiveChannels();
+    #endif
+        
+        d_event_handling_ = true;
+
+            for(auto iter : active_channel_list_)
+            {
+                //0指针结尾来标识活动Channel结束，省去额外的有效下标变量
+                if(nullptr == iter)
+                    break;
+
+                d_current_active_channel_ = iter;
+                iter->HandleEvent(time);
+            }
+
+        d_current_active_channel_   = nullptr;
+        d_event_handling_           = false;
 
         DoPendingTasks();
     }
@@ -104,22 +153,48 @@ void EventLoop::Quit()
     return;
 }
 //---------------------------------------------------------------------------
+void EventLoop::SetAsSignalHandleEventLoop()
+{
+    assert(((void)"can only handle signal in main thread", base::CurrentThread::IsMainThread()));
+
+    //handel sig through epoll
+    sigset_t signal_mask;
+    sigemptyset(&signal_mask);
+    sigaddset(&signal_mask, SIGINT);
+    sigaddset(&signal_mask, SIGQUIT);
+    sigaddset(&signal_mask, SIGUSR1);
+    sigaddset(&signal_mask, SIGUSR2);
+    int sfd = signalfd(-1, &signal_mask, SFD_NONBLOCK|SFD_CLOEXEC);
+    if(-1 == sfd)
+    {
+        SystemLog_Error("create signal fd failed");
+        abort();
+        return;
+    }
+    sig_fd_ = sfd;
+
+    channel_sig_.reset(new Channel(this, sig_fd_));
+    channel_sig_->set_callback_read(std::bind(&EventLoop::HandleSignal, this));
+    channel_sig_->ReadEnable();
+
+    return;
+}
+//---------------------------------------------------------------------------
 void EventLoop::AssertInLoopThread()
 {
     if(!IsInLoopThread())
-    {
         AbortNotInLoopThread();
-    }
 
     return;
 }
 //---------------------------------------------------------------------------
 bool EventLoop::IsInLoopThread()
 {
-    return (tid_ == base::CurrentThread::Tid());
+    return (tid_ == base::CurrentThread::tid());
+
 }
 //---------------------------------------------------------------------------
-void EventLoop::RunInLoop(const Task& task)
+void EventLoop::RunInLoop(Task&& task)
 {
     //为了线程安全设计,所有的回调函数子都会在Eventloop中顺序处理,不会有线程安全问题
     //
@@ -132,11 +207,11 @@ void EventLoop::RunInLoop(const Task& task)
     }
 
     //添加到队列中排队处理
-    QueueInLoop(task);
+    QueueInLoop(std::move(task));
     return;
 }
 //---------------------------------------------------------------------------
-void EventLoop::QueueInLoop(const Task& task)
+void EventLoop::QueueInLoop(Task&& task)
 {
     {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -144,10 +219,11 @@ void EventLoop::QueueInLoop(const Task& task)
     }
 
     //如果不是在EventLoop线程内调用
-    //或者EventLoop线程在不在处理事件中,则需要唤醒loop(fix:好像还是有点问题,因为在处理过程中有is_pending_task变量值有窗口)
-    if((!IsInLoopThread()) || (!is_pending_task_))
+    //或者EventLoop线程在不在处理事件中,则需要唤醒loop(fix:好像还是有点问题,因为在处理过程中is_pending_task变量值有窗口)
+    if((!IsInLoopThread()) || need_wakup_)
     {
         Wakeup();
+        need_wakup_ = false;
     }
 
     return;
@@ -174,9 +250,14 @@ void EventLoop::RunCancel(TimerTask::Ptr timer_task)
     timer_task_queue_->TimerTaskCancel(timer_task);
 }
 //---------------------------------------------------------------------------
+EventLoop* EventLoop::GetEventLoopOfCurrentThread()
+{
+    return t_loop_in_current_thread;
+}
+//---------------------------------------------------------------------------
 void EventLoop::ChannelAdd(Channel* channel)
 {
-    assert(this == channel->owner_loop());
+    assert(((void)"no in owner event loop", this == channel->owner_loop()));
     AssertInLoopThread();
 
     poller_->ChannelAdd(channel);
@@ -185,7 +266,7 @@ void EventLoop::ChannelAdd(Channel* channel)
 //---------------------------------------------------------------------------
 void EventLoop::ChannelMod(Channel* channel)
 {
-    assert(this == channel->owner_loop());
+    assert(((void)"no in owner event loop", this == channel->owner_loop()));
     AssertInLoopThread();
 
     poller_->ChannelMod(channel);
@@ -194,7 +275,7 @@ void EventLoop::ChannelMod(Channel* channel)
 //---------------------------------------------------------------------------
 void EventLoop::ChannelDel(Channel* channel)
 {
-    assert(this == channel->owner_loop());
+    assert(((void)"no in owner event loop", this == channel->owner_loop()));
     AssertInLoopThread();
 
     poller_->ChannelDel(channel);
@@ -203,8 +284,8 @@ void EventLoop::ChannelDel(Channel* channel)
 //---------------------------------------------------------------------------
 void EventLoop::AbortNotInLoopThread()
 {
-    SystemLog_Debug("%p was create in tid:%u, tname:%s, but current tid:%u, tname:%s",
-                    this, tid_, tname_, base::CurrentThread::Tid(), base::CurrentThread::ThreadName());
+    SystemLog_Debug("%p was create in tid:%u, tname:%s, but current tid:%d, tname:%s",
+                    this, tid_, tname_, base::CurrentThread::tid(), base::CurrentThread::tname());
 
     assert(0);
     return;
@@ -212,9 +293,8 @@ void EventLoop::AbortNotInLoopThread()
 //---------------------------------------------------------------------------
 void EventLoop::Wakeup()
 {
-    uint64_t    dat = 1;
-    ssize_t     wlen= ::write(wakeupfd_, &dat, sizeof(dat));
-    if(wlen != sizeof(dat))
+    eventfd_t dat = 1;
+    if(-1 == eventfd_write(wakeupfd_, dat))
     {
         SystemLog_Error("write failed");
         assert(0);
@@ -223,11 +303,10 @@ void EventLoop::Wakeup()
     return;
 }
 //---------------------------------------------------------------------------
-void EventLoop::HandleRead()
+void EventLoop::HandleWakeup()
 {
-    uint64_t    dat = 1;
-    ssize_t     rlen= ::read(wakeupfd_, &dat, sizeof(dat));
-    if(sizeof(dat) != rlen)
+    eventfd_t dat;
+    if(-1 == eventfd_read(wakeupfd_, &dat))
     {
         SystemLog_Error("read failed");
         assert(0);
@@ -236,10 +315,65 @@ void EventLoop::HandleRead()
     return;
 }
 //---------------------------------------------------------------------------
+void EventLoop::HandleSignal()
+{
+    struct signalfd_siginfo siginfo;
+    ssize_t len     = sizeof(siginfo);
+    ssize_t offset  = 0;
+    while(len)
+    {
+        ssize_t rlen = read(sig_fd_, reinterpret_cast<char*>(&siginfo)+offset, len);
+        if(-1 == rlen)
+        {
+            if(EINTR==errno || (EAGAIN==errno))
+                continue;
+
+            SystemLog_Error("read failed, errno:%d, msg:%s", errno, strerror(errno));
+            return;
+        }
+
+        len     -= rlen;
+        offset  += rlen;
+    }
+
+    switch(siginfo.ssi_signo)
+    {
+        case SIGINT:
+            if(sig_int_callback_)
+                sig_int_callback_();
+
+            break;
+
+        case SIGQUIT:
+            if(sig_quit_callback_)
+                sig_quit_callback_();
+
+            break;
+
+        case SIGUSR1:
+            if(sig_usr1_callback_)
+                sig_usr1_callback_();
+
+            break;
+
+        case SIGUSR2:
+            if(sig_usr2_callback_)
+                sig_usr2_callback_();
+
+            break;
+
+        default:
+            SystemLog_Error("recv error signal, signo:%d", siginfo.ssi_signo);
+            assert(0);
+    }
+
+    return;
+}
+//---------------------------------------------------------------------------
 void EventLoop::DoPendingTasks()
 {
     std::list<Task> task;
-    is_pending_task_ = true;
+    need_wakup_ = true;
 
     //交换内容,避免处理的时候长时间锁住task_list_
     {
@@ -247,13 +381,23 @@ void EventLoop::DoPendingTasks()
     task.swap(task_list_);
     }
 
-    for(auto iter=task.begin(); task.end()!=iter; ++iter)
+    for(auto iter : task)
     {
-        (*iter)();
+        iter();
     }
 
-    is_pending_task_ = false;
     return;
+}
+//---------------------------------------------------------------------------
+void EventLoop::PrintActiveChannels() const
+{
+    for(auto iter : active_channel_list_)
+    {
+        if(nullptr == iter)
+            break;
+
+        std::cout << "{" << iter->REventsToString() << "}" << std::endl;
+    }
 }
 //---------------------------------------------------------------------------
 }//namespace net

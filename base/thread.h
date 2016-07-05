@@ -50,7 +50,7 @@ public:
     typedef std::function<void (void)> ThreadFunc;
 
     Thread(ThreadFunc&& thread_func, const std::string& thread_name=std::string());
-    //Thread(Thread&& other);
+    Thread(Thread&& other);
     Thread(const Thread&) =delete;
     Thread& operator=(const Thread&) =delete;
     Thread& operator=(Thread&&) =delete;

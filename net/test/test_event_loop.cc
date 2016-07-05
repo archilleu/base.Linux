@@ -17,23 +17,52 @@ void ThreadEventLoop()
     g_loop->Loop();
     g_loop->Quit();
 }
+//---------------------------------------------------------------------------
+void ThreadEventLoop2()
+{
+    EventLoop loop;
+    loop.SetAsSignalHandleEventLoop();
+    loop.Loop();
+}
+//---------------------------------------------------------------------------
 void ThreadEventLoop1()
 {
-    fprintf(stderr, "event loop:%u", base::CurrentThread::Tid());
+    fprintf(stderr, "event loop:%u", base::CurrentThread::tid());
 
     EventLoop loop;
+    g_loop = &loop;
     loop.Loop();
-    sleep(1);
     loop.Quit();
 }
 //---------------------------------------------------------------------------
 bool TestEventLoop::DoTest()
 {
-//    if(false == Test_Normal())  return false;//需要额外线程打断该测试
-//    if(false == Test_Timefd())      return false;
+    if(false == Test_Normal())      return false;//需要额外线程打断该测试
+    if(false == Test_Timefd())      return false;
     if(false == Test_TimerTask())   return false;
 
     return true;
+}
+//---------------------------------------------------------------------------
+void SigIntCallback()
+{
+    std::cout << "recv int sig" << std::endl;
+}
+//---------------------------------------------------------------------------
+void SigQuitCallback()
+{
+    std::cout << "recv quit sig" << std::endl;
+    g_loop->Quit();
+}
+//---------------------------------------------------------------------------
+void SigUsr1Callback()
+{
+    std::cout << "recv usr1 sig" << std::endl;
+}
+//---------------------------------------------------------------------------
+void SigUsr2Callback()
+{
+    std::cout << "recv usr2 sig" << std::endl;
 }
 //---------------------------------------------------------------------------
 bool TestEventLoop::Test_Normal()
@@ -47,15 +76,30 @@ bool TestEventLoop::Test_Normal()
     //t.Join();
     }
 
+    //非法的设置处理信号线程,成功dump
+    {
+    //base::Thread t(ThreadEventLoop2);
+    //t.Start();
+    //t.Join();
+    }
+
     //合法的
     {
-    fprintf(stderr, "====>event loop:%u\n", base::CurrentThread::Tid());
+    fprintf(stderr, "====>event loop:%u\n", base::CurrentThread::tid());
 
     EventLoop loop;
+    loop.set_sig_int_callback(SigIntCallback);
+    loop.set_sig_quit_callback(SigQuitCallback);
+    loop.set_sig_usr1_callback(SigUsr1Callback);
+    loop.set_sig_usr2_callback(SigUsr2Callback);
+    loop.SetAsSignalHandleEventLoop();
+    g_loop = &loop;
     loop.Loop();
-    loop.Quit();
+
     base::Thread t(ThreadEventLoop1);
     t.Start();
+    sleep(2);
+    g_loop->Quit();
     t.Join();
     }
 

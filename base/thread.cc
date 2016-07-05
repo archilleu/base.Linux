@@ -69,17 +69,17 @@ Thread::Thread(ThreadFunc&& thread_func, const std::string& thread_name)
     return;
 }
 //---------------------------------------------------------------------------
-//Thread::Thread(Thread&& other)
-//:   tid_(0),
-//    name_(std::move(other.name_)),
-//    joined_(false),
-//    started_(false),
-//    thread_(std::move(other.thread_)),
-//    thread_func_(std::move(other.thread_func_))
-//{
-//    assert(thread_func_);
-//    return;
-//}
+Thread::Thread(Thread&& other)
+:   tid_(0),
+    name_(std::move(other.name_)),
+    joined_(false),
+    started_(false),
+    thread_(std::move(other.thread_)),
+    thread_func_(std::move(other.thread_func_))
+{
+    assert(thread_func_);
+    return;
+}
 //---------------------------------------------------------------------------
 Thread::~Thread()
 {
