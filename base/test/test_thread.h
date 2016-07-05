@@ -29,12 +29,14 @@ private:
     bool Test_ParamNone();
     bool Test_Param1();
     bool Test_ParamClass();
+    bool Test_100();
 
 private:
     void Thread_Func1();
     
     uint64_t count_;
     std::mutex mutex_;
+    std::atomic<int> acount_;
 
     Thread thread1_;
     Thread thread2_;

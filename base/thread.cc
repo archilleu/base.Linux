@@ -69,16 +69,17 @@ Thread::Thread(ThreadFunc&& thread_func, const std::string& thread_name)
     return;
 }
 //---------------------------------------------------------------------------
-Thread::Thread(Thread&& other)
-:   tid_(0),
-    name_(std::move(other.name_)),
-    joined_(false),
-    started_(false),
-    thread_(std::move(other.thread_)),
-    thread_func_(std::move(other.thread_func_))
-{
-    return;
-}
+//Thread::Thread(Thread&& other)
+//:   tid_(0),
+//    name_(std::move(other.name_)),
+//    joined_(false),
+//    started_(false),
+//    thread_(std::move(other.thread_)),
+//    thread_func_(std::move(other.thread_func_))
+//{
+//    assert(thread_func_);
+//    return;
+//}
 //---------------------------------------------------------------------------
 Thread::~Thread()
 {
@@ -123,8 +124,6 @@ void Thread::OnThreadFunc()
     tid_                        = CurrentThread::tid();
     CurrentThread::t_thread_name= name_.c_str();
 
-    //if(thread_func_)
-    {
     try
     {
         thread_func_();
@@ -135,14 +134,13 @@ void Thread::OnThreadFunc()
         std::cout << "thread catch exception:"<< e.what() << std::endl;
         std::cout << "--------------------------->" << std::endl;
     }
-    }
 
     return;
 }
 //---------------------------------------------------------------------------
 void Thread::SetThreadName()
 {
-    int num = ++thread_num_;
+    int num = thread_num_++;
 
     char buf[32];
     snprintf(buf, sizeof(buf), "(no:%d)", num);

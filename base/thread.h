@@ -30,7 +30,7 @@ namespace CurrentThread
         return t_cache_tid_str;
     }
 
-    inline const char* thread_name()
+    inline const char* tname()
     {
         return t_thread_name;
     }
@@ -40,13 +40,17 @@ namespace CurrentThread
 }//namespace CurrentThread
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
+//如果不join直接退出，会有以下风险:
+//当Thread是一个很快消失的对象{Threadt(fun);}类似如此作用域的类,
+//类析构的时候会detach线程,thread内部变量tname_内存可能会被下一个thread重用，
+//CurrentThread::tname线程局部变量指向上一个地址，导致可能的错误，所以最好用join保证或者适当延长作用域
 class Thread
 {
 public:
     typedef std::function<void (void)> ThreadFunc;
 
     Thread(ThreadFunc&& thread_func, const std::string& thread_name=std::string());
-    Thread(Thread&& other);
+    //Thread(Thread&& other);
     Thread(const Thread&) =delete;
     Thread& operator=(const Thread&) =delete;
     Thread& operator=(Thread&&) =delete;

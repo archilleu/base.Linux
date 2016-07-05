@@ -9,6 +9,9 @@ namespace test
 //---------------------------------------------------------------------------
 void ThreadFunc_None()
 {
+    std::cout << "tid:" << CurrentThread::tid() << std::endl;
+    std::cout << "tid str:" << CurrentThread::tid_str() << std::endl;
+    std::cout << "thread name::" << CurrentThread::tname() << std::endl;
 }
 //---------------------------------------------------------------------------
 void Thread_Func_ParanNone()
@@ -33,6 +36,7 @@ bool TestThread::TestThread::DoTest()
     if(false == Test_ParamNone())   return false;
     if(false == Test_Param1())      return false;
     if(false == Test_ParamClass())  return false;
+    if(false == Test_100())         return false;
 
     return true;
 }
@@ -42,8 +46,8 @@ bool TestThread::Test_None()
     Thread t1(ThreadFunc_None);
     MY_ASSERT(t1.Start());
 
-    std::cout << t1.name() << std::endl;
-    std::cout << t1.tid() << std::endl;;
+    std::cout << "fname:" << t1.name() << std::endl;
+    std::cout << "fid:" << t1.tid() << std::endl;;
 
     t1.Join();
     return true;
@@ -51,20 +55,13 @@ bool TestThread::Test_None()
 //---------------------------------------------------------------------------
 bool TestThread::Test_ParamNone()
 {
-    {
-    Thread t(ThreadFunc_None);
-    t.Start();
-    }
-
-    {
-    Thread t(ThreadFunc_None);
-    t.Start();
-    t.Join();
-    }
-
-    Thread t(ThreadFunc_None);
-    MY_ASSERT(t.Start());
-    t.Join();
+    Thread t1(ThreadFunc_None);
+    Thread t2(ThreadFunc_None);
+    Thread t3(ThreadFunc_None);
+    t1.Start();
+    t2.Start();
+    MY_ASSERT(t3.Start());
+    t3.Join();
 
     return true;
 }
@@ -91,11 +88,24 @@ bool TestThread::Test_ParamClass()
     MY_ASSERT(thread1_.Start());
     MY_ASSERT(thread2_.Start());
 
+    fprintf(stderr, "test log time, please wait");
     thread1_.Join();
     thread2_.Join();
 
-    fprintf(stderr, "test log time, please wait");
     MY_ASSERT(UNIT_GB == count_);
+    MY_ASSERT(UNIT_GB == acount_);
+    return true;
+}
+//---------------------------------------------------------------------------
+bool TestThread::Test_100()
+{
+    for(int i=0; i<100; i++)
+    {
+        Thread t(ThreadFunc_None);
+        t.Start();
+        t.Join();
+    }
+
     return true;
 }
 //---------------------------------------------------------------------------
@@ -103,6 +113,7 @@ void TestThread::Thread_Func1()
 {
     for(uint64_t i=0; i<UNIT_GB/2; i++)
     {
+        acount_++;
         std::lock_guard<std::mutex> lock(mutex_);
         count_++;
     }
