@@ -17,25 +17,64 @@ namespace
 const int           kPollTimeS              = 5;
 __thread EventLoop* t_loop_in_current_thread= 0;
 //---------------------------------------------------------------------------
-class HandleSignal 
+void InitSignal()
+{
+    //信号屏蔽需要在其他线程创建之前初始化,这样其他线程可以继承该屏蔽字,
+    //因为Log里面带有线程,所以log要后初始化
+ 
+    //block signal
+    sigset_t signal_mask;
+    sigemptyset(&signal_mask);
+    sigaddset(&signal_mask, SIGPIPE);
+    sigaddset(&signal_mask, SIGINT);
+    sigaddset(&signal_mask, SIGQUIT);
+    sigaddset(&signal_mask, SIGUSR1);
+    sigaddset(&signal_mask, SIGUSR2);
+
+    if(-1 == pthread_sigmask(SIG_BLOCK, &signal_mask, NULL))
+    {
+        SystemLog_Error("BOLCK SIGPIPE failed");
+        abort();
+    }
+
+    return;
+}
+//---------------------------------------------------------------------------
+void InitLog()
+{
+    //init log
+    MyNetLog = new NetLog();
+    if(false == MyNetLog->Initialize("net io frame", "/tmp", "network_log", base::UNIT_MB))
+    {
+        SystemLog_Error("log initialze failed");
+        abort();
+    }
+}
+//---------------------------------------------------------------------------
+void UninitLog()
+{
+    if(0 != MyNetLog)
+    {
+        MyNetLog->Uninitialize();
+        delete MyNetLog;
+        MyNetLog = 0;
+    }
+
+    return;
+}
+//---------------------------------------------------------------------------
+class GlobalInit 
 {
 public:
-    HandleSignal()
+    GlobalInit()
     {
-        //block sigpipe
-        sigset_t signal_mask;
-        sigemptyset(&signal_mask);
-        sigaddset(&signal_mask, SIGPIPE);
-        sigaddset(&signal_mask, SIGINT);
-        sigaddset(&signal_mask, SIGQUIT);
-        sigaddset(&signal_mask, SIGUSR1);
-        sigaddset(&signal_mask, SIGUSR2);
-        if(-1 == pthread_sigmask(SIG_BLOCK, &signal_mask, NULL))
-        {
-            SystemLog_Error("BOLCK SIGPIPE failed");
-            abort();
-            return;
-        }
+        InitSignal();
+        InitLog();
+    }
+
+    ~GlobalInit()
+    {
+        UninitLog();
     }
 }g_handle_signal;
 //---------------------------------------------------------------------------
@@ -89,6 +128,13 @@ EventLoop::~EventLoop()
     channel_wakeup_->DisableAll();
     channel_wakeup_->Remove();
     ::close(wakeupfd_);
+
+    if(channel_sig_)
+    {
+        channel_sig_->DisableAll();
+        channel_sig_->Remove();
+        ::close(sig_fd_);
+    }
 
     t_loop_in_current_thread = 0;
     return;

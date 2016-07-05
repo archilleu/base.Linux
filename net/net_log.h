@@ -5,10 +5,10 @@
 #include "../base/share_inc.h"
 #include "../base/log_file.h"
 //---------------------------------------------------------------------------
-#define SystemLog_Debug(format, ...)    (MyNetLog.LogWrite(base::LogFile::LOGLEVEL_DEBUG, "tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
-#define SystemLog_Info(format, ...)     (MyNetLog.LogWrite(base::LogFile::LOGLEVEL_INFO,"tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
-#define SystemLog_Warning(format, ...)  (MyNetLog.LogWrite(base::LogFile::LOGLEVEL_WARNING,"tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
-#define SystemLog_Error(format, ...)    (MyNetLog.LogWrite(base::LogFile::LOGLEVEL_ERROR, "tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
+#define SystemLog_Debug(format, ...)    (MyNetLog->LogWrite(base::LogFile::LOGLEVEL_DEBUG, "tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
+#define SystemLog_Info(format, ...)     (MyNetLog->LogWrite(base::LogFile::LOGLEVEL_INFO,"tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
+#define SystemLog_Warning(format, ...)  (MyNetLog->LogWrite(base::LogFile::LOGLEVEL_WARNING,"tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
+#define SystemLog_Error(format, ...)    (MyNetLog->LogWrite(base::LogFile::LOGLEVEL_ERROR, "tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
 
 namespace net
 {
@@ -28,7 +28,7 @@ private:
     base::LogFile log_file_;    
 };
 //---------------------------------------------------------------------------
-extern NetLog MyNetLog;
+extern NetLog* MyNetLog;
 //---------------------------------------------------------------------------
 }//namespace net
 //---------------------------------------------------------------------------
