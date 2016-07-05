@@ -26,14 +26,6 @@ public:
         sigset_t signal_mask;
         sigemptyset(&signal_mask);
         sigaddset(&signal_mask, SIGPIPE);
-        if(-1 == pthread_sigmask(SIG_BLOCK, &signal_mask, NULL))
-        {
-            SystemLog_Error("BOLCK SIGPIPE failed");
-            abort();
-            return;
-        }
-
-        sigemptyset(&signal_mask);
         sigaddset(&signal_mask, SIGINT);
         sigaddset(&signal_mask, SIGQUIT);
         sigaddset(&signal_mask, SIGUSR1);
