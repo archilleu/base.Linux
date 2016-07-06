@@ -23,6 +23,8 @@ EPoller::EPoller(EventLoop* owner)
 //---------------------------------------------------------------------------
 EPoller::~EPoller()
 {
+    assert(0 == channel_num_);
+
     close(efd_);
     return;
 }

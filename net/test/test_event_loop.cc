@@ -84,16 +84,38 @@ bool TestEventLoop::Test_Normal()
 
     //合法的
     {
-    //fprintf(stderr, "====>event loop:%u\n", base::CurrentThread::tid());
+    fprintf(stderr, "====>event loop:%u\n", base::CurrentThread::tid());
 
-    //EventLoop loop;
-    //loop.set_sig_int_callback(SigIntCallback);
-    //loop.set_sig_quit_callback(SigQuitCallback);
-    //loop.set_sig_usr1_callback(SigUsr1Callback);
-    //loop.set_sig_usr2_callback(SigUsr2Callback);
-    //loop.SetAsSignalHandleEventLoop();
-    //g_loop = &loop;
-    //loop.Loop();
+    EventLoop loop;
+    loop.set_sig_int_callback(SigIntCallback);
+    loop.set_sig_quit_callback(SigQuitCallback);
+    loop.set_sig_usr1_callback(SigUsr1Callback);
+    loop.set_sig_usr2_callback(SigUsr2Callback);
+    loop.SetAsSignalHandleEventLoop();
+
+    //添加多个Channel
+    const int size = 128;
+    int     fds[size];
+    Channel* cl[size];
+    for(int i=0; i<size; i++)
+    {
+        fds[i] = ::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC|TFD_NONBLOCK);
+        if(0 > fds[i])
+            assert(0);
+
+        cl[i] = new Channel(&loop, fds[i]);
+        cl[i]->ReadEnable();
+    }
+    g_loop = &loop;
+    loop.Loop();
+    for(int i=0; i<size; i++)
+    {
+        std::cout << "fd:" << cl[i]->fd() << std::endl;
+        cl[i]->ReadDisable();
+        cl[i]->Remove();
+        delete cl[i];
+        ::close(fds[i]);
+    }
 
     base::Thread t(ThreadEventLoop1);
     t.Start();
@@ -127,6 +149,7 @@ bool TestEventLoop::Test_Timefd()
     ::timerfd_settime(timefd, 0, &howlog, NULL);
 
     loop.Loop();
+    channel.Remove();
     ::close(timefd);
 
     return true;
