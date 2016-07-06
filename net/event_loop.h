@@ -3,7 +3,6 @@
 #define BASE_LINUX_NET_EVENT_LOOP_H_
 //---------------------------------------------------------------------------
 #include "../base/share_inc.h"
-#include "poller.h"
 #include "callback.h"
 #include "timer_task.h"
 #include <atomic>
@@ -54,9 +53,9 @@ public:
 
 public:
     //改变监控的Channel状态,一般由connection通过Channel发起改变请求,Channel再通过EventLoop向poller请求改变,只由内部类调用
-    void ChannelAdd(Channel* channel);
-    void ChannelMod(Channel* channel);
-    void ChannelDel(Channel* channel);
+    void ChannelUpdate(Channel* channel);
+    void ChannelRemove(Channel* channel);
+    bool HasChannel(Channel* channel);
 
 private:
     void AbortNotInLoopThread();
@@ -87,7 +86,7 @@ private:
     std::mutex          mutex_;
     std::atomic<bool>   need_wakup_;
 
-    Poller::ChannelList             active_channel_list_;
+    std::vector<Channel*>           active_channel_list_;
     std::shared_ptr<Poller>         poller_;
     std::shared_ptr<TimerTaskQueue> timer_task_queue_;
 

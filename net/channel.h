@@ -16,12 +16,6 @@ public:
     typedef std::function<void (void)>              EventCallback;
     typedef std::function<void (base::Timestamp)>   EventCallbackRead;
     
-    enum
-    {
-        CHANNEL_None = 1,    //Channle还未被监控
-        CHANNEL_Added        //Channel已经在监控
-    };
-
 public:
     Channel(EventLoop* loop, int fd);
     ~Channel();
@@ -30,10 +24,10 @@ public:
     void Tie(const std::shared_ptr<void>& owner);
 
     //设置回调函数
-    void set_callback_write (const EventCallback&& callback)        { callback_write_ = std::move(callback); }
-    void set_callback_close (const EventCallback&& callback)        { callback_close_ = std::move(callback); }
-    void set_callback_error (const EventCallback&& callback)        { callback_error_ = std::move(callback); }
-    void set_callback_read  (const EventCallbackRead&& callback)    { callback_read_ = std::move(callback); }
+    void set_callback_write (EventCallback&& callback)        { callback_write_ = std::move(callback); }
+    void set_callback_close (EventCallback&& callback)        { callback_close_ = std::move(callback); }
+    void set_callback_error (EventCallback&& callback)        { callback_error_ = std::move(callback); }
+    void set_callback_read  (EventCallbackRead&& callback)    { callback_read_ = std::move(callback); }
 
     //更改事件
     void ReadEnable()   { events_ |= kEventRead; UpdateEvent(); }
@@ -52,16 +46,16 @@ public:
 
     //是否关注写事件,用于buffer的写(如果写缓存还有,则该事件一直会被关注
     bool IsWriting()    { return events_ & kEventWrite; }
-    bool IsNoneEvent()  { return events_ == kEventNormal; }
+    bool IsNoneEvent()  { return events_ == kNone; }
 
     int     events()                    { return events_; }
     void    set_revents(int revents)    { revents_ = revents; }
     
     EventLoop* owner_loop() { return owner_loop_; }
 
-    int     fd()                    { return fd_; }
-    int     status()                { return status_; }
-    void    set_status(int statu)   { status_ = statu; }
+    int     fd() const          { return fd_; }
+    int     index() const       { return index_; }
+    void    set_index(int idx)  { index_= idx; }
 
     //调试接口
     std::string REventsToString();
@@ -72,14 +66,14 @@ private:
 
     void UpdateEvent();
 
-    std::string _EventsToString(int fd, int ev);
+    std::string _EventsToString(int ev);
 
 private:
     EventLoop*  owner_loop_;//事件循环对象
     int         fd_;        //Channel关联的描述符
     int         events_;    //关注的事件
     int         revents_;   //触发的事件
-    int         status_;    //Channel的状态
+    int         index_;     //对应于在poller中channels_的idx
     bool        handling_;  //是否正在处理事件中,如果是,则该Channel不能删除
 
     //为防止拥有该Channel的对象析构导致自己在处理事件过程中提前析构,需要增加对Channel的保护
@@ -93,7 +87,6 @@ private:
     EventCallbackRead   callback_read_;     //读事件回调
 
     static const int kNone;         //无事件
-    static const int kEventNormal;  //普通事件
     static const int kEventRead;    //读事件
     static const int kEventWrite;   //写事件
 

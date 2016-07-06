@@ -8,17 +8,15 @@
 namespace net
 {
 const int Channel::kNone        = 0;  
-const int Channel::kEventNormal = EPOLLRDHUP | EPOLLHUP | EPOLLERR;
 const int Channel::kEventRead   = EPOLLIN | EPOLLPRI;
 const int Channel::kEventWrite  = EPOLLOUT;
 //---------------------------------------------------------------------------
-Channel::Channel(EventLoop* loop, int vfd)
+Channel::Channel(EventLoop* loop, int _fd)
 :   owner_loop_(loop),
-    fd_(vfd),
-    //events_(kEventNormal),//坑大爹了,在TCPServer通知TCPConnection对应成功建立连接前,loop都不能接收任何事件
-    events_(kNone),
+    fd_(_fd),
+    events_(kNone),//在TCPServer通知TCPConnection对应成功建立连接前,loop都不能接收任何事件
     revents_(0),
-    status_(CHANNEL_None),
+    index_(0),
     handling_(false),
     tied_(false)
 {
@@ -66,18 +64,18 @@ void Channel::HandleEvent(base::Timestamp rcv_time)
 //---------------------------------------------------------------------------
 void Channel::Remove()
 {
-    owner_loop_->ChannelDel(this);
+    owner_loop_->ChannelRemove(this);
     return;
 }
 //---------------------------------------------------------------------------
 std::string Channel::REventsToString()
 {
-    return _EventsToString(fd_, revents_);
+    return _EventsToString(revents_);
 }
 //---------------------------------------------------------------------------
 std::string Channel::EventsToString()
 {
-    return _EventsToString(fd_, events_);
+    return _EventsToString(events_);
 }
 //---------------------------------------------------------------------------
 void Channel::_HandleEvent(base::Timestamp rcv_time)
@@ -112,7 +110,7 @@ void Channel::_HandleEvent(base::Timestamp rcv_time)
     }
 
     //可读
-    if((EPOLLIN|EPOLLPRI|EPOLLHUP) & revents_)
+    if((EPOLLIN|EPOLLPRI) & revents_)
     {
         if(callback_read_)
         {
@@ -138,23 +136,14 @@ void Channel::_HandleEvent(base::Timestamp rcv_time)
 //---------------------------------------------------------------------------
 void Channel::UpdateEvent()
 {
-    //如果该channel是新的,则添加到epoll监控事件,否则修改监控事件
-    if(Channel::CHANNEL_None == status_)
-    {
-        owner_loop_->ChannelAdd(this);
-        return;
-    }
-    
-    assert(CHANNEL_Added == status_);
-    owner_loop_->ChannelMod(this);
-
+    owner_loop_->ChannelUpdate(this);
     return;
 }
 //---------------------------------------------------------------------------
-std::string Channel::_EventsToString(int vfd, int ev)
+std::string Channel::_EventsToString(int ev)
 {
     std::ostringstream oss;
-    oss << vfd << ":<";
+    oss << "<";
     if(ev & EPOLLIN)    oss << "IN ";
     if(ev & EPOLLPRI)   oss << "PRI ";
     if(ev & EPOLLOUT)   oss << "OUT ";

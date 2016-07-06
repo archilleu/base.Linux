@@ -1,11 +1,11 @@
+
 //---------------------------------------------------------------------------
 #ifndef BASE_LINUX_NET_POLLER_H_
 #define BASE_LINUX_NET_POLLER_H_
 //---------------------------------------------------------------------------
 #include "../base/share_inc.h"
 #include "../base/timestamp.h"
-//---------------------------------------------------------------------------
-struct epoll_event;
+#include "event_loop.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -17,25 +17,38 @@ class Poller
 public:
     typedef std::vector<Channel*> ChannelList;
 
-    Poller();
-    ~Poller();
+    Poller(EventLoop* owner)
+    :   channel_num_(0),
+        owner_(owner)
+    {
+        channels_.resize(base::UNIT_MB);
+    }
+    virtual ~Poller()
+    {
+    }
 
-    base::Timestamp Poll(int timeout, ChannelList* active_channel_list);    //timeout 以秒为单位
+    virtual base::Timestamp Poll(int timeoutS, ChannelList* active_channel_list) =0;
 
-    void ChannelAdd(Channel* channel);
-    void ChannelMod(Channel* channel);
-    void ChannelDel(Channel* channel);
+    virtual void ChannelUpdate(Channel* channel) =0;
+    virtual void ChannelRemove(Channel* channel) =0;
+
+    bool HasChannel(Channel* channel);
+
+    void AssertInLoopThread()   { owner_->AssertInLoopThread(); }
+
+public:
+    static Poller* NewDefaultPoller(EventLoop* loop);
+
+protected:
+    void DumpChannel();
+
+protected:
+    //在数组中记录所有的Channel，数组下标为Channel fd
+    ChannelList channels_;
+    size_t      channel_num_;
 
 private:
-    void FillActiveChannel(int active_nums, ChannelList* active_channel_list);
-
-    void Update(int op, Channel* channel);
-
-private:
-    int         efd_;       //epoll fd
-    uint64_t    fd_nums_;   //fd 个数
-
-    std::vector<epoll_event> event_list_;   //监听的event fd数组
+    EventLoop* owner_;
 };
 
 }//namespace net

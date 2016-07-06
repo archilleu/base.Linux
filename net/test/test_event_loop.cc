@@ -32,7 +32,6 @@ void ThreadEventLoop1()
     EventLoop loop;
     g_loop = &loop;
     loop.Loop();
-    loop.Quit();
 }
 //---------------------------------------------------------------------------
 bool TestEventLoop::DoTest()
@@ -85,16 +84,16 @@ bool TestEventLoop::Test_Normal()
 
     //合法的
     {
-    fprintf(stderr, "====>event loop:%u\n", base::CurrentThread::tid());
+    //fprintf(stderr, "====>event loop:%u\n", base::CurrentThread::tid());
 
-    EventLoop loop;
-    loop.set_sig_int_callback(SigIntCallback);
-    loop.set_sig_quit_callback(SigQuitCallback);
-    loop.set_sig_usr1_callback(SigUsr1Callback);
-    loop.set_sig_usr2_callback(SigUsr2Callback);
-    loop.SetAsSignalHandleEventLoop();
-    g_loop = &loop;
-    loop.Loop();
+    //EventLoop loop;
+    //loop.set_sig_int_callback(SigIntCallback);
+    //loop.set_sig_quit_callback(SigQuitCallback);
+    //loop.set_sig_usr1_callback(SigUsr1Callback);
+    //loop.set_sig_usr2_callback(SigUsr2Callback);
+    //loop.SetAsSignalHandleEventLoop();
+    //g_loop = &loop;
+    //loop.Loop();
 
     base::Thread t(ThreadEventLoop1);
     t.Start();

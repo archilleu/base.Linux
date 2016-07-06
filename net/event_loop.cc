@@ -3,8 +3,9 @@
 #include "net_log.h"
 #include "channel.h"
 #include "timer_task_queue.h"
-#include <poll.h>
+#include "poller.h"
 #include <sys/eventfd.h>
+#include <poll.h>
 #include <signal.h>
 #include <sys/signalfd.h>
 //---------------------------------------------------------------------------
@@ -99,7 +100,7 @@ EventLoop::EventLoop()
     wakeupfd_(CreateEventFd()),
     channel_wakeup_(new Channel(this, wakeupfd_)),
     need_wakup_(true),
-    poller_(new Poller()),
+    poller_(Poller::NewDefaultPoller(this)),
     timer_task_queue_(new TimerTaskQueue(this)),
     sig_fd_(0),
     d_event_handling_(false),
@@ -114,6 +115,8 @@ EventLoop::EventLoop()
         return;
     }
     
+    active_channel_list_.reserve(128);
+
     channel_wakeup_->set_callback_read(std::bind(&EventLoop::HandleWakeup, this));
     channel_wakeup_->ReadEnable();
 
@@ -162,10 +165,6 @@ void EventLoop::Loop()
 
             for(auto iter : active_channel_list_)
             {
-                //0指针结尾来标识活动Channel结束，省去额外的有效下标变量
-                if(nullptr == iter)
-                    break;
-
                 d_current_active_channel_ = iter;
                 iter->HandleEvent(time);
             }
@@ -293,31 +292,30 @@ EventLoop* EventLoop::GetEventLoopOfCurrentThread()
     return t_loop_in_current_thread;
 }
 //---------------------------------------------------------------------------
-void EventLoop::ChannelAdd(Channel* channel)
+void EventLoop::ChannelUpdate(Channel* channel)
 {
-    assert(((void)"no in owner event loop", this == channel->owner_loop()));
+    assert(this == channel->owner_loop());
     AssertInLoopThread();
 
-    poller_->ChannelAdd(channel);
+    poller_->ChannelUpdate(channel);
     return;
 }
 //---------------------------------------------------------------------------
-void EventLoop::ChannelMod(Channel* channel)
+void EventLoop::ChannelRemove(Channel* channel)
 {
-    assert(((void)"no in owner event loop", this == channel->owner_loop()));
+    assert(this == channel->owner_loop());
     AssertInLoopThread();
 
-    poller_->ChannelMod(channel);
+    poller_->ChannelRemove(channel);
     return;
 }
 //---------------------------------------------------------------------------
-void EventLoop::ChannelDel(Channel* channel)
+bool EventLoop::HasChannel(Channel* channel)
 {
-    assert(((void)"no in owner event loop", this == channel->owner_loop()));
+    assert(this == channel->owner_loop());
     AssertInLoopThread();
 
-    poller_->ChannelDel(channel);
-    return;
+    return poller_->HasChannel(channel);
 }
 //---------------------------------------------------------------------------
 void EventLoop::AbortNotInLoopThread()
@@ -431,11 +429,10 @@ void EventLoop::PrintActiveChannels() const
 {
     for(auto iter : active_channel_list_)
     {
-        if(nullptr == iter)
-            break;
-
-        std::cout << "{" << iter->REventsToString() << "}" << std::endl;
+        std::cout << "{" << "fd:" << iter->fd() << " " << iter->REventsToString() << "}" << std::endl;
     }
+
+    return;
 }
 //---------------------------------------------------------------------------
 }//namespace net
