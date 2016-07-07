@@ -334,17 +334,10 @@ void EventLoop::AbortNotInLoopThread()
 //---------------------------------------------------------------------------
 void EventLoop::Wakeup()
 {
-   // eventfd_t dat = 1;
-   // if(-1 == eventfd_write(wakeupfd_, dat))
-   // {
-   //     SystemLog_Error("write failed");
-   //     assert(0);
-   // }
-   
-    uint64_t dat = 1;
-    if(sizeof(dat) != write(wakeupfd_, &dat, sizeof(dat)))
+    eventfd_t dat = 1;
+    if(-1 == eventfd_write(wakeupfd_, dat))
     {
-        SystemLog_Error("write failed");
+        SystemLog_Error("write failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -353,18 +346,10 @@ void EventLoop::Wakeup()
 //---------------------------------------------------------------------------
 void EventLoop::HandleWakeup()
 {
-    //eventfd_t dat;
-    //if(-1 == eventfd_read(wakeupfd_, &dat))
-    //{
-    //    SystemLog_Error("read failed");
-    //    //assert(0);
-    //}
-
-    uint64_t dat = 1;
-    ssize_t rlen = read(wakeupfd_, &dat, sizeof(dat));
-    if(sizeof(dat) !=  rlen)
+    eventfd_t dat;
+    if(-1 == eventfd_read(wakeupfd_, &dat))
     {
-        SystemLog_Error("write failed");
+        SystemLog_Error("read failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
