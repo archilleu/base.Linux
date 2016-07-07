@@ -4,17 +4,8 @@
 //---------------------------------------------------------------------------
 namespace net
 {
-
-TimerTask::TimerTask(const TimerTaskCallback& callback, base::Timestamp when, int intervalS)
-:   task_callback_(std::move(callback)),
-    expairation_(when),
-    interval_(intervalS)
-{
-}
 //---------------------------------------------------------------------------
-TimerTask::~TimerTask()
-{
-}
+std::atomic<int64_t> TimerTask::no_ = ATOMIC_VAR_INIT(0);
 //---------------------------------------------------------------------------
 void TimerTask::Restart()
 {

@@ -20,8 +20,7 @@ UDPReceiver::UDPReceiver(EventLoop* owner_loop, DatagramSocket* sock, PacketQueu
 
     if(0 > socket_->fd())
     {
-        char buffer[128];
-        SystemLog_Error("svr socket create filed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("svr socket create filed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
         return;
     }
@@ -85,8 +84,7 @@ void UDPReceiver::HandleRead(base::Timestamp)
 //---------------------------------------------------------------------------
 void UDPReceiver::HandleError()
 {
-    char buffer[128];
-    SystemLog_Error("receive failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+    SystemLog_Error("receive failed, errno:%d, msg:%s", errno, StrError(errno));
 
     channel_->DisableAll();
     channel_->Remove();

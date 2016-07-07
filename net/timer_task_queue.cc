@@ -13,9 +13,8 @@ static int CreateTimerfd()
     int timerfd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK|TFD_CLOEXEC);
     if(0 > timerfd)
     {
-        char buffer[128];
-        SystemLog_Error("timerfd create failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, 128));
-        assert(0);
+        SystemLog_Error("timerfd create failed, errno:%d, msg:%s", errno, StrError(errno));
+        abort();
     }
 
     return timerfd;
@@ -56,8 +55,7 @@ static void ResetTimerfd(int timerfd, base::Timestamp expired)
     int err_code = ::timerfd_settime(timerfd, 0, &new_val, &old_val);
     if(0 > err_code)
     {
-        char buffer[128];
-        SystemLog_Error("timerfd_settime error.errno:%d, msg:%s", errno, strerror_r(errno, buffer, 128));
+        SystemLog_Error("timerfd_settime error.errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -67,64 +65,68 @@ static void ResetTimerfd(int timerfd, base::Timestamp expired)
 TimerTaskQueue::TimerTaskQueue(EventLoop* owner_loop)
 :   owner_loop_(owner_loop)
 {
+    SystemLog_Debug("timer task queue conn");
+
     timerfd_ = CreateTimerfd();
     channel_timer_.reset(new Channel(owner_loop_, timerfd_));
 
     channel_timer_->set_callback_read(std::bind(&TimerTaskQueue::HandRead, this));
     channel_timer_->ReadEnable();
 
-    SystemLog_Debug("timer task queue conn");
     return;
 }
 //---------------------------------------------------------------------------
 TimerTaskQueue::~TimerTaskQueue()
 {
+    SystemLog_Debug("timer task queue destory");
+
     channel_timer_->DisableAll();
     channel_timer_->Remove();
 
     ::close(timerfd_);
 
-    //shared_ptr 自动清理timer
-    //...
-
-    SystemLog_Debug("timer task queue destory");
-}
-//---------------------------------------------------------------------------
-TimerTask::Ptr TimerTaskQueue::TimerTaskAdd(const TimerTask::TimerTaskCallback& callback, base::Timestamp when, int intervalS)
-{
-    TimerTask::Ptr ptr = std::make_shared<TimerTask>(callback, when, intervalS);
-    owner_loop_->RunInLoop(std::bind(&TimerTaskQueue::AddTimerInLoop, this, ptr));
-
-    return ptr;
-}
-//---------------------------------------------------------------------------
-void TimerTaskQueue::TimerTaskCancel(const TimerTask::Ptr timer_task)
-{
-    owner_loop_->RunInLoop(std::bind(&TimerTaskQueue::CancelTimerInLoop, this, timer_task));
+    for(auto iter : entry_list_)
+        delete iter.second;
 
     return;
 }
 //---------------------------------------------------------------------------
-void TimerTaskQueue::AddTimerInLoop(const TimerTask::Ptr timer_task)
+TimerTaskId TimerTaskQueue::TimerTaskAdd(TimerTask::TimerTaskCallback&& callback, base::Timestamp when, int intervalS)
+{
+    TimerTask* timer_task = new TimerTask(std::move(callback), when, intervalS);
+    owner_loop_->RunInLoop(std::bind(&TimerTaskQueue::AddTimerInLoop, this, timer_task));
+
+    return TimerTaskId(timer_task, timer_task->id());
+}
+//---------------------------------------------------------------------------
+void TimerTaskQueue::TimerTaskCancel(TimerTaskId timer_task_id)
+{
+    owner_loop_->RunInLoop(std::bind(&TimerTaskQueue::CancelTimerInLoop, this, timer_task_id));
+
+    return;
+}
+//---------------------------------------------------------------------------
+void TimerTaskQueue::AddTimerInLoop(TimerTask* timer_task)
 {
     owner_loop_->AssertInLoopThread();
 
-    bool earliest = Insert(timer_task);
+    bool earliest = Insert(const_cast<TimerTask*>(timer_task));
     if(true == earliest)
         ResetTimerfd(timerfd_, timer_task->expairation());
 
     return;
 }
 //---------------------------------------------------------------------------
-void TimerTaskQueue::CancelTimerInLoop(const TimerTask::Ptr timer_task)
+void TimerTaskQueue::CancelTimerInLoop(TimerTaskId timer_task_id)
 {
     owner_loop_->AssertInLoopThread();
 
-    auto iter = entry_list_.find(Entry(timer_task->expairation(), timer_task));
+    auto iter = entry_list_.find(Entry(timer_task_id.timer_task_->expairation(), timer_task_id.timer_task_));
     if(entry_list_.end() == iter)
         return;
 
     entry_list_.erase(iter);
+    delete iter->second;
     return;
 }
 //---------------------------------------------------------------------------
@@ -145,16 +147,16 @@ void TimerTaskQueue::HandRead()
 std::vector<TimerTaskQueue::Entry> TimerTaskQueue::GetExpired(base::Timestamp now)
 {
     std::vector<Entry>  expired;
-    Entry               sentry(now, TimerTask::Ptr());
-    auto                iter = entry_list_.lower_bound(sentry);
+    Entry               sentry(now, reinterpret_cast<TimerTask*>(UINTPTR_MAX));
+    auto                end = entry_list_.lower_bound(sentry);
 
-    std::copy(entry_list_.begin(), iter, back_inserter(expired));
-    entry_list_.erase(entry_list_.begin(), iter);
+    std::copy(entry_list_.begin(), end, back_inserter(expired));
+    entry_list_.erase(entry_list_.begin(), end);
 
     return expired;
 }
 //---------------------------------------------------------------------------
-void TimerTaskQueue::Reset(const std::vector<Entry>& expired)
+void TimerTaskQueue::Reset(std::vector<Entry>& expired)
 {
     for(auto iter : expired)
     {
@@ -163,6 +165,8 @@ void TimerTaskQueue::Reset(const std::vector<Entry>& expired)
             iter.second->Restart();
             Insert(iter.second);
         }
+        else
+            delete iter.second;
     }
 
     if(!entry_list_.empty())
@@ -174,7 +178,7 @@ void TimerTaskQueue::Reset(const std::vector<Entry>& expired)
     return;
 }
 //---------------------------------------------------------------------------
-bool TimerTaskQueue::Insert(const TimerTask::Ptr timer_task)
+bool TimerTaskQueue::Insert(TimerTask* timer_task)
 {
     bool earliest = false;
    
@@ -183,8 +187,7 @@ bool TimerTaskQueue::Insert(const TimerTask::Ptr timer_task)
     if((iter==entry_list_.end()) || (when<iter->first))
         earliest = true;
 
-    Entry entry = std::make_pair(when, timer_task);
-    if(false == entry_list_.insert(entry).second)
+    if(false == entry_list_.insert(Entry(when, timer_task)).second)
     {
         SystemLog_Error("insert timer_task error");
         assert(0);

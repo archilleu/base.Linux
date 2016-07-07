@@ -4,6 +4,7 @@
 //---------------------------------------------------------------------------
 #include "../base/share_inc.h"
 #include "../base/timestamp.h"
+#include <atomic>
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -11,26 +12,38 @@ namespace net
 class TimerTask
 {
 public:
-    typedef std::shared_ptr<TimerTask>  Ptr;
     typedef std::function<void (void)>  TimerTaskCallback;
 
-    TimerTask(const TimerTaskCallback& callback, base::Timestamp when, int intervalS=0);
-    ~TimerTask();
+    TimerTask(TimerTaskCallback&& callback, base::Timestamp when, int intervalS=0)
+    :   task_callback_(std::move(callback)),
+        expairation_(when),
+        interval_(intervalS),
+        id_(no_++)
+    {
+    }
+    ~TimerTask()
+    {
+    }
 
     void Run() { task_callback_();} //运行定时任务
 
     void Restart(); //如果任务是间隔时间运行的,则重启任务
 
-    base::Timestamp expairation()   { return expairation_; }
-    bool            interval()      { return interval_; }
+    base::Timestamp expairation() const { return expairation_; }
+    bool            interval() const    { return interval_; }
+    int64_t         id() const          { return id_; }
 
 private:
-    TimerTaskCallback   task_callback_;
-    base::Timestamp     expairation_;
-    int                 interval_;
+    const TimerTaskCallback task_callback_;
+    base::Timestamp         expairation_;
+    int                     interval_;
+    const int64_t           id_;
 
 protected:
-//    DISALLOW_COPY_AND_ASSIGN(TimerTask);
+    DISALLOW_COPY_AND_ASSIGN(TimerTask);
+
+private:
+    static std::atomic<int64_t> no_;
 };
 
 }//namespace net

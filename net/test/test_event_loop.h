@@ -24,6 +24,8 @@ public:
 
 private:
     bool Test_Normal();
+    bool Test_Signal();
+    bool Test_RunInLoop();
     bool Test_Timefd();
     bool Test_TimerTask();
 };

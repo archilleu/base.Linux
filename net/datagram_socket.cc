@@ -13,8 +13,7 @@ DatagramSocket::DatagramSocket()
     sockfd_.reset(new Socket(SocketCeate()));
     if(0 > sockfd_->fd())
     {
-        char buffer[128];
-        SystemLog_Error("socket create failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("socket create failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -29,8 +28,7 @@ DatagramSocket::DatagramSocket(short port)
     sockfd_.reset(new Socket(SocketCeate()));
     if(false == Bind(local_addr_))
     {
-        char buffer[128];
-        SystemLog_Error("socket bind failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("socket bind failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -45,8 +43,7 @@ DatagramSocket::DatagramSocket(const InetAddress& inet_addr)
     sockfd_.reset(new Socket(SocketCeate()));
     if(false == Bind(inet_addr))
     {
-        char buffer[128];
-        SystemLog_Error("socket bind failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("socket bind failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -77,8 +74,7 @@ bool DatagramSocket::Connect(const InetAddress& addr)
 {
     if(0 > ::connect(sockfd_->fd(), reinterpret_cast<const sockaddr*>(&addr.address()), sizeof(sockaddr)))
     {
-        char buffer[128];
-        SystemLog_Error("socket connect failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("socket connect failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
 
         return false;
@@ -127,8 +123,7 @@ void DatagramSocket::SetBroadcast(bool enable)
     int broadcast = enable;
     if(0 > setsockopt(sockfd_->fd(), SOL_SOCKET, SO_BROADCAST, reinterpret_cast<char*>(&broadcast), sizeof(int)))
     {
-        char buffer[128];
-        SystemLog_Error("set broadcast failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("set broadcast failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -141,8 +136,7 @@ bool DatagramSocket::IsBroadcast()
     socklen_t   len         = sizeof(int);
     if(0 > getsockopt(sockfd_->fd(), SOL_SOCKET, SO_BROADCAST, reinterpret_cast<char*>(&broadcast), &len))
     {
-        char buffer[128];
-        SystemLog_Error("set broadcast failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("set broadcast failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -225,8 +219,7 @@ int DatagramSocket::SocketCeate()
     int sockfd = ::socket(AF_INET, SOCK_DGRAM, 0);
     if(0 > sockfd)
     {
-        char buffer[128];
-        SystemLog_Error("socket create failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("socket create failed, errno:%d, msg:%s", errno, StrError(errno));
     }
 
     return sockfd;

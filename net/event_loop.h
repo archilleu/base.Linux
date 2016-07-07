@@ -6,6 +6,7 @@
 #include "callback.h"
 #include "timer_task.h"
 #include <atomic>
+#include "timer_task_id.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -43,10 +44,10 @@ public:
     void QueueInLoop(Task&& task);
 
     //定时任务
-    TimerTask::Ptr  RunAt       (const base::Timestamp when, const CallbackTimerTask& callback);
-    TimerTask::Ptr  RunAfter    (int delayS, const CallbackTimerTask& callback);
-    TimerTask::Ptr  RunInterval (int intervalS, const CallbackTimerTask& callback);
-    void            RunCancel   (TimerTask::Ptr timer_task);
+    TimerTaskId RunAt       (base::Timestamp when, CallbackTimerTask&& callback);
+    TimerTaskId RunAfter    (int delayS, CallbackTimerTask&& callback);
+    TimerTaskId RunInterval (int intervalS, CallbackTimerTask&& callback);
+    void        RunCancel   (TimerTaskId timer_task_id);
 
 public:
     static EventLoop* GetEventLoopOfCurrentThread();

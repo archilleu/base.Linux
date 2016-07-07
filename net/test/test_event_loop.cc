@@ -37,6 +37,8 @@ void ThreadEventLoop1()
 bool TestEventLoop::DoTest()
 {
     if(false == Test_Normal())      return false;//需要额外线程打断该测试
+    if(false == Test_Signal())      return false;
+    if(false == Test_RunInLoop())   return false;
     if(false == Test_Timefd())      return false;
     if(false == Test_TimerTask())   return false;
 
@@ -84,6 +86,18 @@ bool TestEventLoop::Test_Normal()
 
     //合法的
     {
+    base::Thread t(ThreadEventLoop1);
+    t.Start();
+    sleep(2);
+    g_loop->Quit();
+    t.Join();
+    }
+
+    return true;
+}
+//---------------------------------------------------------------------------
+bool TestEventLoop::Test_Signal()
+{
     fprintf(stderr, "====>event loop:%u\n", base::CurrentThread::tid());
 
     EventLoop loop;
@@ -94,7 +108,7 @@ bool TestEventLoop::Test_Normal()
     loop.SetAsSignalHandleEventLoop();
 
     //添加多个Channel
-    const int size = 128;
+    const int size = 8;
     int     fds[size];
     Channel* cl[size];
     for(int i=0; i<size; i++)
@@ -117,12 +131,31 @@ bool TestEventLoop::Test_Normal()
         ::close(fds[i]);
     }
 
-    base::Thread t(ThreadEventLoop1);
-    t.Start();
-    sleep(2);
-    g_loop->Quit();
-    t.Join();
-    }
+    return true;
+}
+//---------------------------------------------------------------------------
+void RunInLoop()
+{
+    std::cout << "tid:" << base::CurrentThread::tid() 
+        << " RunInLoop" << std::endl;
+}
+//---------------------------------------------------------------------------
+void QueueInLoop()
+{
+    std::cout << "tid:" << base::CurrentThread::tid() 
+        << " QueueInLoop" << std::endl;
+}
+bool TestEventLoop::Test_RunInLoop()
+{
+    std::cout << "=====>In current thread" << std::endl;
+    EventLoop loop;
+    loop.RunInLoop(RunInLoop);
+    loop.RunInLoop(RunInLoop);
+    loop.RunInLoop(RunInLoop);
+    loop.QueueInLoop(QueueInLoop);
+    loop.QueueInLoop(QueueInLoop);
+    loop.QueueInLoop(QueueInLoop);
+    //loop.Loop();
 
     return true;
 }
@@ -156,22 +189,25 @@ bool TestEventLoop::Test_Timefd()
 }
 //---------------------------------------------------------------------------
 bool g_flag = false;
+int cat = 0;
+int rat = 0;
+int r = 0;
 //---------------------------------------------------------------------------
 void OnTimerTaskRunAt()
 {
-    printf("OnTimerTaskRunAt\n");
+    printf("======================>OnTimerTaskRunAt:%d\n", cat++);
     g_flag = true;
 }
 //---------------------------------------------------------------------------
 void OnTimerTaskRunAter()
 {
-    printf("OnTimerTaskRunAfter\n");
+    printf("===============================>OnTimerTaskRunAfter:%d\n", rat++);
     g_flag = true;
 }
 //---------------------------------------------------------------------------
 void OnTimerTaskRunInterval()
 {
-    printf("OnTimerTaskRunInterval\n");
+    printf("==================================>OnTimerTaskRunInterval:%d\n", r++);
 }
 //---------------------------------------------------------------------------
 void OnTimerTask()
@@ -180,18 +216,37 @@ void OnTimerTask()
     printf("thread start.......\n");
     base::Timestamp when = base::Timestamp::Now().AddTime(2);
     g_loop->RunAt(when, OnTimerTaskRunAt);
+    g_loop->RunAt(when, OnTimerTaskRunAt);
+    g_loop->RunAt(when, OnTimerTaskRunAt);
+    g_loop->RunAt(when, OnTimerTaskRunAt);
+    g_loop->RunAt(when, OnTimerTaskRunAt);
+    g_loop->RunAt(when, OnTimerTaskRunAt);
+    g_loop->RunAt(when, OnTimerTaskRunAt);
+    g_loop->RunAt(when, OnTimerTaskRunAt);
+    g_loop->RunAt(when, OnTimerTaskRunAt);
+    g_loop->RunAt(when, OnTimerTaskRunAt);
 
     sleep(5);
     assert(true == g_flag);
 
     g_flag = false;
     g_loop->RunAfter(2, OnTimerTaskRunAter);
+    g_loop->RunAfter(2, OnTimerTaskRunAter);
+    g_loop->RunAfter(2, OnTimerTaskRunAter);
+    g_loop->RunAfter(2, OnTimerTaskRunAter);
+    g_loop->RunAfter(2, OnTimerTaskRunAter);
+    g_loop->RunAfter(2, OnTimerTaskRunAter);
+    g_loop->RunAfter(2, OnTimerTaskRunAter);
+    g_loop->RunAfter(2, OnTimerTaskRunAter);
+    g_loop->RunAfter(2, OnTimerTaskRunAter);
+    g_loop->RunAfter(2, OnTimerTaskRunAter);
     sleep(5);
     assert(true == g_flag);
     
-    TimerTask::Ptr ptr = g_loop->RunInterval(1, OnTimerTaskRunInterval);
+    TimerTaskId tid1 = g_loop->RunInterval(1, OnTimerTaskRunInterval);
+    TimerTaskId tid2 = g_loop->RunInterval(1, OnTimerTaskRunInterval);
     sleep(10);
-    g_loop->RunCancel(ptr);
+    g_loop->RunCancel(tid1);
 
     g_loop->Quit();
 }

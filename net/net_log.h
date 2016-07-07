@@ -9,7 +9,9 @@
 #define SystemLog_Info(format, ...)     (MyNetLog->LogWrite(base::LogFile::LOGLEVEL_INFO,"tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
 #define SystemLog_Warning(format, ...)  (MyNetLog->LogWrite(base::LogFile::LOGLEVEL_WARNING,"tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
 #define SystemLog_Error(format, ...)    (MyNetLog->LogWrite(base::LogFile::LOGLEVEL_ERROR, "tid:%s,File:%s,Line[%d],Fun:%s >> " format " ", base::CurrentThread::tid_str(),__FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__))
-
+//---------------------------------------------------------------------------
+const char* StrError(int e);
+//---------------------------------------------------------------------------
 namespace net
 {
 

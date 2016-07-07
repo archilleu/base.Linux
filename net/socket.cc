@@ -36,8 +36,7 @@ bool Socket::Bind(const InetAddress& inet_addr)
 {
     if(0 > ::bind(fd_, reinterpret_cast<const sockaddr*>(&inet_addr.address()), sizeof(struct sockaddr_in)))
     {
-        char buffer[128];
-        SystemLog_Error("bind failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("bind failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
         return false;
     }
@@ -50,8 +49,7 @@ void Socket::SetReuseAddress()
     int reuse = 1;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int)))
     {
-        char buffer[128];
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -65,8 +63,7 @@ void Socket::SetNodelay()
     int nodelay = 1;
     if(0 > setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)))
     {
-        char buffer[128];
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
     
@@ -80,8 +77,7 @@ void Socket::SetTimeoutRecv(int timeoutS)
     timeout.tv_usec = 0;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)))
     {
-        char buffer[128];
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -95,8 +91,7 @@ void Socket::SetTimeoutSend(int timeoutS)
     timeout.tv_usec = 0;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)))
     {
-        char buffer[128];
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -107,8 +102,7 @@ void Socket::SetSendBufferSize(int size)
 {
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&size), sizeof(int)))
     {
-        char buffer[128];
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -119,8 +113,7 @@ void Socket::SetRecvBufferSize(int size)
 {
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&size), sizeof(int)))
     {
-        char buffer[128];
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -133,8 +126,7 @@ int Socket::GetSendBufferSize()
     socklen_t   len = sizeof(val);
     if(0 > getsockopt(fd_, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&val), &len))
     {
-        char buffer[128];
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -147,8 +139,7 @@ int Socket::GetRecvBufferSize()
     socklen_t   len = sizeof(val);
     if(0 > getsockopt(fd_, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&val), &len))
     {
-        char buffer[128];
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -161,8 +152,7 @@ InetAddress Socket::GetLocalAddress()
     socklen_t           len = static_cast<socklen_t>(sizeof(local_address));
     if(0 > ::getsockname(fd_, reinterpret_cast<sockaddr*>(&local_address), &len))
     {
-        char buffer[128];
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -175,8 +165,7 @@ InetAddress Socket::GetPeerAddress()
     socklen_t           len = static_cast<socklen_t>(sizeof(peer_address));
     if(0 > ::getpeername(fd_, reinterpret_cast<sockaddr*>(&peer_address), &len))
     {
-        char buffer[128];
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -197,8 +186,7 @@ InetAddress Socket::GetLocalAddress(int sockfd)
     socklen_t           len = static_cast<socklen_t>(sizeof(local_address));
     if(0 > ::getsockname(sockfd, reinterpret_cast<sockaddr*>(&local_address), &len))
     {
-        char buffer[128];
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -211,8 +199,7 @@ InetAddress Socket::GetPeerAddress(int sockfd)
     socklen_t           len = static_cast<socklen_t>(sizeof(peer_address));
     if(0 > ::getpeername(sockfd, reinterpret_cast<sockaddr*>(&peer_address), &len))
     {
-        char buffer[128];
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
     }
 
@@ -225,7 +212,7 @@ int Socket::GetSocketError(int sockfd)
     socklen_t   optlen = static_cast<socklen_t>(sizeof optval);
     if(0 > ::getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &optval, &optlen))
     {
-        SystemLog_Error("getsocket failed, errno:%d, msg:%s", errno, strerror(errno));
+        SystemLog_Error("getsocket failed, errno:%d, msg:%s", errno, StrError(errno));
         return errno;
     }
     

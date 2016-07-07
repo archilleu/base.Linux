@@ -85,7 +85,7 @@ void Connector::Connect()
     int sockfd = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0);
     if(0 > sockfd)
     {
-        SystemLog_Error("Create socket failed, errno:%d, msg:%s", errno, strerror(errno)); 
+        SystemLog_Error("Create socket failed, errno:%d, msg:%s", errno, StrError(errno)); 
         Retry();
         return;
     }
@@ -102,7 +102,7 @@ void Connector::Connect()
             break;
 
         default:
-            SystemLog_Error("connect failed, errno:%d, msg:%s", err_no, strerror(err_no));
+            SystemLog_Error("connect failed, errno:%d, msg:%s", err_no, StrError(err_no));
             break;
     }
 
@@ -134,7 +134,7 @@ void Connector::HandleWrite()
     int err_code = Socket::GetSocketError(sockfd);
     if(0 < err_code)//大于0表示出错
     {
-        SystemLog_Error("connect failed, errno:%d, msg:%s", err_code, strerror(err_code));
+        SystemLog_Error("connect failed, errno:%d, msg:%s", err_code, StrError(err_code));
         return;
     }
 
@@ -162,7 +162,7 @@ void Connector::HandleError()
     {
         int sockfd  = RemoveAndResetChannel();
         int err_code= Socket::GetSocketError(sockfd);
-        SystemLog_Error("connect error, errno:%d, msg:%s", err_code, strerror(err_code));
+        SystemLog_Error("connect error, errno:%d, msg:%s", err_code, StrError(err_code));
         ::close(sockfd);
         Retry();
     }

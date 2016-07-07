@@ -168,8 +168,7 @@ ssize_t TCPConnection::_SendMostPossible(const char* dat, size_t len)
             //发送出错,关闭连接
             if((EAGAIN!=errno) || (EWOULDBLOCK!=errno))
             {
-                char buffer[128];
-                SystemLog_Warning("send failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+                SystemLog_Warning("send failed, errno:%d, msg:%s", errno, StrError(errno));
                 HandleClose();
                 return -1;
             }
@@ -245,8 +244,7 @@ void TCPConnection::HandleRead(base::Timestamp rcv_time)
     if((EAGAIN==err_no) || (EWOULDBLOCK==err_no))
         return;
 
-    char buffer[128];
-    SystemLog_Error("read error, errno:%d, msg:%s", err_no, strerror_r(err_no, buffer, sizeof(buffer)));
+    SystemLog_Error("read error, errno:%d, msg:%s", err_no, StrError(err_no));
     HandleError();
     assert(0);
     return;
@@ -263,8 +261,7 @@ void TCPConnection::HandleWrite()
     {
         if((EAGAIN!=errno) || (EWOULDBLOCK!=errno))
         {
-            char buffer[128];
-            SystemLog_Error("write error, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+            SystemLog_Error("write error, errno:%d, msg:%s", errno, StrError(errno));
             HandleClose();
             assert(0);
             return;

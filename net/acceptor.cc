@@ -17,8 +17,7 @@ Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
 
     if(0 > listen_sock_->fd())
     {
-        char buffer[128];
-        SystemLog_Error("listen sock create failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("listen sock create failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
         return;
     }
@@ -27,8 +26,7 @@ Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
     listen_sock_->SetNodelay();
     if(false == listen_sock_->Bind(inet_listen))
     {
-        char buffer[128];
-        SystemLog_Error("bind sock create failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("bind sock create failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
         return;
     }
@@ -56,8 +54,7 @@ bool Acceptor::Listen()
 
     if(0 > ::listen(channel_listen_->fd(), SOMAXCONN))
     {
-        char buffer[128];
-        SystemLog_Error("listen sock failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("listen sock failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
         return false;
     }
@@ -73,8 +70,7 @@ int Acceptor::AcceptConnection(InetAddress* inet_peer)
     int         clientfd= ::accept4(channel_listen_->fd(), reinterpret_cast<sockaddr*>(&client_addr), &len , SOCK_NONBLOCK|SOCK_CLOEXEC);
     if(0 > clientfd)
     {
-        char buffer[128];
-        SystemLog_Error("accept client failed, errno:%d, msg:%s", errno, strerror_r(errno, buffer, sizeof(buffer)));
+        SystemLog_Error("accept client failed, errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
         return -1;
     }

@@ -59,7 +59,7 @@ base::Timestamp EPoller::Poll(int timeoutS, ChannelList* active_channel_list)
     //出错
     if(EINTR != errno)
     {
-        SystemLog_Error("epoll_wait error:no:%d, msg:%s", errno, strerror(errno));
+        SystemLog_Error("epoll_wait error:no:%d, msg:%s", errno, StrError(errno));
         assert(((void)"epoll_wait error", 0));
     }
 
@@ -128,14 +128,21 @@ void EPoller::ChannelRemove(Channel* channel)
 //---------------------------------------------------------------------------
 void EPoller::FillActiveChannel(int active_nums, ChannelList* active_channel_list)
 {
-    for(int i=0; i<active_nums; i++)
+    if(active_nums >= static_cast<int>(active_channel_list->size()))
+        active_channel_list->resize(active_channel_list->size()*2);
+
+    int i = 0;
+    for(; i<active_nums; i++)
     {
         Channel* channel = static_cast<Channel*>(event_list_[i].data.ptr);
         assert(((void)"channels_ no equal channel", channel == this->channels_[channel->fd()]));
 
         channel->set_revents(event_list_[i].events);
-        active_channel_list->push_back(channel);
+
+        (*active_channel_list)[i] = channel;
     }
+
+    (*active_channel_list)[i] = nullptr;
 
     return;
 }
@@ -171,7 +178,7 @@ bool EPoller::Update(int op, Channel* channel)
     event.data.ptr  = channel;
     if(0 > ::epoll_ctl(efd_, op, channel->fd(), &event))
     {
-        SystemLog_Error("epoll_ctl error: op=%s, fd=%d, errno:%d, msg:%s", OperatorToString(op), channel->fd(), errno, strerror(errno));
+        SystemLog_Error("epoll_ctl error: op=%s, fd=%d, errno:%d, msg:%s", OperatorToString(op), channel->fd(), errno, StrError(errno));
         assert(0);
         return false;
     }

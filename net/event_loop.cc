@@ -84,7 +84,7 @@ int CreateEventFd()
     int fd = ::eventfd(0, EFD_NONBLOCK|EFD_CLOEXEC);
     if(0 > fd)
     {
-        SystemLog_Error("eventfd create failed, errno:%d, msg:%s", errno, strerror(errno));
+        SystemLog_Error("eventfd create failed, errno:%d, msg:%s", errno, StrError(errno));
         abort();
     }
 
@@ -115,7 +115,7 @@ EventLoop::EventLoop()
         return;
     }
     
-    active_channel_list_.reserve(128);
+    active_channel_list_.resize(128);
 
     channel_wakeup_->set_callback_read(std::bind(&EventLoop::HandleWakeup, this));
     channel_wakeup_->ReadEnable();
@@ -153,7 +153,7 @@ void EventLoop::Loop()
     looping_ = true;
     while(looping_)
     {
-        active_channel_list_.clear();
+        active_channel_list_[0] = nullptr;
         base::Timestamp time = poller_->Poll(kPollTimeS, &active_channel_list_);
         ++iteration_;
         
@@ -165,6 +165,9 @@ void EventLoop::Loop()
 
             for(auto iter : active_channel_list_)
             {
+                if(nullptr == iter)
+                    break;
+
                 d_current_active_channel_ = iter;
                 iter->HandleEvent(time);
             }
@@ -186,7 +189,9 @@ void EventLoop::Quit()
     looping_ = false;
     
     //wakup
-    Wakeup();
+    if(!IsInLoopThread())
+        Wakeup();
+
     return;
 }
 //---------------------------------------------------------------------------
@@ -266,25 +271,25 @@ void EventLoop::QueueInLoop(Task&& task)
     return;
 }
 //---------------------------------------------------------------------------
-TimerTask::Ptr EventLoop::RunAt(const base::Timestamp when, const CallbackTimerTask& callback)
+TimerTaskId EventLoop::RunAt(base::Timestamp when, CallbackTimerTask&& callback)
 {
-    return timer_task_queue_->TimerTaskAdd(callback, when, 0);
+    return timer_task_queue_->TimerTaskAdd(std::move(callback), when, 0);
 }
 //---------------------------------------------------------------------------
-TimerTask::Ptr EventLoop::RunAfter(int delayS, const CallbackTimerTask& callback)
+TimerTaskId EventLoop::RunAfter(int delayS, CallbackTimerTask&& callback)
 {
     base::Timestamp when = base::Timestamp::Now().AddTime(delayS);
-    return timer_task_queue_->TimerTaskAdd(callback, when, 0);
+    return timer_task_queue_->TimerTaskAdd(std::move(callback), when, 0);
 }
 //---------------------------------------------------------------------------
-TimerTask::Ptr EventLoop::RunInterval(int intervalS, const CallbackTimerTask& callback)
+TimerTaskId EventLoop::RunInterval(int intervalS, CallbackTimerTask&& callback)
 {
-    return timer_task_queue_->TimerTaskAdd(callback, base::Timestamp::Now(), intervalS);
+    return timer_task_queue_->TimerTaskAdd(std::move(callback), base::Timestamp::Now(), intervalS);
 }
 //---------------------------------------------------------------------------
-void EventLoop::RunCancel(TimerTask::Ptr timer_task)
+void EventLoop::RunCancel(TimerTaskId timer_task_id)
 {
-    timer_task_queue_->TimerTaskCancel(timer_task);
+    timer_task_queue_->TimerTaskCancel(timer_task_id);
 }
 //---------------------------------------------------------------------------
 EventLoop* EventLoop::GetEventLoopOfCurrentThread()
@@ -329,8 +334,15 @@ void EventLoop::AbortNotInLoopThread()
 //---------------------------------------------------------------------------
 void EventLoop::Wakeup()
 {
-    eventfd_t dat = 1;
-    if(-1 == eventfd_write(wakeupfd_, dat))
+   // eventfd_t dat = 1;
+   // if(-1 == eventfd_write(wakeupfd_, dat))
+   // {
+   //     SystemLog_Error("write failed");
+   //     assert(0);
+   // }
+   
+    uint64_t dat = 1;
+    if(sizeof(dat) != write(wakeupfd_, &dat, sizeof(dat)))
     {
         SystemLog_Error("write failed");
         assert(0);
@@ -341,10 +353,18 @@ void EventLoop::Wakeup()
 //---------------------------------------------------------------------------
 void EventLoop::HandleWakeup()
 {
-    eventfd_t dat;
-    if(-1 == eventfd_read(wakeupfd_, &dat))
+    //eventfd_t dat;
+    //if(-1 == eventfd_read(wakeupfd_, &dat))
+    //{
+    //    SystemLog_Error("read failed");
+    //    //assert(0);
+    //}
+
+    uint64_t dat = 1;
+    ssize_t rlen = read(wakeupfd_, &dat, sizeof(dat));
+    if(sizeof(dat) !=  rlen)
     {
-        SystemLog_Error("read failed");
+        SystemLog_Error("write failed");
         assert(0);
     }
 
@@ -364,7 +384,7 @@ void EventLoop::HandleSignal()
             if(EINTR==errno || (EAGAIN==errno))
                 continue;
 
-            SystemLog_Error("read failed, errno:%d, msg:%s", errno, strerror(errno));
+            SystemLog_Error("read failed, errno:%d, msg:%s", errno, StrError(errno));
             return;
         }
 
@@ -409,11 +429,12 @@ void EventLoop::HandleSignal()
 void EventLoop::DoPendingTasks()
 {
     std::list<Task> task;
-    need_wakup_ = true;
 
     //交换内容,避免处理的时候长时间锁住task_list_
     {
     std::lock_guard<std::mutex> lock(mutex_);
+
+    need_wakup_ = true;
     task.swap(task_list_);
     }
 
@@ -429,6 +450,9 @@ void EventLoop::PrintActiveChannels() const
 {
     for(auto iter : active_channel_list_)
     {
+        if(nullptr == iter)
+            break;
+
         std::cout << "{" << "fd:" << iter->fd() << " " << iter->REventsToString() << "}" << std::endl;
     }
 
