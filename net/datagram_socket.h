@@ -20,7 +20,7 @@ public:
 
     int fd();
 
-    bool Bind(const InetAddress& inet_addr);
+    void Bind(const InetAddress& inet_addr);
     bool IsBind(){ return is_bind_; }
 
     //如果需要Bind, 则需要在connect之前Bind

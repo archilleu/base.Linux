@@ -26,11 +26,7 @@ DatagramSocket::DatagramSocket(short port)
     is_bind_(false)
 {
     sockfd_.reset(new Socket(SocketCeate()));
-    if(false == Bind(local_addr_))
-    {
-        SystemLog_Error("socket bind failed, errno:%d, msg:%s", errno, StrError(errno));
-        assert(0);
-    }
+    Bind(local_addr_);
 
     is_bind_ = true;
     return;
@@ -41,11 +37,7 @@ DatagramSocket::DatagramSocket(const InetAddress& inet_addr)
     is_bind_(false)
 {
     sockfd_.reset(new Socket(SocketCeate()));
-    if(false == Bind(inet_addr))
-    {
-        SystemLog_Error("socket bind failed, errno:%d, msg:%s", errno, StrError(errno));
-        assert(0);
-    }
+    Bind(inet_addr);
 
     return;
 }
@@ -59,15 +51,13 @@ int DatagramSocket::fd()
     return sockfd_->fd();
 }
 //---------------------------------------------------------------------------
-bool DatagramSocket::Bind(const InetAddress& inet_addr)
+void DatagramSocket::Bind(const InetAddress& inet_addr)
 {
-    bool err_code = sockfd_->Bind(inet_addr);
-    if(false == err_code)
-        return false;
-
+    sockfd_->Bind(inet_addr);
     local_addr_ = inet_addr;
     is_bind_    = true;
-    return true;
+
+    return;
 }
 //---------------------------------------------------------------------------
 bool DatagramSocket::Connect(const InetAddress& addr)

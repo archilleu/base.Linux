@@ -6,48 +6,75 @@
 namespace net
 {
 //---------------------------------------------------------------------------
-Socket::Socket(int sockfd)
-:   fd_(sockfd)
+tcp_info Socket::GetTCPInfo() const
 {
-    assert(0 < fd_);
-    return;
-}
-//---------------------------------------------------------------------------
-Socket::~Socket()
-{
-    if(0 < fd_)
-        ::close(fd_);
+    tcp_info info;
+    bzero(&info, sizeof(info));
+    socklen_t len = sizeof(info);
+    ::getsockopt(fd_, SOL_TCP, TCP_INFO, &info, &len);
 
+    return info;
+}
+//---------------------------------------------------------------------------
+std::string Socket::GetTCPInfoString() const
+{
+    tcp_info info = GetTCPInfo();
+    char buf[256];
+    snprintf(buf, sizeof(buf), "unrecovered=%u "
+                                "rto=%u ato=%u snd_mss=%u rcv_mss=%u "
+                                "lost=%u retrans=%u rtt=%u rttvar=%u "
+                                "sshthresh=%u cwnd=%u total_retrans=%u",
+                                info.tcpi_retransmits,  // Number of unrecovered [RTO] timeouts
+                                info.tcpi_rto,          // Retransmit timeout in usec
+                                info.tcpi_ato,          // Predicted tick of soft clock in usec
+                                info.tcpi_snd_mss,
+                                info.tcpi_rcv_mss,
+                                info.tcpi_lost,         // Lost packets
+                                info.tcpi_retrans,      // Retransmitted packets out
+                                info.tcpi_rtt,          // Smoothed round trip time in usec
+                                info.tcpi_rttvar,       // Medium deviation
+                                info.tcpi_snd_ssthresh,
+                                info.tcpi_snd_cwnd,
+                                info.tcpi_total_retrans);  // Total retransmits for entire connection
+
+    return buf;
+}
+//---------------------------------------------------------------------------
+void Socket::ShutDownWrite()
+{
+    ::shutdown(fd_, SHUT_WR);
     return;
 }
 //---------------------------------------------------------------------------
-int Socket::fd()
-{
-    return fd_;
-}
-//---------------------------------------------------------------------------
-void Socket::ShutDown()
-{
-    ::shutdown(fd_, SHUT_RDWR);
-    return;
-}
-//---------------------------------------------------------------------------
-bool Socket::Bind(const InetAddress& inet_addr)
+void Socket::Bind(const InetAddress& inet_addr)
 {
     if(0 > ::bind(fd_, reinterpret_cast<const sockaddr*>(&inet_addr.address()), sizeof(struct sockaddr_in)))
     {
         SystemLog_Error("bind failed errno:%d, msg:%s", errno, StrError(errno));
-        assert(0);
-        return false;
+        abort();
     }
 
-    return true;
+    return;
 }
 //---------------------------------------------------------------------------
 void Socket::SetReuseAddress()
 {
     int reuse = 1;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int)))
+    {
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        assert(0);
+    }
+
+    return;
+}
+//---------------------------------------------------------------------------
+void Socket::SetReusePort()
+{
+    //http://xiaorui.cc/2015/12/02/%E4%BD%BF%E7%94%A8socket-so_reuseport%E6%8F%90%E9%AB%98%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%80%A7%E8%83%BD/
+    
+    int reuse = 1;
+    if(0 > setsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(int)))
     {
         SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
         assert(0);
@@ -174,10 +201,10 @@ InetAddress Socket::GetPeerAddress()
 //---------------------------------------------------------------------------
 bool Socket::IsSelfConnect()
 {
-    if(GetLocalAddress() == GetPeerAddress())
-        return true;
+    if(GetLocalAddress() != GetPeerAddress())
+        return false;
 
-    return false;
+    return true;
 }
 //---------------------------------------------------------------------------
 InetAddress Socket::GetLocalAddress(int sockfd)
@@ -218,4 +245,5 @@ int Socket::GetSocketError(int sockfd)
     
     return optval;
 }
+//---------------------------------------------------------------------------
 }//namespace net

@@ -39,7 +39,7 @@ public:
         return be64toh(value);
     }
 
-    int32_t PeekInt32()
+    int32_t PeekInt32() const
     {
         assert(sizeof(int32_t) <= ReadableBytes());
 
@@ -48,7 +48,7 @@ public:
         return be32toh(value);
     }
 
-    int16_t PeekInt16()
+    int16_t PeekInt16() const
     {
         assert(sizeof(int16_t) <= ReadableBytes());
 
@@ -57,7 +57,7 @@ public:
         return be16toh(value);
     }
 
-    int8_t PeekInt8()
+    int8_t PeekInt8() const
     {
         assert(sizeof(int8_t) <= ReadableBytes());
 
@@ -95,8 +95,8 @@ public:
     void RetrieveInt8()     { Retrieve(sizeof(int8_t)); }
     void RetrieveAll()
     {
-        read_index_     = 0;
-        write_index_    = 0;
+        read_index_ = 0;
+        write_index_= 0;
     }
 
     void AppendInt64(int64_t value)
@@ -128,10 +128,7 @@ public:
 
     void Append(const std::string& dat)
     {
-        EnsureWritableBytes(dat.size());
-
-        memcpy(BeginWrite(), dat.data(), dat.size());
-        HasWriteBytes(dat.size());
+        Append(dat.data(), dat.size());
 
         return;
     }
@@ -216,6 +213,8 @@ private:
         //如果已经读过的数据和可写的内存总和都不能够满足要写写入的大小,则重新申请足够大的内存
         if((WritableBytes() + read_index_) < len)
         {
+            assert((write_index_+len) > buffer_.size());
+
             buffer_.resize(write_index_ + len);
             return;
         }
@@ -225,8 +224,8 @@ private:
 //      memory areas must not overlap
 //      memcpy(Begin(), Begin() + read_index_, readable);
         std::copy_backward(Begin()+read_index_, Begin()+write_index_, Begin()+readable);
-        read_index_     = 0;
-        write_index_    = readable;
+        read_index_ = 0;
+        write_index_= readable;
 
         assert(readable == ReadableBytes());
     }

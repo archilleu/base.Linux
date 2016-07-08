@@ -6,7 +6,7 @@
 namespace net
 {
 //---------------------------------------------------------------------------
-bool Poller::HasChannel(Channel* channel)
+bool Poller::HasChannel(Channel* channel) const
 {
     AssertInLoopThread();
 

@@ -202,7 +202,7 @@ void TCPConnection::ShutdownInLoop()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     if(false == channel_->IsWriting())
-        socket_->ShutDown();
+        socket_->ShutDownWrite();
 
     return;
 }

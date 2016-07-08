@@ -114,7 +114,7 @@ bool TestDatagramSocket::Test_Normal()
 
     {
     DatagramSocket ds;
-    MY_ASSERT(ds.Bind(InetAddress(cli_ip, cli_port)));
+    ds.Bind(InetAddress(cli_ip, cli_port));
     ds.Connect(InetAddress(svr_ip, svr_port));
     MY_ASSERT(true == ds.IsBind());
     MY_ASSERT(true == ds.IsConnect());

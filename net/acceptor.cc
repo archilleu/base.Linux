@@ -1,37 +1,39 @@
 //---------------------------------------------------------------------------
 #include "acceptor.h"
+#include "event_loop.h"
 #include "socket.h"
 #include "inet_address.h"
 #include "channel.h"
 #include "net_log.h"
+#include "poll.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 //---------------------------------------------------------------------------
 Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
-:   listen_sock_(new Socket(::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0))),
-    channel_listen_(new Channel(owner_loop, listen_sock_->fd()))
+:   owner_loop_(owner_loop),
+    listen_sock_(new Socket(::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0))),
+    channel_listen_(new Channel(owner_loop, listen_sock_->fd())),
+    idle_fd_(::open("/dev/null", O_RDONLY|O_CLOEXEC))
 {
     SystemLog_Info("Acceptor ctor");
+    if(0 > idle_fd_)
+    {
+        SystemLog_Error("open idle_fd failed, errno:%d, msg:%s", errno, StrError(errno));
+        abort();
+    }
 
     if(0 > listen_sock_->fd())
     {
         SystemLog_Error("listen sock create failed, errno:%d, msg:%s", errno, StrError(errno));
-        assert(0);
-        return;
+        abort();
     }
 
     listen_sock_->SetReuseAddress();
-    listen_sock_->SetNodelay();
-    if(false == listen_sock_->Bind(inet_listen))
-    {
-        SystemLog_Error("bind sock create failed, errno:%d, msg:%s", errno, StrError(errno));
-        assert(0);
-        return;
-    }
-
+    listen_sock_->Bind(inet_listen);
     channel_listen_->set_callback_read(std::bind(&Acceptor::HandleRead, this, std::placeholders::_1));
+
     return;
 }
 //---------------------------------------------------------------------------
@@ -44,23 +46,24 @@ Acceptor::~Acceptor()
 
     channel_listen_->DisableAll();
     channel_listen_->Remove();
+    ::close(idle_fd_);
     
     return;
 }
 //---------------------------------------------------------------------------
-bool Acceptor::Listen()
+void Acceptor::Listen()
 {
     SystemLog_Info("Acceptor listen");
+    owner_loop_->AssertInLoopThread();
 
     if(0 > ::listen(channel_listen_->fd(), SOMAXCONN))
     {
         SystemLog_Error("listen sock failed, errno:%d, msg:%s", errno, StrError(errno));
-        assert(0);
-        return false;
+        abort();
     }
 
     channel_listen_->ReadEnable();
-    return true;
+    return;
 }
 //---------------------------------------------------------------------------
 int Acceptor::AcceptConnection(InetAddress* inet_peer)
@@ -71,7 +74,6 @@ int Acceptor::AcceptConnection(InetAddress* inet_peer)
     if(0 > clientfd)
     {
         SystemLog_Error("accept client failed, errno:%d, msg:%s", errno, StrError(errno));
-        assert(0);
         return -1;
     }
 
@@ -81,26 +83,60 @@ int Acceptor::AcceptConnection(InetAddress* inet_peer)
 //---------------------------------------------------------------------------
 void Acceptor::HandleRead(base::Timestamp rcv_time)
 {
-    InetAddress peer_addr;
-    int         clientfd = AcceptConnection(&peer_addr);
-    if(0 > clientfd)
+    for(;;)
     {
-        SystemLog_Error("AcceptConnection failed");
-        assert(0);
-        return;
-    }
+        InetAddress peer_addr;
+        int         clientfd = AcceptConnection(&peer_addr);
+        if(0 < clientfd)
+        {
+            if(false == CheckConnection(clientfd))
+            {
+                SystemLog_Warning("bad connection");
+                ::close(clientfd);
+                continue;
+            }
 
-    //处理连接,如果不处理,则关闭
-    if(callback_new_connection_)
-    {
-        callback_new_connection_(clientfd, peer_addr, rcv_time);
-    }
-    else
-    {
-        ::close(clientfd);
+            //处理连接,如果不处理,则关闭
+            if(callback_new_connection_)
+                callback_new_connection_(clientfd, peer_addr, rcv_time);
+            else
+                ::close(clientfd);
+        }
+        else
+        {
+            if(EAGAIN == errno)
+                break;
+
+            if(EMFILE == errno)
+            {
+                ::close(idle_fd_);
+                idle_fd_ = AcceptConnection(&peer_addr);
+                ::close(idle_fd_);
+                idle_fd_ = ::open("/dev/null", O_RDONLY|O_CLOEXEC);
+            }
+
+            SystemLog_Error("AcceptConnection failed");
+            assert(0);
+            return;
+        }
+
     }
 
     return;
+}
+//---------------------------------------------------------------------------
+bool Acceptor::CheckConnection(int fd)
+{
+    struct pollfd pfd;
+    pfd.fd = fd;
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+
+    int num = poll(&pfd, 1, 0);
+    if(1 == num)
+        return (pfd.revents & POLLIN);
+
+    return false;
 }
 //---------------------------------------------------------------------------
 }//namespace net

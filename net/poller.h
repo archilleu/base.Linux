@@ -32,9 +32,9 @@ public:
     virtual void ChannelUpdate(Channel* channel) =0;
     virtual void ChannelRemove(Channel* channel) =0;
 
-    bool HasChannel(Channel* channel);
+    bool HasChannel(Channel* channel) const;
 
-    void AssertInLoopThread()   { owner_->AssertInLoopThread(); }
+    void AssertInLoopThread() const  { owner_->AssertInLoopThread(); }
 
 public:
     static Poller* NewDefaultPoller(EventLoop* loop);

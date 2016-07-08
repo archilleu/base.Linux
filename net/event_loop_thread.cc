@@ -28,8 +28,7 @@ EventLoop* EventLoopThread::StartLoop()
     if(false == thread_.Start())
     {
         SystemLog_Error("event loop start failed");
-        assert(0);
-        return 0;
+        abort();
     }
 
     std::unique_lock<std::mutex> lock(mutex_);

@@ -35,7 +35,7 @@ bool TestAcceptor::Test_Normal()
     EventLoop       loop;
     InetAddress     listen_addr("127.0.0.1", 9999);
     Acceptor        acceptor(&loop, listen_addr);
-    MY_ASSERT(true == acceptor.Listen());
+    acceptor.Listen();
 
     g_loop = &loop;
 

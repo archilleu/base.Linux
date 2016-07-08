@@ -45,13 +45,13 @@ public:
     void Remove();
 
     //是否关注写事件,用于buffer的写(如果写缓存还有,则该事件一直会被关注
-    bool IsWriting()    { return events_ & kEventWrite; }
-    bool IsNoneEvent()  { return events_ == kNone; }
+    bool IsWriting() const      { return events_ & kEventWrite; }
+    bool IsNoneEvent() const    { return events_ == kNone; }
 
-    int     events()                    { return events_; }
+    int     events() const              { return events_; }
     void    set_revents(int revents)    { revents_ = revents; }
     
-    EventLoop* owner_loop() { return owner_loop_; }
+    const EventLoop* owner_loop() const { return owner_loop_; }
 
     int     fd() const          { return fd_; }
     int     index() const       { return index_; }

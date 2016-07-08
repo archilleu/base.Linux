@@ -45,6 +45,10 @@ bool TestSocket::Test_Normal()
 
     sock.Bind(InetAddress("127.0.0.1", 9999));
     printf("local addr:%s perr addr:\n", sock.GetLocalAddress().IPPort().c_str());
+
+
+    std::string info = sock.GetTCPInfoString();
+    std::cout << "tcp info:" << info << std::endl;
     return true;
 }
 //---------------------------------------------------------------------------

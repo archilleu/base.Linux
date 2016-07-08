@@ -9,22 +9,38 @@
  * Socket 内部维护的描述符不是由自己创建的,但是由自己销毁
  */
 //---------------------------------------------------------------------------
+struct tcp_info;
+
 namespace net
 {
 
 class Socket
 {
 public:
-    Socket(int fd);
-    ~Socket();
+    Socket(int sockfd)
+    :   fd_(sockfd)
+    {
+        assert(0 < fd_);
+        return;
+    }
 
-    int fd();
+    ~Socket()
+    {
+        if(0 < fd_)
+            ::close(fd_);
+    }
 
-    void ShutDown();
+    int fd() const { return fd_; };
 
-    bool Bind(const InetAddress& inet_addr);
+    tcp_info GetTCPInfo() const;
+    std::string GetTCPInfoString() const;
+
+    void ShutDownWrite();
+
+    void Bind(const InetAddress& inet_addr);
 
     void SetReuseAddress();
+    void SetReusePort();
     void SetNodelay();
     
     void SetTimeoutRecv(int timeoutS);
@@ -52,6 +68,7 @@ private:
 
 protected:
     DISALLOW_COPY_AND_ASSIGN(Socket);
+
 };
 
 }

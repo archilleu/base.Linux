@@ -36,8 +36,8 @@ public:
 
     uint64_t iteration() const { return iteration_; }
 
-    void AssertInLoopThread();
-    bool IsInLoopThread();
+    void AssertInLoopThread() const;
+    bool IsInLoopThread() const;
 
     //线程安全方法,如果调用着的线程是本EventLoop线程,则RunInLoop会立刻执行,否则排队到QueueInLoop
     void RunInLoop  (Task&& task);
@@ -56,10 +56,10 @@ public:
     //改变监控的Channel状态,一般由connection通过Channel发起改变请求,Channel再通过EventLoop向poller请求改变,只由内部类调用
     void ChannelUpdate(Channel* channel);
     void ChannelRemove(Channel* channel);
-    bool HasChannel(Channel* channel);
+    bool HasChannel(Channel* channel) const;
 
 private:
-    void AbortNotInLoopThread();
+    void AbortNotInLoopThread() const;
 
     //当poll没有外在事件发生时,poll阻塞返回需要最长5s,QueueInLoop和RunInLoop也因此需要5s
     //为避免发生这样的情况,使用额外的手动事件来触发poll

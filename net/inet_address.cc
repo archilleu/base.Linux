@@ -16,12 +16,13 @@ InetAddress::InetAddress()
     return;
 }
 //---------------------------------------------------------------------------
-InetAddress::InetAddress(short port)
+InetAddress::InetAddress(short port, bool only_loopback)
 {
     bzero(&address_, sizeof(address_));
-    address_.sin_family     = AF_INET; //Address families
+    auto ip = only_loopback ? INADDR_LOOPBACK : INADDR_ANY;
+    address_.sin_family     = AF_INET;
     address_.sin_port       = htobe16(port);
-    address_.sin_addr.s_addr= 0;
+    address_.sin_addr.s_addr= htobe32(ip);
 
     return;
 }
@@ -35,7 +36,7 @@ InetAddress::InetAddress(const sockaddr_in& addr)
 InetAddress::InetAddress(uint32_t raw_ip, short port)
 {
     bzero(&address_, sizeof(address_));
-    address_.sin_family     = AF_INET; //Address families
+    address_.sin_family     = AF_INET;
     address_.sin_port       = htobe16(port);
     address_.sin_addr.s_addr= raw_ip;
 
@@ -45,7 +46,7 @@ InetAddress::InetAddress(uint32_t raw_ip, short port)
 InetAddress::InetAddress(const std::string& ip, short port)
 {
     bzero(&address_, sizeof(address_));
-    address_.sin_family = AF_INET; //Address families
+    address_.sin_family = AF_INET;
     address_.sin_port   = htobe16(port);
 
     int error = ::inet_pton(AF_INET, ip.c_str(), &address_.sin_addr);
@@ -95,8 +96,8 @@ std::vector<InetAddress> InetAddress::GetAllByDomain(std::string domain_name, sh
 //---------------------------------------------------------------------------
 std::string InetAddress::IP() const
 {
-  char buf[16];
-  inet_ntop(AF_INET, &address_.sin_addr, buf, 16);
+  char buf[INET_ADDRSTRLEN];
+  inet_ntop(AF_INET, &address_.sin_addr, buf, sizeof(buf));
   return buf;
 }
 //---------------------------------------------------------------------------

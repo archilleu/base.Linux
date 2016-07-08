@@ -140,27 +140,26 @@ bool TestBuffer::Test_Normal()
 
     }
 
-    //{
-    //Buffer tcp_buf;
+    {
+    Buffer tcp_buf;
 
-    //std::string path = base::RunPathFileName("test");
-    //int fd = ::open(path.c_str(), O_RDONLY);
-    //if(0 > fd)
-    //  return true;
+    std::string path = base::RunPathFileName("./file/test");
+    base::MemoryBlock mb;
+    base::LoadFile(path, &mb);
+    int fd = ::open(path.c_str(), O_RDONLY);
+    if(0 > fd)
+      return true;
 
-    //int err_no = 0;
-    //for(int len=tcp_buf.ReadFd(fd, &err_no); 0<len; len=tcp_buf.ReadFd(fd, &err_no))
-    //{
-    //    printf("read size:%d\n", len); 
-    //}
-    //close(fd);
+    int err_no = 0;
+    for(int len=tcp_buf.ReadFd(fd, &err_no); 0<len; len=tcp_buf.ReadFd(fd, &err_no))
+    {
+        printf("read size:%d\n", len); 
+    }
+    close(fd);
 
-    //base::AppendFile file;
-    //assert(true == file.Open(base::RunPathFileName(base::Timestamp::Now().Datetime())));
-    //file.Append(tcp_buf.Peek(), tcp_buf.ReadableBytes());
-    //file.Flush();
-    //file.Close();
-    //}
+    assert(mb.len() == tcp_buf.ReadableBytes());
+    assert(0 == memcmp(mb.dat(), tcp_buf.Peek(), tcp_buf.ReadableBytes()));
+    }
 
     return true;
 }

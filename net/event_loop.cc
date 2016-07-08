@@ -222,7 +222,7 @@ void EventLoop::SetAsSignalHandleEventLoop()
     return;
 }
 //---------------------------------------------------------------------------
-void EventLoop::AssertInLoopThread()
+void EventLoop::AssertInLoopThread() const
 {
     if(!IsInLoopThread())
         AbortNotInLoopThread();
@@ -230,7 +230,7 @@ void EventLoop::AssertInLoopThread()
     return;
 }
 //---------------------------------------------------------------------------
-bool EventLoop::IsInLoopThread()
+bool EventLoop::IsInLoopThread() const
 {
     return (tid_ == base::CurrentThread::tid());
 
@@ -315,7 +315,7 @@ void EventLoop::ChannelRemove(Channel* channel)
     return;
 }
 //---------------------------------------------------------------------------
-bool EventLoop::HasChannel(Channel* channel)
+bool EventLoop::HasChannel(Channel* channel) const
 {
     assert(this == channel->owner_loop());
     AssertInLoopThread();
@@ -323,7 +323,7 @@ bool EventLoop::HasChannel(Channel* channel)
     return poller_->HasChannel(channel);
 }
 //---------------------------------------------------------------------------
-void EventLoop::AbortNotInLoopThread()
+void EventLoop::AbortNotInLoopThread() const
 {
     SystemLog_Debug("%p was create in tid:%u, tname:%s, but current tid:%d, tname:%s",
                     this, tid_, tname_, base::CurrentThread::tid(), base::CurrentThread::tname());
