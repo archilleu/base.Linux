@@ -36,6 +36,7 @@ void Poller::DumpChannel()
     }
 
     assert(((void)"channels num not eq num", count == channel_num_));
+    SystemLog_Info("has channels:%zu", count); 
 
     return;
 }

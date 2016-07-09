@@ -2,8 +2,8 @@
 #ifndef BASE_LINUX_NET_TCP_SERVER_H_
 #define BASE_LINUX_NET_TCP_SERVER_H_
 //---------------------------------------------------------------------------
-#include "../base/share_inc.h"
 #include "callback.h"
+#include "../base/share_inc.h"
 #include "../base/timestamp.h"
 //---------------------------------------------------------------------------
 namespace net
@@ -20,14 +20,23 @@ public:
     TCPServer(EventLoop* owner_loop, InetAddress& listen_addr);
     ~TCPServer();
 
-    void set_callback_connection    (const CallbackConnection& callback)    { callback_connection_      = callback; }
-    void set_callback_disconnection (const CallbackDisconnection& callback) { callback_disconnection_   = callback; }
-    void set_callback_read          (const CallbackRead& callback)          { callback_read_            = callback; }
+    void set_callback_connection        (CallbackConnection&& callback)                     { callback_connection_   = std::move(callback); }
+    void set_callback_disconnection     (CallbackDisconnection&& callback)                  { callback_disconnection_= std::move(callback); }
+    void set_callback_read              (CallbackRead&& callback)                           { callback_read_         = std::move(callback); }
+    void set_callback_write_complete    (CallbackWriteComplete&& callback)                  { callback_write_complete_ = std::move(callback); }
+    void set_callback_high_water_mark   (CallbackWriteHighWaterMark&& callback, size_t mark)
+    {
+        callback_high_water_mark_ = std::move(callback);
+        mark_ = mark;
+    }
 
     void set_event_loop_nums(int nums);
 
     void Start();
     void Stop();
+
+    //for debug
+    void DumpConnection();
 
 private:
     void OnNewConnection(int clientfd, const InetAddress& client_addr, base::Timestamp accept_time);
@@ -36,16 +45,21 @@ private:
     void OnConnectionDestroyInLoop  (const TCPConnectionPtr& connection_ptr);
 
 private:
-    CallbackConnection      callback_connection_;
-    CallbackDisconnection   callback_disconnection_;
-    CallbackRead            callback_read_;
+    CallbackConnection          callback_connection_;
+    CallbackDisconnection       callback_disconnection_;
+    CallbackRead                callback_read_;
+    CallbackWriteComplete       callback_write_complete_;
+    CallbackWriteHighWaterMark  callback_high_water_mark_;
+    size_t                      mark_;
 
     EventLoop*                  owner_loop_;
     std::string                 name_;
     size_t                      next_connect_id_;
     std::shared_ptr<Acceptor>   acceptor_;
 
-    std::map<std::string, TCPConnectionPtr> tcp_name_connection_map_;
+    std::vector<TCPConnectionPtr>   tcp_conn_list_;            
+    size_t                          tcp_conn_count_;
+
     std::shared_ptr<EventLoopThreadPool>    loop_thread_pool_;
 };
 

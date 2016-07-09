@@ -28,7 +28,6 @@ public:
     //注意:connection 回调不能在回调里面发送数据
     void set_callback_connection        (const CallbackConnection& callback)        { callback_connection_      = std::move(callback); }
     void set_callback_disconnection     (const CallbackDisconnection& callback)     { callback_disconnection_   = std::move(callback); }
-    void set_callback_destroy           (const CalllbackDestroy& callback)          { callback_destroy_         = std::move(callback); }
     void set_callback_read              (const CallbackRead& callback)              { callback_read_            = std::move(callback); }
     void set_callback_write_complete    (const CallbackWriteComplete& callback)     { callback_write_complete_  = std::move(callback); }
     void set_callback_high_water_mark   (const CallbackWriteHighWaterMark& callback, size_t overstock_size)
@@ -36,6 +35,10 @@ public:
         callback_high_water_mark_   = std::move(callback); 
         overstock_size_             = overstock_size;
     }
+
+    //for TCPServer use
+    void set_callback_destroy           (const CalllbackDestroy& callback)          { callback_destroy_         = std::move(callback); }
+    void set_callback_close (const CallbackClose& callback) { callback_close_ = callback; }
 
     //初始化
     void Initialize();
@@ -60,6 +63,8 @@ public:
 
     EventLoop*                      owner_loop()    { return owner_loop_; }
     const std::shared_ptr<Socket>   socket()        { return socket_; }
+
+    std::string GetTCPInfo() const;
 
 private:
     //如果上面的Send调用不在本io线程中调用,则转换到本线程发送数据,达到线程安全的目的
@@ -97,6 +102,7 @@ private:
     CallbackRead                callback_read_;
     CallbackWriteComplete       callback_write_complete_;
     CallbackWriteHighWaterMark  callback_high_water_mark_;
+    CallbackClose               callback_close_;
     size_t                      overstock_size_;
 };
 

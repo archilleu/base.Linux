@@ -123,6 +123,11 @@ void TCPConnection::ConnectionDestroy()
     return;
 }
 //---------------------------------------------------------------------------
+std::string TCPConnection::GetTCPInfo() const
+{
+    return socket_->GetTCPInfoString();
+}
+//---------------------------------------------------------------------------
 void TCPConnection::SendInLoopA(const base::MemoryBlock dat)
 {
     SendInLoopB(dat.dat(), dat.len());

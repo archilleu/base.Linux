@@ -33,13 +33,6 @@ void EventLoopThreadPool::Start()
         std::shared_ptr<EventLoopThread> loop_thread(new EventLoopThread());
 
         EventLoop* loop = loop_thread->StartLoop();
-        if(0 == loop)
-        {
-            SystemLog_Error("event loop start failed,thread nums: %d", i);
-            assert(0);
-            return;
-        }
-
         loop_threads_.push_back(loop_thread);
         loops_.push_back(loop);
     }
@@ -54,7 +47,7 @@ void EventLoopThreadPool::Stop()
         return;
 
     for(auto iter : loop_threads_)
-        iter->StartLoop();
+        iter->StopLoop();
 
     running_    = false;
     loop_main_  = 0;
