@@ -36,10 +36,11 @@ void ThreadEventLoop1()
 //---------------------------------------------------------------------------
 bool TestEventLoop::DoTest()
 {
+    if(false == Test_Channel())     return false;
     //if(false == Test_Normal())      return false;//需要额外线程打断该测试
 //    if(false == Test_Signal())      return false;
     //if(false == Test_RunInLoop())   return false;
-    if(false == Test_Timefd())      return false;
+    //if(false == Test_Timefd())      return false;
     //if(false == Test_TimerTask())   return false;
 
     return true;
@@ -64,6 +65,39 @@ void SigUsr1Callback()
 void SigUsr2Callback()
 {
     std::cout << "recv usr2 sig" << std::endl;
+}
+//---------------------------------------------------------------------------
+bool TestEventLoop::Test_Channel()
+{
+    int timefd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK|TFD_CLOEXEC);
+    EventLoop loop;
+    Channel channel(&loop, timefd);
+    channel.DisableAll();
+    channel.DisableAll();
+    channel.ReadDisable();
+    channel.ReadDisable();
+    channel.WriteDisable();
+    channel.WriteDisable();
+    MY_ASSERT(channel.IsNoneEvent());
+
+    channel.ReadEnable();
+    channel.ReadEnable();
+    channel.WriteEnable();
+    channel.WriteEnable();
+    MY_ASSERT(!channel.IsNoneEvent());
+    channel.ReadDisable();
+    channel.ReadDisable();
+    channel.WriteDisable();
+    channel.DisableAll();
+    channel.WriteDisable();
+    channel.ReadEnable();
+    channel.DisableAll();
+    MY_ASSERT(channel.IsNoneEvent());
+
+    channel.Remove();
+    channel.Remove();
+
+    return true;
 }
 //---------------------------------------------------------------------------
 bool TestEventLoop::Test_Normal()

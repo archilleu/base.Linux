@@ -23,6 +23,7 @@ public:
     virtual bool DoTest();
 
 private:
+    bool Test_Channel();
     bool Test_Normal();
     bool Test_Signal();
     bool Test_RunInLoop();

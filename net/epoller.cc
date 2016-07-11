@@ -89,28 +89,45 @@ void EPoller::ChannelUpdate(Channel* channel)
     {
         case kNew:
             assert(((void)"channel alreeady add", nullptr == channels_[fd]));
-            if(false == Update(EPOLL_CTL_ADD, channel))
-                return;
+            if(!channel->IsNoneEvent())
+            {
+                if(false == Update(EPOLL_CTL_ADD, channel))
+                    return;
+
+                channel->set_status(kAdded);
+            }
+            else
+            {
+                channel->set_status(kDel);
+            }
 
             AddfdList(fd, channel);
-            channel->set_status(kAdded);
 
             break;
 
         case kAdded:
             assert(((void)"channel no eq channels_", channel == this->channels_[channel->fd()]));
-            if(channel->IsNoneEvent())
+            if(!channel->IsNoneEvent())
+            {
+                Update(EPOLL_CTL_MOD, channel);
+            }
+            else
             {
                 Update(EPOLL_CTL_DEL, channel);
                 channel->set_status(kDel);
             }
-            else
-                Update(EPOLL_CTL_MOD, channel);
 
             break;
         
         case kDel:
             assert(((void)"channel no eq channels_", channel == this->channels_[channel->fd()]));
+
+            if(!channel->IsNoneEvent())
+            {
+                Update(EPOLL_CTL_ADD, channel);
+                channel->set_status(kAdded);
+            }
+
             break;
 
         default:
@@ -123,23 +140,30 @@ void EPoller::ChannelUpdate(Channel* channel)
 void EPoller::ChannelRemove(Channel* channel)
 {
     this->AssertInLoopThread();
+    int fd      = channel->fd();
+    int status  = channel->status();
+    SystemLog_Debug("fd:%d events:%d index:%d", fd, channel->events(), status);
 
-    int fd  = channel->fd();
-    int idx = channel->index();
-    SystemLog_Debug("fd:%d events:%d index:%d", fd, channel->events(), idx);
-
-    assert(((void)"idx requst no zero", 0 != idx));
-    assert(((void)"idx not eq fd", idx == fd));
-    assert(((void)"idx must <= channels_'s size", idx <= static_cast<int>(channels_.size())));
-    assert(channel == channels_[idx]);
-    
-    if(!channel->IsNoneEvent())
+    if(kNew != status)
     {
-        if(false == Update(EPOLL_CTL_DEL, channel))
-            return;
+        assert(((void)"idx must <= channels_'s size", fd <= static_cast<int>(channels_.size())));
+        assert(channel == channels_[fd]);
+        
+        if(!channel->IsNoneEvent())
+        {
+            assert(kAdded == status);
+            if(false == Update(EPOLL_CTL_DEL, channel))
+                return;
+        }
+        else
+        {
+            assert(kDel == status);
+        }
+
+        channel->set_status(kNew);
+        DeldList(channel);
     }
 
-    DeldList(channel);
     return;
 }
 //---------------------------------------------------------------------------
@@ -207,7 +231,6 @@ void EPoller::AddfdList(int fd, Channel* channel)
 
     channels_[fd] = channel;
     channel_num_++;
-    channel->set_index(fd);
 
     return;
 }
@@ -216,7 +239,6 @@ void EPoller::DeldList(Channel* channel)
 {
     channels_[channel->fd()] = nullptr;
     channel_num_--;
-    channel->set_index(0);
 }
 //---------------------------------------------------------------------------
 }//namespace net
