@@ -8,17 +8,17 @@
 namespace net
 {
 //TCP
-class TCPConnection;
+class TCPConn;
 class Buffer;
 
-typedef std::shared_ptr<TCPConnection> TCPConnectionPtr;
+typedef std::shared_ptr<TCPConn> TCPConnPtr;
 
-typedef std::function<void (const TCPConnectionPtr&)>                           CallbackConnection;
-typedef std::function<void (const TCPConnectionPtr&)>                           CallbackDisconnection;
-typedef std::function<void (const TCPConnectionPtr&)>                           CallbackClose;
-typedef std::function<void (const TCPConnectionPtr&, Buffer&, base::Timestamp)> CallbackRead;
-typedef std::function<void (const TCPConnectionPtr&)>                           CallbackWriteComplete;
-typedef std::function<void (const TCPConnectionPtr&, size_t)>                   CallbackWriteHighWaterMark;
+typedef std::function<void (const TCPConnPtr&)>                           CallbackConnection;
+typedef std::function<void (const TCPConnPtr&)>                           CallbackDisconnection;
+typedef std::function<void (const TCPConnPtr&)>                           CallbackRemove;
+typedef std::function<void (const TCPConnPtr&, Buffer&, base::Timestamp)> CallbackRead;
+typedef std::function<void (const TCPConnPtr&)>                           CallbackWriteComplete;
+typedef std::function<void (const TCPConnPtr&, size_t)>                   CallbackWriteHighWaterMark;
 
 typedef std::function<void (void)>  CallbackTimerTask;
 

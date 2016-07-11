@@ -54,8 +54,8 @@ public:
     const EventLoop* owner_loop() const { return owner_loop_; }
 
     int     fd() const          { return fd_; }
-    int     index() const       { return index_; }
-    void    set_index(int idx)  { index_= idx; }
+    int     status() const       { return status_; }
+    void    set_status(int s)  { status_ = s; }
 
     //调试接口
     std::string REventsToString();
@@ -73,7 +73,7 @@ private:
     int         fd_;        //Channel关联的描述符
     int         events_;    //关注的事件
     int         revents_;   //触发的事件
-    int         index_;     //对应于在poller中channels_的idx
+    int         status_;    //在poll中的监听状态，kNew，kAdded表明已经在epoll中监听，而kDel表明禁止epoll中监听
     bool        handling_;  //是否正在处理事件中,如果是,则该Channel不能删除
 
     //为防止拥有该Channel的对象析构导致自己在处理事件过程中提前析构,需要增加对Channel的保护

@@ -20,12 +20,12 @@ bool TestTCPServer::DoTest()
     return true;
 }
 //---------------------------------------------------------------------------
-void TestTCPServer::OnConnection(const TCPConnectionPtr& conn_ptr)
+void TestTCPServer::OnConnection(const TCPConnPtr& conn_ptr)
 {
     std::cout << "TestTCPServer" << ": connect:" << conn_ptr->name() << std::endl;
 }
 //---------------------------------------------------------------------------
-void TestTCPServer::OnDisconnection(const TCPConnectionPtr& conn_ptr)
+void TestTCPServer::OnDisconnection(const TCPConnPtr& conn_ptr)
 {
     std::cout << "TestTCPServer" << ": disconnect:" << conn_ptr->name() << std::endl;
 }
@@ -40,37 +40,32 @@ bool TestTCPServer::Test_Illegal()
     return true;
 }
 //---------------------------------------------------------------------------
-static EventLoop* g_loop = 0;
-//---------------------------------------------------------------------------
-void Test_Normal_Finishe()
+TCPServer* svr;
+static void Dump()
 {
-    g_loop->Quit();
-    g_loop = 0;
-
-    return;
+    svr->DumpConnection();
 }
 //---------------------------------------------------------------------------
 bool TestTCPServer::Test_Normal()
 {
     {
     EventLoop loop;
-    InetAddress listen_addr("127.0.0.1",  9999);
+    InetAddress listen_addr(9999);
     TCPServer tcp_server(&loop, listen_addr);
     }
 
     {
     EventLoop loop;
-    InetAddress listen_addr("127.0.0.1",  9999);
+    InetAddress listen_addr(9999);
     TCPServer tcp_server(&loop, listen_addr);
+    svr = &tcp_server;
+    tcp_server.set_event_loop_nums(1);
     
-    tcp_server.set_event_loop_nums(4);
+    loop.set_sig_usr1_callback(Dump);
+    loop.SetAsSignalHandleEventLoop();
     tcp_server.set_callback_connection(std::bind(&TestTCPServer::OnConnection, this, std::placeholders::_1));
     tcp_server.set_callback_disconnection(std::bind(&TestTCPServer::OnDisconnection, this, std::placeholders::_1));
     tcp_server.Start();
-    
-    g_loop = &loop;
-    loop.RunAfter(60*3, Test_Normal_Finishe);
-
     loop.Loop();
     tcp_server.Stop();
     }
@@ -80,6 +75,17 @@ bool TestTCPServer::Test_Normal()
 //---------------------------------------------------------------------------
 bool TestTCPServer::Test_MultiThread()
 {
+    EventLoop loop;
+    InetAddress listen_addr(9999);
+    TCPServer tcp_server(&loop, listen_addr);
+    
+    tcp_server.set_event_loop_nums(8);
+    tcp_server.set_callback_connection(std::bind(&TestTCPServer::OnConnection, this, std::placeholders::_1));
+    tcp_server.set_callback_disconnection(std::bind(&TestTCPServer::OnDisconnection, this, std::placeholders::_1));
+    tcp_server.Start();
+    loop.Loop();
+    tcp_server.Stop();
+
     return true;
 }
 //---------------------------------------------------------------------------

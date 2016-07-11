@@ -82,33 +82,33 @@ void TCPClient::NewConnection(short sockfd)
     InetAddress peer_addr = Socket::GetPeerAddress(sockfd);
     std::string conn_name = base::CombineString("%s:%s#%d", name_.c_str(), peer_addr.IPPort().c_str(), next_conn_id_++);
     InetAddress local_addr(sockfd);
-    TCPConnectionPtr conn(new TCPConnection(loop_, conn_name, sockfd, local_addr, peer_addr));
-    conn->set_callback_connection(callback_connection_);
-    conn->set_callback_read(callback_read_);
-    conn->set_callback_write_complete(callback_write_complete_);
-    conn->set_callback_disconnection(std::bind(&TCPClient::RemoveConnection, this, std::placeholders::_1));
-    conn->Initialize();
+    TCPConnPtr conn_ptr(new TCPConn(loop_, conn_name, sockfd, local_addr, peer_addr));
+    conn_ptr->set_callback_connection(callback_connection_);
+    conn_ptr->set_callback_read(callback_read_);
+    conn_ptr->set_callback_write_complete(callback_write_complete_);
+    conn_ptr->set_callback_disconnection(std::bind(&TCPClient::RemoveConnection, this, std::placeholders::_1));
+    conn_ptr->Initialize();
 
     {
     std::lock_guard<std::mutex> lock(mutex_);
-    connection_ = conn;
+    connection_ = conn_ptr;
     }
-    conn->ConnectionEstablished();
+    conn_ptr->ConnectionEstablished();
     return;
 }
 //---------------------------------------------------------------------------
-void TCPClient::RemoveConnection(const TCPConnectionPtr& conn)
+void TCPClient::RemoveConnection(const TCPConnPtr& conn_ptr)
 {
     loop_->AssertInLoopThread();
-    assert(loop_ == conn->owner_loop());
+    assert(loop_ == conn_ptr->owner_loop());
 
     {
     std::lock_guard<std::mutex> lock(mutex_);
-    assert(connection_.get() == conn.get());
+    assert(connection_.get() == conn_ptr.get());
     connection_.reset();
     }
 
-    loop_->QueueInLoop(std::bind(&TCPConnection::ConnectionDestroy, conn));
+    loop_->QueueInLoop(std::bind(&TCPConn::ConnectionDestroy, conn_ptr));
 
     if(retry_ && connect_)
     {

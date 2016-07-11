@@ -24,8 +24,8 @@ public:
     virtual bool DoTest();
 
 private:
-    void OnConnection   (const TCPConnectionPtr& conn_ptr);
-    void OnDisconnection(const TCPConnectionPtr& conn_ptr);
+    void OnConnection   (const TCPConnPtr& conn_ptr);
+    void OnDisconnection(const TCPConnPtr& conn_ptr);
 
     void OnThreadClientConnect();
 

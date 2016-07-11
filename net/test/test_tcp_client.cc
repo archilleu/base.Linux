@@ -20,22 +20,22 @@ namespace
 };
 bool flag = false;
 //---------------------------------------------------------------------------
-void TestTCPClient::OnConnection(const TCPConnectionPtr& conn)
+void TestTCPClient::OnConnection(const TCPConnPtr& conn_ptr)
 {
     std::cout << "OnConnection:";
-    std::cout << conn->name() << std::endl;
+    std::cout << conn_ptr->name() << std::endl;
     flag = true;
 }
 //---------------------------------------------------------------------------
-void TestTCPClient::OnRead(const TCPConnectionPtr& conn, Buffer& buffer, base::Timestamp rcv_time)
+void TestTCPClient::OnRead(const TCPConnPtr& conn_ptr, Buffer& buffer, base::Timestamp rcv_time)
 {
     std::cout << "time:" << rcv_time.Datetime(true) << "OnRead" << "size:" << buffer.ReadableBytes() << std::endl;
-    conn->Send(buffer.Peek(), buffer.ReadableBytes());
+    conn_ptr->Send(buffer.Peek(), buffer.ReadableBytes());
     buffer.RetrieveAll();
     return;
 }
 //---------------------------------------------------------------------------
-void TestTCPClient::OnWriteComplete(const TCPConnectionPtr& )
+void TestTCPClient::OnWriteComplete(const TCPConnPtr& )
 {
     std::cout << "OnWriteComplete" << std::endl;
 }

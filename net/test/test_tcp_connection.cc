@@ -88,7 +88,7 @@ bool TestTCPConnection::Test_MultiThread()
     return true;
 }
 //---------------------------------------------------------------------------
-void TestTCPConnection::OnConnection(const TCPConnectionPtr& conn_ptr)
+void TestTCPConnection::OnConnection(const TCPConnPtr& conn_ptr)
 {
     ConnectionAdd(conn_ptr);
 //    std::cout << "OnConnectio name:" << conn_ptr->name()
@@ -99,7 +99,7 @@ void TestTCPConnection::OnConnection(const TCPConnectionPtr& conn_ptr)
     return;
 }
 //---------------------------------------------------------------------------
-void TestTCPConnection::OnDisconnection(const TCPConnectionPtr& conn_ptr)
+void TestTCPConnection::OnDisconnection(const TCPConnPtr& conn_ptr)
 {
     ConnectionDel(conn_ptr);
 //    std::cout << "OnDisconnectio name:" << conn_ptr->name()
@@ -110,7 +110,7 @@ void TestTCPConnection::OnDisconnection(const TCPConnectionPtr& conn_ptr)
     return;
 }
 //---------------------------------------------------------------------------
-void TestTCPConnection::OnRead(const TCPConnectionPtr& conn_ptr, Buffer& rbuf)
+void TestTCPConnection::OnRead(const TCPConnPtr& conn_ptr, Buffer& rbuf)
 {
 //    std::cout << "read name:" << conn_ptr->name()
 //        << " local addr:" << conn_ptr->local_addr().IPPort()
@@ -139,7 +139,7 @@ void TestTCPConnection::OnRead(const TCPConnectionPtr& conn_ptr, Buffer& rbuf)
     return;
 }
 //---------------------------------------------------------------------------
-void TestTCPConnection::ConnectionAdd(const TCPConnectionPtr& conn_ptr)
+void TestTCPConnection::ConnectionAdd(const TCPConnPtr& conn_ptr)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -152,7 +152,7 @@ void TestTCPConnection::ConnectionAdd(const TCPConnectionPtr& conn_ptr)
     return;
 }
 //---------------------------------------------------------------------------
-void TestTCPConnection::ConnectionDel(const TCPConnectionPtr& conn_ptr)
+void TestTCPConnection::ConnectionDel(const TCPConnPtr& conn_ptr)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -165,9 +165,9 @@ size_t TestTCPConnection::ConnectionNums()
     return tcp_connection_set_.size();
 }
 //---------------------------------------------------------------------------
-void TestTCPConnection::OnConnectionRandomDel(const TCPConnectionPtr& conn_ptr)
+void TestTCPConnection::OnConnectionRandomDel(const TCPConnPtr& conn_ptr)
 {
-    TCPConnectionPtr ptr;
+    TCPConnPtr ptr;
 
     {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -186,7 +186,7 @@ void TestTCPConnection::OnConnectionRandomDel(const TCPConnectionPtr& conn_ptr)
 //---------------------------------------------------------------------------
 void TestTCPConnection::Notify()
 {
-    TCPConnectionPtr ptr;
+    TCPConnPtr ptr;
     {
     std::lock_guard<std::mutex> lock(mutex_);
     ssize_t nums = tcp_connection_set_.size();
@@ -211,7 +211,7 @@ void TestTCPConnection::Notify()
 //---------------------------------------------------------------------------
 void TestTCPConnection::Close()
 {
-    TCPConnectionPtr ptr;
+    TCPConnPtr ptr;
     {
     std::lock_guard<std::mutex> lock(mutex_);
     size_t nums = tcp_connection_set_.size();

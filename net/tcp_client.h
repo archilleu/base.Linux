@@ -29,7 +29,7 @@ public:
     void EnableRetry() { retry_ = true; }
 
     //程序退出的时候,所有持有该连接的对象都必须释首先放该对象
-    TCPConnectionPtr connection() { std::lock_guard<std::mutex> lock(mutex_); return connection_; }
+    TCPConnPtr connection() { std::lock_guard<std::mutex> lock(mutex_); return connection_; }
 
     EventLoop* loop() { return loop_; }
 
@@ -37,7 +37,7 @@ public:
 
 private:
     void NewConnection(short sockfd);
-    void RemoveConnection(const TCPConnectionPtr& conn);
+    void RemoveConnection(const TCPConnPtr& conn_ptr);
 
 private:
     EventLoop*  loop_;
@@ -47,7 +47,7 @@ private:
     std::string name_;
 
     std::mutex                  mutex_;//保护connection_
-    TCPConnectionPtr            connection_;
+    TCPConnPtr            connection_;
     std::shared_ptr<Connector>  connector_; //Before calling shared_from_this() your class needs to be stored in a shared_ptr
 
     CallbackConnection      callback_connection_;

@@ -14,7 +14,7 @@ const int Channel::kEventWrite  = EPOLLOUT;
 Channel::Channel(EventLoop* loop, int _fd)
 :   owner_loop_(loop),
     fd_(_fd),
-    events_(kNone),//在TCPServer通知TCPConnection对应成功建立连接前,loop都不能接收任何事件
+    events_(kNone),//在TCPServer通知TCPConn对应成功建立连接前,loop都不能接收任何事件
     revents_(0),
     index_(0),
     handling_(false),

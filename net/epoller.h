@@ -26,6 +26,9 @@ private:
 
     bool Update(int op, Channel* channel);
 
+    void AddfdList(int fd, Channel* channel);
+    void DeldList(Channel* channel);
+
 private:
     int efd_;
 

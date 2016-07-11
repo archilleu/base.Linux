@@ -65,7 +65,7 @@ static void ResetTimerfd(int timerfd, base::Timestamp expired)
 TimerTaskQueue::TimerTaskQueue(EventLoop* owner_loop)
 :   owner_loop_(owner_loop)
 {
-    SystemLog_Debug("timer task queue conn");
+    SystemLog_Debug("timer task queue conn_ptr");
 
     timerfd_ = CreateTimerfd();
     channel_timer_.reset(new Channel(owner_loop_, timerfd_));

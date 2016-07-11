@@ -30,21 +30,21 @@ public:
     bool Test_MultiThread();
 
 private:
-    void OnConnection   (const TCPConnectionPtr& conn_ptr);
-    void OnDisconnection(const TCPConnectionPtr& conn_ptr);
-    void OnRead         (const TCPConnectionPtr& conn_ptr, Buffer& rbuffer);
+    void OnConnection   (const TCPConnPtr& conn_ptr);
+    void OnDisconnection(const TCPConnPtr& conn_ptr);
+    void OnRead         (const TCPConnPtr& conn_ptr, Buffer& rbuffer);
 
 private:
-    void    ConnectionAdd           (const TCPConnectionPtr& conn_ptr);
-    void    ConnectionDel           (const TCPConnectionPtr& conn_ptr);
+    void    ConnectionAdd           (const TCPConnPtr& conn_ptr);
+    void    ConnectionDel           (const TCPConnPtr& conn_ptr);
     size_t  ConnectionNums          ();
-    void    OnConnectionRandomDel   (const TCPConnectionPtr& conn_ptr);
+    void    OnConnectionRandomDel   (const TCPConnPtr& conn_ptr);
 
     void    Notify();
     void    Close();
 
 private:
-    std::set<TCPConnectionPtr>  tcp_connection_set_;
+    std::set<TCPConnPtr>  tcp_connection_set_;
     std::mutex                  mutex_;
 };
 

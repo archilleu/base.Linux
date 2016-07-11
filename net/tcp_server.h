@@ -41,8 +41,11 @@ public:
 private:
     void OnNewConnection(int clientfd, const InetAddress& client_addr, base::Timestamp accept_time);
 
-    void OnConnectionDestroy        (const TCPConnectionPtr& connection_ptr);
-    void OnConnectionDestroyInLoop  (const TCPConnectionPtr& connection_ptr);
+    void OnConnectionRemove        (const TCPConnPtr& conn_ptr);
+    void OnConnectionRemoveInLoop  (const TCPConnPtr& conn_ptr);
+
+    void ConnAddList(const TCPConnPtr& conn_ptr);
+    void ConnDelList(const TCPConnPtr& conn_ptr);
 
 private:
     CallbackConnection          callback_connection_;
@@ -57,8 +60,8 @@ private:
     size_t                      next_connect_id_;
     std::shared_ptr<Acceptor>   acceptor_;
 
-    std::vector<TCPConnectionPtr>   tcp_conn_list_;            
-    size_t                          tcp_conn_count_;
+    std::vector<TCPConnPtr>     tcp_conn_list_;            
+    size_t                      tcp_conn_count_;
 
     std::shared_ptr<EventLoopThreadPool>    loop_thread_pool_;
 };

@@ -4,6 +4,13 @@
 #include "net_log.h"
 #include <sys/epoll.h>
 //---------------------------------------------------------------------------
+namespace
+{
+    const int kNew  = 1;
+    const int kAdded= 2;
+    const int kDel  = 3;
+}
+//---------------------------------------------------------------------------
 namespace net
 {
 //---------------------------------------------------------------------------
@@ -74,31 +81,40 @@ void EPoller::ChannelUpdate(Channel* channel)
 {
     this->AssertInLoopThread();
 
-    int fd  = channel->fd();
-    int idx = channel->index();
-    SystemLog_Debug("fd:%d events:%d index:%d", fd, channel->events(), idx);
+    int fd      = channel->fd();
+    int status  = channel->status();
+    SystemLog_Debug("fd:%d events:%d status:%d", fd, channel->events(), status);
 
-    if(0 == idx) //add
+    switch(status)
     {
-        if(fd >= static_cast<int>(this->channels_.size()))
-            channels_.resize(channels_.size()*2);
+        case kNew:
+            assert(((void)"channel alreeady add", nullptr == channels_[fd]));
+            if(false == Update(EPOLL_CTL_ADD, channel))
+                return;
 
-        assert(((void)"channel alreeady add", nullptr == channels_[fd]));
-        if(false == Update(EPOLL_CTL_ADD, channel))
-            return;
+            AddfdList(fd, channel);
+            channel->set_status(kAdded);
 
-        channels_[fd] = channel;
-        channel_num_++;
-        channel->set_index(fd);
-    }
-    else //mod
-    {
-        assert(((void)"fd not eq idx", fd == idx));
-        assert(((void)"channel no eq channels_", channel == this->channels_[idx]));
-        if(channel->IsNoneEvent())
-            Update(EPOLL_CTL_DEL, channel);
-        else
-            Update(EPOLL_CTL_MOD, channel);
+            break;
+
+        case kAdded:
+            assert(((void)"channel no eq channels_", channel == this->channels_[channel->fd()]));
+            if(channel->IsNoneEvent())
+            {
+                Update(EPOLL_CTL_DEL, channel);
+                channel->set_status(kDel);
+            }
+            else
+                Update(EPOLL_CTL_MOD, channel);
+
+            break;
+        
+        case kDel:
+            assert(((void)"channel no eq channels_", channel == this->channels_[channel->fd()]));
+            break;
+
+        default:
+            assert(((void)"status invalid", 0));
     }
 
     return;
@@ -117,12 +133,13 @@ void EPoller::ChannelRemove(Channel* channel)
     assert(((void)"idx must <= channels_'s size", idx <= static_cast<int>(channels_.size())));
     assert(channel == channels_[idx]);
     
-    if(false == Update(EPOLL_CTL_DEL, channel))
-        return;
+    if(!channel->IsNoneEvent())
+    {
+        if(false == Update(EPOLL_CTL_DEL, channel))
+            return;
+    }
 
-    channels_[idx] = nullptr;
-    channel_num_--;
-    channel->set_index(0);
+    DeldList(channel);
     return;
 }
 //---------------------------------------------------------------------------
@@ -170,9 +187,6 @@ bool EPoller::Update(int op, Channel* channel)
 {
     SystemLog_Debug("epoll_ctl op = %s, {fd:%d==>event:%s}", OperatorToString(op), channel->fd(), channel->EventsToString().c_str());
 
-    if(channel->IsNoneEvent())
-        return true;
-
     struct epoll_event event;
     event.events    = channel->events();
     event.data.ptr  = channel;
@@ -184,6 +198,25 @@ bool EPoller::Update(int op, Channel* channel)
     }
 
     return true;
+}
+//---------------------------------------------------------------------------
+void EPoller::AddfdList(int fd, Channel* channel)
+{
+    if(fd >= static_cast<int>(this->channels_.size()))
+        this->channels_.resize(channels_.size()*2);
+
+    channels_[fd] = channel;
+    channel_num_++;
+    channel->set_index(fd);
+
+    return;
+}
+//---------------------------------------------------------------------------
+void EPoller::DeldList(Channel* channel)
+{
+    channels_[channel->fd()] = nullptr;
+    channel_num_--;
+    channel->set_index(0);
 }
 //---------------------------------------------------------------------------
 }//namespace net

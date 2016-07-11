@@ -23,6 +23,7 @@ TCPServer::TCPServer(EventLoop* owner_loop, InetAddress& listen_addr)
 {
     SystemLog_Debug("ctor tcp server, listen address:%s", name_.c_str());
 
+    tcp_conn_list_.resize(base::UNIT_MB);
     acceptor_->set_callback_new_connection(std::bind(&TCPServer::OnNewConnection, this, 
                 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
@@ -67,12 +68,11 @@ void TCPServer::Stop()
         if(!iter)
             continue;
 
-        TCPConnectionPtr conn_ptr = iter;
+        TCPConnPtr conn_ptr = iter;
         iter.reset();
 
         //客户端的连接需要在自己的线程中回调
-        //conn_ptr->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, conn_ptr));
-        conn_ptr.reset();
+        conn_ptr->owner_loop()->RunInLoop(std::bind(&TCPConn::ConnectionDestroy, conn_ptr));
     }
 
     return;
@@ -88,7 +88,7 @@ void TCPServer::DumpConnection()
         if(!tcp_conn_list_[i])
             continue;
 
-        assert(((void)"conn fd no eq idx", tcp_conn_list_[i]->socket()->fd() == static_cast<int>(i)));
+        assert(((void)"conn_ptr fd no eq idx", tcp_conn_list_[i]->socket()->fd() == static_cast<int>(i)));
         count++;
     }
 
@@ -111,52 +111,83 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ba
     SystemLog_Debug("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s\n", accept_time.Datetime(true).c_str(),
             new_conn_name.c_str(), clientfd, tcp_conn_count_, local_addr.IPPort().c_str(), client_addr.IPPort().c_str());
 
-    TCPConnectionPtr conn_ptr = std::make_shared<TCPConnection>(loop, new_conn_name, clientfd, local_addr, client_addr);
+    TCPConnPtr conn_ptr = std::make_shared<TCPConn>(loop, new_conn_name, clientfd, local_addr, client_addr);
     //初始化连接
     conn_ptr->set_callback_connection(callback_connection_);
     conn_ptr->set_callback_disconnection(callback_disconnection_);
     conn_ptr->set_callback_read(callback_read_);
     conn_ptr->set_callback_write_complete(callback_write_complete_);
     conn_ptr->set_callback_high_water_mark(callback_high_water_mark_, mark_);
-    //销毁连接是由TCPConnection发起的回调,需要由TCPServer的线程自己来释放连接
-    conn_ptr->set_callback_destroy(std::bind(&TCPServer::OnConnectionDestroy, this, std::placeholders::_1));
+    conn_ptr->set_callback_remove(std::bind(&TCPServer::OnConnectionRemove, this, std::placeholders::_1));
     
-    //加入到连接map中
-    tcp_conn_list_[clientfd] = conn_ptr;
+    //加入到连接list中
+    ConnAddList(conn_ptr);
+
     conn_ptr->Initialize();
     
     //通知连接已经就绪,在conn_ptr中通知
     //只有在加入到list中后才允许该连接的事件,防止在未加入list前,该连接又close掉导致list里找不到该连接
-    loop->RunInLoop(std::bind(&TCPConnection::ConnectionEstablished, conn_ptr)); 
+    loop->RunInLoop(std::bind(&TCPConn::ConnectionEstablished, conn_ptr)); 
+
+#ifdef _DEBUG
+    DumpConnection();
+#endif
+
     return;
 }
 //---------------------------------------------------------------------------
-void TCPServer::OnConnectionDestroy(const TCPConnectionPtr& connection_ptr)
+void TCPServer::OnConnectionRemove(const TCPConnPtr& conn_ptr)
 {
-    //该回调是由连接的线程回调上来的,但是销毁连接需要在TCPServer的线程中执行(connection_ptr是拷贝的一个副本,即是是引用参数!!)
-    owner_loop_->RunInLoop(std::bind(&TCPServer::OnConnectionDestroyInLoop, this, connection_ptr));
+    //该回调是由连接的线程回调上来的,但是销毁连接需要在TCPServer的线程中执行(conn_ptr是拷贝的一个副本,即是是引用参数!!)
+    owner_loop_->RunInLoop(std::bind(&TCPServer::OnConnectionRemoveInLoop, this, conn_ptr));
     return;
 }
 //---------------------------------------------------------------------------
-void TCPServer::OnConnectionDestroyInLoop(const TCPConnectionPtr& connection_ptr)
+void TCPServer::OnConnectionRemoveInLoop(const TCPConnPtr& conn_ptr)
 {
     //在TCPserver的线程销毁连接
     owner_loop_->AssertInLoopThread();
 
     SystemLog_Debug("server name:[%s], total[%zu]- name:%s,  fd:%d, from :%s to :%s\n", 
-            name_.c_str(), tcp_conn_count_, connection_ptr->name().c_str(), connection_ptr->socket()->fd(), connection_ptr->local_addr().IPPort().c_str(),
-            connection_ptr->peer_addr().IPPort().c_str());
+            name_.c_str(), tcp_conn_count_, conn_ptr->name().c_str(), conn_ptr->socket()->fd(), conn_ptr->local_addr().IPPort().c_str(),
+            conn_ptr->peer_addr().IPPort().c_str());
 
-    if(!tcp_conn_list_[connection_ptr->socket()->fd()])
+    if(!tcp_conn_list_[conn_ptr->socket()->fd()])
     {
-        //当消息为<IN HUP ERR>时,该事件会被多次触发,所以TCPConnectioni做了相应修改(大部分断线只有<IN>消息)~,所以在TCPConnection直接remove省事点
-        SystemLog_Warning("connection:%s not exist!!!", connection_ptr->name().c_str());
+        //当消息为<IN HUP ERR>时,该事件会被多次触发,所以TCPConnectioni做了相应修改(大部分断线只有<IN>消息)~,所以在TCPConn直接remove省事点
+        SystemLog_Warning("connection:%s not exist!!!", conn_ptr->name().c_str());
         assert(0);
     }
-    tcp_conn_list_[connection_ptr->socket()->fd()].reset();
+
+    ConnDelList(conn_ptr);
 
     //通知connection已经销毁
-    //connection_ptr->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, connection_ptr));
+    conn_ptr->owner_loop()->RunInLoop(std::bind(&TCPConn::ConnectionDestroy, conn_ptr));
+
+#ifdef _DEBUG
+    DumpConnection();
+#endif
+
+    return;
+}
+//---------------------------------------------------------------------------
+void TCPServer::ConnAddList(const TCPConnPtr& conn_ptr)
+{
+    if(tcp_conn_list_.size() <= static_cast<size_t>(conn_ptr->socket()->fd()))
+        tcp_conn_list_.resize(tcp_conn_list_.size()*2);
+
+    tcp_conn_list_[conn_ptr->socket()->fd()] = conn_ptr;
+    tcp_conn_count_++;
+    return;
+}
+//---------------------------------------------------------------------------
+void TCPServer::ConnDelList(const TCPConnPtr& conn_ptr)
+{
+    assert(tcp_conn_list_[conn_ptr->socket()->fd()]);
+
+    SystemLog_Debug("conn_ptr ref:%d", conn_ptr.use_count());
+    tcp_conn_list_[conn_ptr->socket()->fd()].reset();
+    tcp_conn_count_--;
     return;
 }
 //---------------------------------------------------------------------------

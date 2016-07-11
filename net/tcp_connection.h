@@ -7,6 +7,7 @@
 #include "callback.h"
 #include "inet_address.h"
 #include "buffer.h"
+#include <atomic>
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -16,13 +17,13 @@ class InetAddress;
 class Socket;
 class Channel;
 
-class TCPConnection : public std::enable_shared_from_this<TCPConnection>
+class TCPConn : public std::enable_shared_from_this<TCPConn>
 {
 public:
-    typedef std::function<void (const TCPConnectionPtr&)> CalllbackDestroy;
+    typedef std::function<void (const TCPConnPtr&)> CalllbackDestroy;
 
-    TCPConnection(EventLoop* owner_loop, const std::string& name, int fd, const InetAddress& local_addr, const InetAddress& peer_addr);
-    ~TCPConnection();
+    TCPConn(EventLoop* owner_loop, const std::string& name, int fd, const InetAddress& local_addr, const InetAddress& peer_addr);
+    ~TCPConn();
 
     //各种回调
     //注意:connection 回调不能在回调里面发送数据
@@ -37,8 +38,7 @@ public:
     }
 
     //for TCPServer use
-    void set_callback_destroy           (const CalllbackDestroy& callback)          { callback_destroy_         = std::move(callback); }
-    void set_callback_close (const CallbackClose& callback) { callback_close_ = callback; }
+    void set_callback_remove (const CallbackRemove& callback) { callback_remove_ = callback; }
 
     //初始化
     void Initialize();
@@ -88,7 +88,14 @@ private:
     std::string name_;
     InetAddress local_addr_;
     InetAddress peer_addr_;
-    bool        connected_;
+    enum
+    {
+        DISCONNECTED=1,
+        CONNECTING,
+        CONNECTED,
+        DISCONNECTING
+    };
+    std::atomic<int> state_;
 
     Buffer buffer_input_;
     Buffer buffer_output_;
@@ -98,11 +105,10 @@ private:
 
     CallbackConnection          callback_connection_;
     CallbackDisconnection       callback_disconnection_;
-    CalllbackDestroy            callback_destroy_;
     CallbackRead                callback_read_;
     CallbackWriteComplete       callback_write_complete_;
     CallbackWriteHighWaterMark  callback_high_water_mark_;
-    CallbackClose               callback_close_;
+    CallbackRemove              callback_remove_;
     size_t                      overstock_size_;
 };
 

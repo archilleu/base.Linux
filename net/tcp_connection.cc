@@ -11,133 +11,152 @@
 namespace net
 {
 //---------------------------------------------------------------------------
-TCPConnection::TCPConnection(EventLoop* ownerloop, const std::string& tcpname, int fd, const InetAddress& localaddr, const InetAddress& peeraddr)
+TCPConn::TCPConn(EventLoop* ownerloop, const std::string& tcpname, int fd, const InetAddress& localaddr, const InetAddress& peeraddr)
 :   owner_loop_(ownerloop),
     name_(tcpname),
     local_addr_(localaddr),
     peer_addr_(peeraddr),
-    connected_(false),
+    state_(CONNECTING),
     socket_(new Socket(fd)),
     channel_(new Channel(owner_loop_, fd)),
     overstock_size_(0)
 {
+    SystemLog_Debug("ctor==>name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), fd, local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+
     assert(0 != owner_loop_);
     assert(0 < fd);
-
-    SystemLog_Debug("ctor==>name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), fd, local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     return;
 }
 //---------------------------------------------------------------------------
-TCPConnection::~TCPConnection()
+TCPConn::~TCPConn()
 {
     SystemLog_Debug("dtor==>name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+
+    assert(DISCONNECTED == state_);
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::Initialize()
+void TCPConn::Initialize()
 {
-    channel_->set_callback_read(std::bind(&TCPConnection::HandleRead, this, std::placeholders::_1));
-    channel_->set_callback_write(std::bind(&TCPConnection::HandleWrite, this));
-    channel_->set_callback_error(std::bind(&TCPConnection::HandleError, this));
-    channel_->set_callback_close(std::bind(&TCPConnection::HandleClose, this));
+    assert(CONNECTING == state_);
+
+    channel_->set_callback_read(std::bind(&TCPConn::HandleRead, this, std::placeholders::_1));
+    channel_->set_callback_write(std::bind(&TCPConn::HandleWrite, this));
+    channel_->set_callback_error(std::bind(&TCPConn::HandleError, this));
+    channel_->set_callback_close(std::bind(&TCPConn::HandleClose, this));
 
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::Send(const char* dat, size_t len)
+void TCPConn::Send(const char* dat, size_t len)
 {
-    assert(true == connected_);//有可能被其它线程关闭
-
-    //如果在本线程调用,则直接发送
-    if(true == owner_loop_->IsInLoopThread())
+    if(CONNECTED == state_)
     {
-        SendInLoopB(dat, len);
+        //如果在本线程调用,则直接发送
+        if(true == owner_loop_->IsInLoopThread())
+        {
+            SendInLoopB(dat, len);
+            return;
+        }
+
+        //不在线程调用,则排入本线程发送队列
+        owner_loop_->QueueInLoop(std::bind(&TCPConn::SendInLoopA, this, base::MemoryBlock(dat, len)));
+
         return;
     }
 
-    //不在线程调用,则排入本线程发送队列
-    owner_loop_->QueueInLoop(std::bind(&TCPConnection::SendInLoopA, this, base::MemoryBlock(dat, len)));
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::Send(const base::MemoryBlock& dat)
+void TCPConn::Send(const base::MemoryBlock& dat)
 {
-    assert(true == connected_);//有可能被其它线程关闭
-
-    //如果在本线程调用,则直接发送
-    if(true == owner_loop_->IsInLoopThread())
+    if(CONNECTED == state_)
     {
-        SendInLoopA(dat);
-        return;
+        //如果在本线程调用,则直接发送
+        if(true == owner_loop_->IsInLoopThread())
+        {
+            SendInLoopA(dat);
+            return;
+        }
+
+        //不在线程调用,则排入本线程发送队列
+        owner_loop_->QueueInLoop(std::bind(&TCPConn::SendInLoopA, this, dat));
     }
 
-    //不在线程调用,则排入本线程发送队列
-    owner_loop_->QueueInLoop(std::bind(&TCPConnection::SendInLoopA, this, dat));
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::Shutdown()
+void TCPConn::Shutdown()
 {
-    assert(true == connected_);//有可能被其它线程关闭
+    if(CONNECTED == state_)
+    {
+        SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
+        state_ = DISCONNECTING;
+        owner_loop_->QueueInLoop(std::bind(&TCPConn::ShutdownInLoop, shared_from_this()));
+    }
+
+    return;
+}
+//---------------------------------------------------------------------------
+void TCPConn::ForceClose()
+{
+    if((CONNECTED==state_) || (DISCONNECTING==state_))
+    {
+
+        SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+        
+        state_ = DISCONNECTING;
+        owner_loop_->QueueInLoop(std::bind(&TCPConn::ForceCloseInLoop, shared_from_this()));
+    }
+
+    return;
+}
+//---------------------------------------------------------------------------
+void TCPConn::ConnectionEstablished()
+{
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-    //connected_ = false;
-    owner_loop_->QueueInLoop(std::bind(&TCPConnection::ShutdownInLoop, shared_from_this()));
-    return;
-}
-//---------------------------------------------------------------------------
-void TCPConnection::ForceClose()
-{
-    assert(true == connected_);//有可能被其它线程关闭
-
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
-
-    //connected_ = false;
-    owner_loop_->QueueInLoop(std::bind(&TCPConnection::ForceCloseInLoop, shared_from_this()));
-    return;
-}
-//---------------------------------------------------------------------------
-void TCPConnection::ConnectionEstablished()
-{
     owner_loop_->AssertInLoopThread();
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    assert(CONNECTING == state_);
 
+    state_ = CONNECTED;
     channel_->Tie(shared_from_this());
     channel_->ReadEnable();
     
     if(callback_connection_)
         callback_connection_(shared_from_this());
 
-    connected_ = true;
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::ConnectionDestroy()
+void TCPConn::ConnectionDestroy()
 {
-    owner_loop_->AssertInLoopThread();
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-    connected_ = false;
+    owner_loop_->AssertInLoopThread();
+    assert(DISCONNECTING == state_);
+
+    state_ = DISCONNECTED;
     channel_->Remove();
     return;
 }
 //---------------------------------------------------------------------------
-std::string TCPConnection::GetTCPInfo() const
+std::string TCPConn::GetTCPInfo() const
 {
     return socket_->GetTCPInfoString();
 }
 //---------------------------------------------------------------------------
-void TCPConnection::SendInLoopA(const base::MemoryBlock dat)
+void TCPConn::SendInLoopA(const base::MemoryBlock dat)
 {
     SendInLoopB(dat.dat(), dat.len());
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::SendInLoopB(const char* dat, size_t len)
+void TCPConn::SendInLoopB(const char* dat, size_t len)
 {
-    assert(true == connected_);
     owner_loop_->AssertInLoopThread();
+    assert(CONNECTED == state_);
 
     ssize_t remain = _SendMostPossible(dat, len);
     if(-1 == remain)
@@ -159,7 +178,7 @@ void TCPConnection::SendInLoopB(const char* dat, size_t len)
     return;
 }
 //---------------------------------------------------------------------------
-ssize_t TCPConnection::_SendMostPossible(const char* dat, size_t len)
+ssize_t TCPConn::_SendMostPossible(const char* dat, size_t len)
 {
     //如果没有关注写事件,意味着写缓存为空,则可以直接发送数据
     ssize_t wlen = 0;
@@ -184,7 +203,7 @@ ssize_t TCPConnection::_SendMostPossible(const char* dat, size_t len)
     return remain;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::_SendDatQueueInBuffer(const char* dat, size_t remain)
+void TCPConn::_SendDatQueueInBuffer(const char* dat, size_t remain)
 {
     //如果之前已经有缓存没有发送完成,或者这次没有发送完成,需要缓存数据等待下一次发送
     
@@ -201,10 +220,12 @@ void TCPConnection::_SendDatQueueInBuffer(const char* dat, size_t remain)
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::ShutdownInLoop()
+void TCPConn::ShutdownInLoop()
 {
-    owner_loop_->AssertInLoopThread();
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+
+    owner_loop_->AssertInLoopThread();
+    assert(CONNECTED == state_);
 
     if(false == channel_->IsWriting())
         socket_->ShutDownWrite();
@@ -212,19 +233,21 @@ void TCPConnection::ShutdownInLoop()
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::ForceCloseInLoop()
+void TCPConn::ForceCloseInLoop()
 {
-    owner_loop_->AssertInLoopThread();
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+
+    owner_loop_->AssertInLoopThread();
+    assert(CONNECTED == state_);
 
     HandleClose();
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::HandleRead(base::Timestamp rcv_time)
+void TCPConn::HandleRead(base::Timestamp rcv_time)
 {
     owner_loop_->AssertInLoopThread();
-    assert(true == connected_);
+    assert(CONNECTED == state_);
 
     int err_no  = 0;
     int rlen    = buffer_input_.ReadFd(socket_->fd(), &err_no);
@@ -255,10 +278,10 @@ void TCPConnection::HandleRead(base::Timestamp rcv_time)
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::HandleWrite()
+void TCPConn::HandleWrite()
 {
     owner_loop_->AssertInLoopThread();
-    assert(true == connected_);
+    assert(CONNECTED == state_);
 
     size_t  readable_len= buffer_output_.ReadableBytes();
     ssize_t wlen        = ::send(socket_->fd(), buffer_output_.Peek(), readable_len, 0);
@@ -289,34 +312,33 @@ void TCPConnection::HandleWrite()
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::HandleError()
+void TCPConn::HandleError()
 {
-    owner_loop_->AssertInLoopThread();
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-    HandleClose();
+    owner_loop_->AssertInLoopThread();
+    assert(CONNECTED == state_);
+
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::HandleClose()
+void TCPConn::HandleClose()
 {
-    owner_loop_->AssertInLoopThread();
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-    connected_ = false;
+    owner_loop_->AssertInLoopThread();
+    assert(CONNECTED == state_);
+
+    state_ = DISCONNECTING;
     /*
     EPOLLERR
         Error condition happened on the associated file descriptor.  epoll_wait(2) will always wait for this event; it is not necessary to set it in events.
     EPOLLHUP
         Hang up happened on the associated file descriptor.  epoll_wait(2) will always wait for this event; it is not necessary to set it in events.
     */
-
-    //而且,因为在
-    //channel_->DisableAll();拯救不了不再接收事件~,原因在上
-    //EventLoop中的DoPending处理函数,加入的任务和处理中的任务有一个间隔时间窗口,所以ConnectionDestroy(因为这个原因,该函数已经去掉)有可能不能在这次的poll中得到调用,导致多次触发该<HUP ERR>事件
-    channel_->Remove();
+    channel_->DisableAll();
     
-    TCPConnectionPtr guard(shared_from_this());
+    TCPConnPtr guard(shared_from_this());
 
     //通知下线,回调给用户,原则上接到这个指令后,上层使用者不应该在对该连接操作
     if(callback_disconnection_)
@@ -325,10 +347,7 @@ void TCPConnection::HandleClose()
     }
 
     //内部开始销毁链接
-    if(callback_destroy_)
-    {
-        callback_destroy_(guard);
-    }
+    callback_remove_(guard);
 
     return;
 }

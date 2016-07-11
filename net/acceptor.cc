@@ -73,6 +73,9 @@ int Acceptor::AcceptConnection(InetAddress* inet_peer)
     int         clientfd= ::accept4(channel_listen_->fd(), reinterpret_cast<sockaddr*>(&client_addr), &len , SOCK_NONBLOCK|SOCK_CLOEXEC);
     if(0 > clientfd)
     {
+        if(EAGAIN == errno)
+            return clientfd;
+
         SystemLog_Error("accept client failed, errno:%d, msg:%s", errno, StrError(errno));
         return -1;
     }
@@ -129,12 +132,15 @@ bool Acceptor::CheckConnection(int fd)
 {
     struct pollfd pfd;
     pfd.fd = fd;
-    pfd.events = POLLIN;
+    pfd.events = POLLOUT;
     pfd.revents = 0;
 
     int num = poll(&pfd, 1, 0);
     if(1 == num)
-        return (pfd.revents & POLLIN);
+    {
+        if(POLLOUT & pfd.revents)
+            return true;
+    }
 
     return false;
 }

@@ -36,11 +36,11 @@ void ThreadEventLoop1()
 //---------------------------------------------------------------------------
 bool TestEventLoop::DoTest()
 {
-    if(false == Test_Normal())      return false;//需要额外线程打断该测试
-    if(false == Test_Signal())      return false;
-    if(false == Test_RunInLoop())   return false;
+    //if(false == Test_Normal())      return false;//需要额外线程打断该测试
+//    if(false == Test_Signal())      return false;
+    //if(false == Test_RunInLoop())   return false;
     if(false == Test_Timefd())      return false;
-    if(false == Test_TimerTask())   return false;
+    //if(false == Test_TimerTask())   return false;
 
     return true;
 }
@@ -182,6 +182,8 @@ bool TestEventLoop::Test_Timefd()
     ::timerfd_settime(timefd, 0, &howlog, NULL);
 
     loop.Loop();
+    channel.DisableAll();
+    channel.ReadDisable();
     channel.Remove();
     ::close(timefd);
 
