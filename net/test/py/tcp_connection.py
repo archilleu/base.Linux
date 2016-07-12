@@ -38,15 +38,13 @@ def SendEncode(dat, conn_ptr):
         return;
 
 def RecvDecode(conn_ptr):
-        rcv = conn_ptr.recv(8)
+        rcv = conn_ptr.recv(8, socket.MSG_WAITALL)
         if 0 == len(rcv):
             return None
 
         codec   = struct.Struct(">ii")
         header  = codec.unpack(rcv)
-
-        print("type:", header[1], "size:", header[0])
-        dat = conn_ptr.recv(header[0])
+        dat = conn_ptr.recv(header[0], socket.MSG_WAITALL)
         return (dat, header[1])
 
 def RecvNotify(dat, conn_ptr):
@@ -74,7 +72,6 @@ def ClientSendData(tname, conn_ptr):
             v = random.randint(0, 255)
             byte_data[i] = v;
 
-        #import pdb; pdb.set_trace();
         try:
             SendEncode(byte_data, conn_ptr)
         except BrokenPipeError as e:
@@ -97,7 +94,6 @@ def ClientSendData(tname, conn_ptr):
 
         if REPLY == pair[1]:
             if byte_data != pair[0]:
-                import pdb; pdb.set_trace();
                 assert False, "error"
 
         #随机断线~
