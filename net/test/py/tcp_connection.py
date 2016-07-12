@@ -6,7 +6,7 @@ import threading
 import random
 import struct
 
-HOST = "127.0.0.1"
+HOST = "0.0.0.0"
 PORT = 9999
 
 REPLY = 1
@@ -29,42 +29,43 @@ def ClientDisconnect():
 
         return
 
-def SendEncode(dat, conn):
+def SendEncode(dat, conn_ptr):
         codec = struct.Struct(">ii")
         header = codec.pack(len(dat), REPLY)
-        conn.send(header)
-        conn.send(dat)
+        conn_ptr.send(header)
+        conn_ptr.send(dat)
 
         return;
 
-def RecvDecode(conn):
-        rcv = conn.recv(8)
+def RecvDecode(conn_ptr):
+        rcv = conn_ptr.recv(8)
         if 0 == len(rcv):
             return None
 
         codec   = struct.Struct(">ii")
         header  = codec.unpack(rcv)
 
-        dat = conn.recv(header[0])
+        print("type:", header[1], "size:", header[0])
+        dat = conn_ptr.recv(header[0])
         return (dat, header[1])
 
-def RecvNotify(dat, conn):
+def RecvNotify(dat, conn_ptr):
     print("recv notify")
 
-    addr = conn.getsockname()
+    addr = conn_ptr.getsockname()
     str_addr = addr[0] + ":" + str(addr[1])
 
     if str_addr != dat.decode("utf-8"):
         assert False, "notify error"
 
-def Reconnect(tname, conn):
-    conn.close()
-    conn = ClientConnect()
-    client_list[tname] = conn
-    return conn
+def Reconnect(tname, conn_ptr):
+    conn_ptr.close()
+    conn_ptr = ClientConnect()
+    client_list[tname] = conn_ptr
+    return conn_ptr
 
 client_list = []
-def ClientSendData(tname, conn):
+def ClientSendData(tname, conn_ptr):
     for i in range(10000):
         print("thread name:", tname, "times:", i)
         byte_data   = bytearray(random.randint(1, 1024*64))
@@ -73,34 +74,35 @@ def ClientSendData(tname, conn):
             v = random.randint(0, 255)
             byte_data[i] = v;
 
+        #import pdb; pdb.set_trace();
         try:
-            SendEncode(byte_data, conn)
+            SendEncode(byte_data, conn_ptr)
         except BrokenPipeError as e:
             print(e)
-            conn = Reconnect(tname, conn)
+            conn_ptr = Reconnect(tname, conn_ptr)
             continue
 
-        pair = RecvDecode(conn)
+        pair = RecvDecode(conn_ptr)
 
         if None == pair:
-            conn = Reconnect(tname, conn)
+            conn_ptr = Reconnect(tname, conn_ptr)
             continue
 
         if NOTIFY == pair[1]:
-            RecvNotify(pair[0], conn)
-            pair = RecvDecode(conn)
+            RecvNotify(pair[0], conn_ptr)
+            pair = RecvDecode(conn_ptr)
             if None == pair:
-                conn = Reconnect(tname, conn)
+                conn_ptr = Reconnect(tname, conn_ptr)
                 continue
 
         if REPLY == pair[1]:
             if byte_data != pair[0]:
-                import pdb; pdb.set_trace()
+                import pdb; pdb.set_trace();
                 assert False, "error"
 
         #随机断线~
         if 1 == random.randint(1, 50):
-            conn = Reconnect(tname, conn)
+            conn_ptr = Reconnect(tname, conn_ptr)
 
     return
 
@@ -111,7 +113,7 @@ if "__main__" == __name__:
     #ClientDisconnect();
 
     #测试多线程
-    client_nums = 10
+    client_nums = 1
     for i in range(client_nums):
         client_list.append(ClientConnect())
 

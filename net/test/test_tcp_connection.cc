@@ -51,6 +51,16 @@ public:
 };
 
 }
+namespace
+{
+EventLoop* g_loop;
+
+void Quit()
+{
+    g_loop->Quit();
+    return;
+}
+}
 //---------------------------------------------------------------------------
 bool TestTCPConnection::DoTest()
 {
@@ -69,13 +79,17 @@ bool TestTCPConnection::Test_Illegal()
 bool TestTCPConnection::Test_Normal()
 {
     EventLoop   loop;
-    InetAddress listen_addr("127.0.0.1", 9999);
+    InetAddress listen_addr(9999);
     TCPServer   server(&loop, listen_addr);
+    loop.set_sig_quit_callback(Quit);
+    loop.SetAsSignalHandleEventLoop();
 
-    server.set_event_loop_nums(8);
+    server.set_event_loop_nums(1);
     server.set_callback_connection(std::bind(&TestTCPConnection::OnConnection, this, std::placeholders::_1));
     server.set_callback_disconnection(std::bind(&TestTCPConnection::OnDisconnection, this, std::placeholders::_1));
     server.set_callback_read(std::bind(&TestTCPConnection::OnRead, this, std::placeholders::_1, std::placeholders::_2));
+    server.set_callback_write_complete(std::bind(&TestTCPConnection::OnWriteComplete, this, std::placeholders::_1));
+    server.set_callback_high_water_mark(std::bind(&TestTCPConnection::OnWriteWirteHighWater, this, std::placeholders::_1, std::placeholders::_2), 100);
 
     server.Start();
     loop.Loop();
@@ -117,7 +131,7 @@ void TestTCPConnection::OnRead(const TCPConnPtr& conn_ptr, Buffer& rbuf)
 //        << " peer addr:" << conn_ptr->peer_addr().IPPort()
 //        << std::endl;
 //
-//    std::cout << "rbuf len:" << rbuf.ReadableBytes() << std::endl;
+    std::cout << "rbuf len:" << rbuf.ReadableBytes() << std::endl;
 //    std::cout << "rbuf data:" << rbuf.Peek() << std::endl;;
 
     int len = Decoder::Decode(rbuf);
@@ -136,6 +150,18 @@ void TestTCPConnection::OnRead(const TCPConnPtr& conn_ptr, Buffer& rbuf)
 
     Notify();
 
+    return;
+}
+//---------------------------------------------------------------------------
+void TestTCPConnection::OnWriteComplete(const TCPConnPtr& conn_ptr)
+{
+    std::cout << "conn write complete:" << conn_ptr->name() << std::endl;
+    return;
+}
+//---------------------------------------------------------------------------
+void TestTCPConnection::OnWriteWirteHighWater(const TCPConnPtr& conn_ptr, size_t size)
+{
+    std::cout << "conn write high water:" << conn_ptr->name() << " size:" << size << std::endl;
     return;
 }
 //---------------------------------------------------------------------------

@@ -86,14 +86,14 @@ void TCPConn::Send(const base::MemoryBlock& dat)
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConn::Shutdown()
+void TCPConn::ShutdownWirte()
 {
     if(CONNECTED == state_)
     {
         SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
         state_ = DISCONNECTING;
-        owner_loop_->QueueInLoop(std::bind(&TCPConn::ShutdownInLoop, shared_from_this()));
+        owner_loop_->QueueInLoop(std::bind(&TCPConn::ShutdownWriteInLoop, shared_from_this()));
     }
 
     return;
@@ -147,7 +147,7 @@ std::string TCPConn::GetTCPInfo() const
     return socket_->GetTCPInfoString();
 }
 //---------------------------------------------------------------------------
-void TCPConn::SendInLoopA(const base::MemoryBlock dat)
+void TCPConn::SendInLoopA(base::MemoryBlock dat)
 {
     SendInLoopB(dat.dat(), dat.len());
     return;
@@ -220,7 +220,7 @@ void TCPConn::_SendDatQueueInBuffer(const char* dat, size_t remain)
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConn::ShutdownInLoop()
+void TCPConn::ShutdownWriteInLoop()
 {
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
@@ -238,7 +238,7 @@ void TCPConn::ForceCloseInLoop()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-    assert(CONNECTED == state_);
+    assert(DISCONNECTING == state_);
 
     HandleClose();
     return;
@@ -273,7 +273,6 @@ void TCPConn::HandleRead(base::Timestamp rcv_time)
         return;
 
     SystemLog_Error("read error, errno:%d, msg:%s", err_no, StrError(err_no));
-    HandleError();
     assert(0);
     return;
 }
@@ -285,30 +284,30 @@ void TCPConn::HandleWrite()
 
     size_t  readable_len= buffer_output_.ReadableBytes();
     ssize_t wlen        = ::send(socket_->fd(), buffer_output_.Peek(), readable_len, 0);
-    if(0 > wlen)
+    if(0 < wlen)
     {
-        if((EAGAIN!=errno) || (EWOULDBLOCK!=errno))
+        buffer_output_.Retrieve(wlen);
+        if(readable_len == static_cast<size_t>(wlen))
         {
-            SystemLog_Error("write error, errno:%d, msg:%s", errno, StrError(errno));
-            HandleClose();
-            assert(0);
-            return;
+            assert(0 == buffer_output_.ReadableBytes());
+            channel_->WriteDisable();
+
+            //发送完成回调
+            if(callback_write_complete_)
+                owner_loop_->QueueInLoop(std::bind(callback_write_complete_, shared_from_this()));
+
+            if(DISCONNECTING == state_)
+                ShutdownWriteInLoop();
         }
+    
+        return;
     }
 
-    buffer_output_.Retrieve(wlen);
-    if(readable_len == static_cast<size_t>(wlen))
-    {
-        assert(0 == buffer_output_.ReadableBytes());
-        channel_->WriteDisable();
+    if((EAGAIN!=errno) || (EWOULDBLOCK!=errno))
+        return;
 
-        //发送完成回调
-        if(callback_write_complete_)
-        {
-            owner_loop_->QueueInLoop(std::bind(callback_write_complete_, shared_from_this()));
-        }
-    }
-
+    SystemLog_Error("write error, errno:%d, msg:%s", errno, StrError(errno));
+    assert(0);
     return;
 }
 //---------------------------------------------------------------------------
@@ -327,7 +326,7 @@ void TCPConn::HandleClose()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-    assert(CONNECTED == state_);
+    assert((CONNECTED==state_) || (DISCONNECTING==state_));
 
     state_ = DISCONNECTING;
     /*

@@ -60,7 +60,7 @@ void TCPClient::Disconnect()
     {
     std::lock_guard<std::mutex> lock(mutex_);
     if(connection_)
-        connection_->Shutdown();
+        connection_->ShutdownWirte();
     }
 
     return;

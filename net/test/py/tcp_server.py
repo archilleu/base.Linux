@@ -7,14 +7,14 @@ import threading
 HOST = "127.0.0.1"
 PORT = 9981
 
-def SendAndRecv(conn):
+def SendAndRecv(conn_ptr):
 
     print("connet start")
     while True:
         try:
-            data = conn.recv(1024)
+            data = conn_ptr.recv(1024)
             if data:
-                conn.send(data)
+                conn_ptr.send(data)
         except OSError as e:
             print(e)
             break;

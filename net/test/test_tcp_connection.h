@@ -33,6 +33,8 @@ private:
     void OnConnection   (const TCPConnPtr& conn_ptr);
     void OnDisconnection(const TCPConnPtr& conn_ptr);
     void OnRead         (const TCPConnPtr& conn_ptr, Buffer& rbuffer);
+    void OnWriteComplete(const TCPConnPtr& conn_ptr);
+    void OnWriteWirteHighWater(const TCPConnPtr& conn_ptr, size_t size);
 
 private:
     void    ConnectionAdd           (const TCPConnPtr& conn_ptr);
