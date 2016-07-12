@@ -13,8 +13,8 @@ using namespace net::test;
 //---------------------------------------------------------------------------
 bool TestTCPServer::DoTest()
 {
-    if(false == Test_Illegal())     return false;
-    if(false == Test_Normal())      return false;
+    //if(false == Test_Illegal())     return false;
+    //if(false == Test_Normal())      return false;
     if(false == Test_MultiThread()) return false;
 
     return true;
@@ -40,28 +40,41 @@ bool TestTCPServer::Test_Illegal()
     return true;
 }
 //---------------------------------------------------------------------------
+namespace
+{
+
 TCPServer* svr;
-static void Dump()
+EventLoop* g_loop;
+void Dump()
 {
     svr->DumpConnection();
+}
+
+void Quit()
+{
+    g_loop->Quit();
+}
+
+
 }
 //---------------------------------------------------------------------------
 bool TestTCPServer::Test_Normal()
 {
     {
-    EventLoop loop;
-    InetAddress listen_addr(9999);
-    TCPServer tcp_server(&loop, listen_addr);
+    //EventLoop loop;
+    //InetAddress listen_addr(9999);
+    //TCPServer tcp_server(&loop, listen_addr);
     }
 
     {
     EventLoop loop;
+    g_loop = &loop;
     InetAddress listen_addr(9999);
     TCPServer tcp_server(&loop, listen_addr);
     svr = &tcp_server;
-    tcp_server.set_event_loop_nums(1);
     
     loop.set_sig_usr1_callback(Dump);
+    loop.set_sig_quit_callback(Quit);
     loop.SetAsSignalHandleEventLoop();
     tcp_server.set_callback_connection(std::bind(&TestTCPServer::OnConnection, this, std::placeholders::_1));
     tcp_server.set_callback_disconnection(std::bind(&TestTCPServer::OnDisconnection, this, std::placeholders::_1));
@@ -76,9 +89,12 @@ bool TestTCPServer::Test_Normal()
 bool TestTCPServer::Test_MultiThread()
 {
     EventLoop loop;
+    g_loop = &loop;
     InetAddress listen_addr(9999);
     TCPServer tcp_server(&loop, listen_addr);
-    
+    loop.set_sig_usr1_callback(Dump);
+    loop.set_sig_quit_callback(Quit);
+    loop.SetAsSignalHandleEventLoop();
     tcp_server.set_event_loop_nums(8);
     tcp_server.set_callback_connection(std::bind(&TestTCPServer::OnConnection, this, std::placeholders::_1));
     tcp_server.set_callback_disconnection(std::bind(&TestTCPServer::OnDisconnection, this, std::placeholders::_1));

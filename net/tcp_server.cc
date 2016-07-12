@@ -185,7 +185,6 @@ void TCPServer::ConnDelList(const TCPConnPtr& conn_ptr)
 {
     assert(tcp_conn_list_[conn_ptr->socket()->fd()]);
 
-    SystemLog_Debug("conn_ptr ref:%d", conn_ptr.use_count());
     tcp_conn_list_[conn_ptr->socket()->fd()].reset();
     tcp_conn_count_--;
     return;

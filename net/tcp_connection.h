@@ -27,13 +27,13 @@ public:
 
     //各种回调
     //注意:connection 回调不能在回调里面发送数据
-    void set_callback_connection        (const CallbackConnection& callback)        { callback_connection_      = std::move(callback); }
-    void set_callback_disconnection     (const CallbackDisconnection& callback)     { callback_disconnection_   = std::move(callback); }
-    void set_callback_read              (const CallbackRead& callback)              { callback_read_            = std::move(callback); }
-    void set_callback_write_complete    (const CallbackWriteComplete& callback)     { callback_write_complete_  = std::move(callback); }
+    void set_callback_connection        (const CallbackConnection& callback)        { callback_connection_      = callback; }
+    void set_callback_disconnection     (const CallbackDisconnection& callback)     { callback_disconnection_   = callback; }
+    void set_callback_read              (const CallbackRead& callback)              { callback_read_            = callback; }
+    void set_callback_write_complete    (const CallbackWriteComplete& callback)     { callback_write_complete_  = callback; }
     void set_callback_high_water_mark   (const CallbackWriteHighWaterMark& callback, size_t overstock_size)
     {
-        callback_high_water_mark_   = std::move(callback); 
+        callback_high_water_mark_   = callback; 
         overstock_size_             = overstock_size;
     }
 

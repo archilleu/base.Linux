@@ -37,11 +37,11 @@ void ThreadEventLoop1()
 bool TestEventLoop::DoTest()
 {
     if(false == Test_Channel())     return false;
-    //if(false == Test_Normal())      return false;//需要额外线程打断该测试
-//    if(false == Test_Signal())      return false;
-    //if(false == Test_RunInLoop())   return false;
-    //if(false == Test_Timefd())      return false;
-    //if(false == Test_TimerTask())   return false;
+    if(false == Test_Normal())      return false;
+    if(false == Test_Signal())      return false;
+    if(false == Test_RunInLoop())   return false;
+    if(false == Test_Timefd())      return false;
+    if(false == Test_TimerTask())   return false;
 
     return true;
 }
