@@ -152,13 +152,6 @@ void TCPServer::OnConnectionRemoveInLoop(const TCPConnPtr& conn_ptr)
             name_.c_str(), tcp_conn_count_, conn_ptr->name().c_str(), conn_ptr->socket()->fd(), conn_ptr->local_addr().IPPort().c_str(),
             conn_ptr->peer_addr().IPPort().c_str());
 
-    if(!tcp_conn_list_[conn_ptr->socket()->fd()])
-    {
-        //当消息为<IN HUP ERR>时,该事件会被多次触发,所以TCPConnectioni做了相应修改(大部分断线只有<IN>消息)~,所以在TCPConn直接remove省事点
-        SystemLog_Warning("connection:%s not exist!!!", conn_ptr->name().c_str());
-        assert(0);
-    }
-
     ConnDelList(conn_ptr);
 
     //通知connection已经销毁
@@ -176,6 +169,12 @@ void TCPServer::ConnAddList(const TCPConnPtr& conn_ptr)
     if(tcp_conn_list_.size() <= static_cast<size_t>(conn_ptr->socket()->fd()))
         tcp_conn_list_.resize(tcp_conn_list_.size()*2);
 
+    if(tcp_conn_list_[conn_ptr->socket()->fd()])
+    {
+        SystemLog_Warning("connection:%s already exist!!!", conn_ptr->name().c_str());
+        assert(0);
+    }
+
     tcp_conn_list_[conn_ptr->socket()->fd()] = conn_ptr;
     tcp_conn_count_++;
     return;
@@ -183,7 +182,11 @@ void TCPServer::ConnAddList(const TCPConnPtr& conn_ptr)
 //---------------------------------------------------------------------------
 void TCPServer::ConnDelList(const TCPConnPtr& conn_ptr)
 {
-    assert(tcp_conn_list_[conn_ptr->socket()->fd()]);
+    if(!tcp_conn_list_[conn_ptr->socket()->fd()])
+    {
+        SystemLog_Warning("connection:%s not exist!!!", conn_ptr->name().c_str());
+        assert(0);
+    }
 
     tcp_conn_list_[conn_ptr->socket()->fd()].reset();
     tcp_conn_count_--;

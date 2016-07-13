@@ -28,6 +28,7 @@ public:
 
     static int Decode(Buffer& buffer)
     {
+        assert(8 == sizeof(Header));
         if(sizeof(Header) >= buffer.ReadableBytes())
             return 0;
 
@@ -131,7 +132,7 @@ void TestTCPConnection::OnRead(const TCPConnPtr& conn_ptr, Buffer& rbuf)
 //        << " peer addr:" << conn_ptr->peer_addr().IPPort()
 //        << std::endl;
 //
-    std::cout << "rbuf len:" << rbuf.ReadableBytes() << std::endl;
+//    std::cout << "rbuf len:" << rbuf.ReadableBytes() << std::endl;
 //    std::cout << "rbuf data:" << rbuf.Peek() << std::endl;;
 
     int len = Decoder::Decode(rbuf);
@@ -145,6 +146,9 @@ void TestTCPConnection::OnRead(const TCPConnPtr& conn_ptr, Buffer& rbuf)
         
     Decoder::Header header = Decoder::MakeHeader(len, Decoder::Header::kReply);
     conn_ptr->Send(reinterpret_cast<char*>(&header), sizeof(Decoder::Header));
+    //conn_ptr->Send(rbuf.Peek(), rbuf.ReadableBytes()/2);
+    //conn_ptr->ForceClose();
+    //return;
     conn_ptr->Send(rbuf.Peek(), rbuf.ReadableBytes());
     rbuf.Retrieve(len);
 

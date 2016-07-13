@@ -438,7 +438,7 @@ void EventLoop::PrintActiveChannels() const
         if(nullptr == iter)
             break;
 
-        std::cout << "{" << "fd:" << iter->fd() << " " << iter->REventsToString() << "}" << std::endl;
+        SystemLog_Debug("{ fd:%d event:%s }", iter->fd(), iter->REventsToString().c_str());
     }
 
     return;

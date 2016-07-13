@@ -23,6 +23,7 @@ EPoller::EPoller(EventLoop* owner)
         SystemLog_Error("create epoll fd failed");
         abort();
     }
+    egen_ = 0;
 
     event_list_.resize(128);
     return;
@@ -177,10 +178,16 @@ void EPoller::FillActiveChannel(int active_nums, ChannelList* active_channel_lis
     {
         Channel* channel = static_cast<Channel*>(event_list_[i].data.ptr);
         assert(((void)"channels_ no equal channel", channel == this->channels_[channel->fd()]));
-
-        channel->set_revents(event_list_[i].events);
-
-        (*active_channel_list)[i] = channel;
+        if(!channel->IsNoneEvent())
+        {
+            channel->set_revents(event_list_[i].events);
+            (*active_channel_list)[i] = channel;
+        }
+        else
+        {
+            assert(((void)"spurious notification", 0));
+            this->egen_++;
+        }
     }
 
     (*active_channel_list)[i] = nullptr;

@@ -19,6 +19,7 @@ public:
 
     Poller(EventLoop* owner)
     :   channel_num_(0),
+        egen_(0),
         owner_(owner)
     {
         channels_.resize(base::UNIT_MB);
@@ -46,6 +47,7 @@ protected:
     //在数组中记录所有的Channel，数组下标为Channel fd
     ChannelList channels_;
     size_t      channel_num_;
+    size_t      egen_;
 
 private:
     EventLoop* owner_;

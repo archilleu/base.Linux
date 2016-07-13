@@ -190,12 +190,18 @@ ssize_t TCPConn::_SendMostPossible(const char* dat, size_t len)
         if(0 > wlen)
         {
             //发送出错,关闭连接
-            if((EAGAIN!=errno) || (EWOULDBLOCK!=errno))
+            //当Poll返回时， 某个channel 收到 ERR 等关闭连接事件，但是该channel在执行前，
+            //在它前面的channel调用该channel所属的tcp_conn发送数据，此时会产生ECONNRESET错误
+            if((EAGAIN!=errno) || (EWOULDBLOCK!=errno) || (ECONNRESET!=errno) || (EPIPE!=errno))
             {
-                SystemLog_Warning("send failed, errno:%d, msg:%s", errno, StrError(errno));
-                HandleClose();
-                return -1;
+                SystemLog_Warning("send failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
+                        , errno, StrError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+
+                //不需要HandleClose，原因如上
+                //HandleClose();
             }
+
+            return -1;
         }
     }
 
@@ -272,7 +278,8 @@ void TCPConn::HandleRead(base::Timestamp rcv_time)
     if((EAGAIN==err_no) || (EWOULDBLOCK==err_no))
         return;
 
-    SystemLog_Error("read error, errno:%d, msg:%s", err_no, StrError(err_no));
+    SystemLog_Error("read failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
+            , errno, StrError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     assert(0);
     return;
 }
@@ -280,7 +287,7 @@ void TCPConn::HandleRead(base::Timestamp rcv_time)
 void TCPConn::HandleWrite()
 {
     owner_loop_->AssertInLoopThread();
-    assert(CONNECTED == state_);
+    //assert(CONNECTED == state_);
 
     size_t  readable_len= buffer_output_.ReadableBytes();
     ssize_t wlen        = ::send(socket_->fd(), buffer_output_.Peek(), readable_len, 0);
@@ -306,7 +313,8 @@ void TCPConn::HandleWrite()
     if((EAGAIN!=errno) || (EWOULDBLOCK!=errno))
         return;
 
-    SystemLog_Error("write error, errno:%d, msg:%s", errno, StrError(errno));
+    SystemLog_Error("write failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
+            , errno, StrError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
     assert(0);
     return;
 }
@@ -316,7 +324,7 @@ void TCPConn::HandleError()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-    assert(CONNECTED == state_);
+//    assert(CONNECTED == state_);
 
     return;
 }
@@ -326,7 +334,7 @@ void TCPConn::HandleClose()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-    assert((CONNECTED==state_) || (DISCONNECTING==state_));
+//    assert((CONNECTED==state_) || (DISCONNECTING==state_));
 
     state_ = DISCONNECTING;
     /*
