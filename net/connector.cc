@@ -155,6 +155,8 @@ void Connector::HandleWrite()
     states_ = CONNECTED;
     if(running_)
         callback_new_connection_(sockfd);//此时sockfd交予上层控制释放
+    else
+        ::close(sockfd);
 
     return;
 }
@@ -179,12 +181,13 @@ void Connector::Retry(int fd)
     ::close(fd);
     states_ = DISCONNECTED;
 
-    if(!running_) 
-        return;
+    if(running_) 
+    {
+        SystemLog_Info("Connector retry connect to %s in seconds %d",  svr_addr_.IPPort().c_str(), retry_delay_/1000);
+        loop_->RunAfter(retry_delay_/1000, std::bind(&Connector::StartInLoop, shared_from_this()));
+        retry_delay_ = std::min(retry_delay_*2, kMaxRetryDelay);
+    }
 
-    SystemLog_Info("Connector retry connect to %s in seconds %d",  svr_addr_.IPPort().c_str(), retry_delay_/1000);
-    loop_->RunAfter(retry_delay_/1000, std::bind(&Connector::StartInLoop, shared_from_this()));
-    retry_delay_ = std::min(retry_delay_*2, kMaxRetryDelay);
     return;
 }
 //---------------------------------------------------------------------------

@@ -66,7 +66,7 @@ void TCPClient::Disconnect()
     return;
 }
 //---------------------------------------------------------------------------
-void TCPClient::stop()
+void TCPClient::Stop()
 {
     connect_ = false;
     connector_->Stop();
@@ -78,7 +78,6 @@ void TCPClient::NewConnection(short sockfd)
 {
     loop_->AssertInLoopThread();
 
-    //服务器分配的ip port
     InetAddress peer_addr = Socket::GetPeerAddress(sockfd);
     std::string conn_name = base::CombineString("%s:%s#%d", name_.c_str(), peer_addr.IPPort().c_str(), next_conn_id_++);
     InetAddress local_addr(sockfd);
@@ -86,13 +85,14 @@ void TCPClient::NewConnection(short sockfd)
     conn_ptr->set_callback_connection(callback_connection_);
     conn_ptr->set_callback_read(callback_read_);
     conn_ptr->set_callback_write_complete(callback_write_complete_);
-    conn_ptr->set_callback_disconnection(std::bind(&TCPClient::RemoveConnection, this, std::placeholders::_1));
+    conn_ptr->set_callback_remove(std::bind(&TCPClient::RemoveConnection, this, std::placeholders::_1));
     conn_ptr->Initialize();
 
     {
     std::lock_guard<std::mutex> lock(mutex_);
     connection_ = conn_ptr;
     }
+
     conn_ptr->ConnectionEstablished();
     return;
 }

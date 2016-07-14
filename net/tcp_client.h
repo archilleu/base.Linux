@@ -18,20 +18,24 @@ public:
     TCPClient(EventLoop* loop, const InetAddress& svr, const std::string& name);
     ~TCPClient();
 
-    void set_callback_connection    (const CallbackConnection& callback)    { callback_connection_ = callback; }
-    void set_callback_read          (const CallbackRead callback)           { callback_read_ = callback; }
-    void set_callback_write_complete(const CallbackWriteComplete callback)  { callback_write_complete_ = callback; }
+    void set_callback_connection    (CallbackConnection&& callback)     { callback_connection_ = callback; }
+    void set_callback_read          (CallbackRead&& callback)           { callback_read_ = callback; }
+    void set_callback_write_complete(CallbackWriteComplete&& callback)  { callback_write_complete_ = callback; }
 
     void Connect();
     void Disconnect();
-    void stop();
+    void Stop();
 
     void EnableRetry() { retry_ = true; }
 
     //程序退出的时候,所有持有该连接的对象都必须释首先放该对象
-    TCPConnPtr connection() { std::lock_guard<std::mutex> lock(mutex_); return connection_; }
+    TCPConnPtr connection()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return connection_;
+    }
 
-    EventLoop* loop() { return loop_; }
+    EventLoop* loop() const { return loop_; }
 
     const std::string& name() const { return name_; }
 
@@ -46,9 +50,10 @@ private:
     int         next_conn_id_;
     std::string name_;
 
-    std::mutex                  mutex_;//保护connection_
-    TCPConnPtr            connection_;
-    std::shared_ptr<Connector>  connector_; //Before calling shared_from_this() your class needs to be stored in a shared_ptr
+    std::mutex                  mutex_;     //保护connection_
+    TCPConnPtr                  connection_;
+    std::shared_ptr<Connector>  connector_;
+    //Before calling shared_from_this() your class needs to be stored in a shared_ptr
 
     CallbackConnection      callback_connection_;
     CallbackRead            callback_read_;
