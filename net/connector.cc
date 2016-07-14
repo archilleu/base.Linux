@@ -138,6 +138,8 @@ void Connector::HandleWrite()
     if(0 < err_code)//大于0表示出错
     {
         SystemLog_Error("connect failed, errno:%d, msg:%s", err_code, StrError(err_code));
+
+        Retry(sockfd);
         return;
     }
 
@@ -145,6 +147,7 @@ void Connector::HandleWrite()
     if(Socket::GetLocalAddress(sockfd) == Socket::GetPeerAddress(sockfd))
     {
         SystemLog_Warning("self connection, retry");
+
         Retry(sockfd);
     }
 
