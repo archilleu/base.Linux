@@ -18,8 +18,11 @@ public:
     TimerTaskQueue(EventLoop* owner_loop);
     ~TimerTaskQueue();
 
-    TimerTaskId TimerTaskAdd    (TimerTask::TimerTaskCallback&& callback, base::Timestamp when, int intervalS);
-    void        TimerTaskCancel (TimerTaskId timer_task_id);
+    //add timer task
+    TimerTaskId TimerTaskAdd(TimerTask::TimerTaskCallback&& callback, base::Timestamp when, int intervalS);
+
+    //cancel timer task, can't cannel itself!!!
+    void TimerTaskCancel(TimerTaskId timer_task_id);
 
     size_t TimerTaskCount() const { return entry_list_.size(); }
 

@@ -3,6 +3,7 @@
 
 import socket
 import threading
+import time
 import random
 import struct
 
@@ -12,16 +13,21 @@ PORT = 9999
 REPLY = 1
 NOTIFY = 2
 
-clinet_nums = 1
+client_nums = 50
+#client_nums = 1
 client_list = []
 cond = threading.Condition()
 
 def ClientConnect():
+    try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
         client.connect((HOST, PORT))
         print("connect nums:peer:", client.getpeername(), "local:", client.getsockname())
 
         return client
+
+    except OSError as e:
+        print(e)
 
 def ClientDisconnect():
         print("disconnect num peer:", client.getpeername(), "local:", client.getsockname())
@@ -39,7 +45,7 @@ def SendEncode(dat, conn_ptr):
 
 def RecvDecode(conn_ptr):
         rcv = conn_ptr.recv(8, socket.MSG_WAITALL)
-        if 0 == len(rcv):
+        if 8 > len(rcv):
             return None
 
         codec   = struct.Struct(">ii")
@@ -54,7 +60,7 @@ def RecvNotify(dat, conn_ptr):
     str_addr = addr[0] + ":" + str(addr[1])
 
     if str_addr != dat.decode("utf-8"):
-        assert False, "notify error"
+        assert False,"notify error"
 
 def Reconnect(tname, conn_ptr):
     conn_ptr.close()
@@ -66,7 +72,8 @@ client_list = []
 def ClientSendData(tname, conn_ptr):
     for i in range(10000):
         print("thread name:", tname, "times:", i)
-        byte_data   = bytearray(random.randint(1, 1024*64))
+        #byte_data   = bytearray(random.randint(1, 1024*64))
+        byte_data   = bytearray(1024*64)
         byte_len    = len(byte_data)
         for i in range(byte_len):
             v = random.randint(0, 255)
@@ -93,8 +100,19 @@ def ClientSendData(tname, conn_ptr):
                 continue
 
         if REPLY == pair[1]:
-            if byte_data != pair[0]:
-                assert False, "error"
+            tmp = byte_data[0:len(pair[0])]
+            print("tmp", len(tmp), "pair", len(pair[0]));
+            if byte_len > len(pair[0]):
+                conn_ptr = Reconnect(tname, conn_ptr)
+                continue
+            elif byte_len == len(pair[0]):
+                print("tmp", len(tmp), "pair", len(pair[0]));
+                assert tmp==pair[0], "rcv error"
+                print('recv dat')
+            else:
+                #print("tmp len", len(tmp), "pair len:", len(pair[0]))
+                assert False
+
 
         #随机断线~
         if 1 == random.randint(1, 50):
@@ -109,7 +127,6 @@ if "__main__" == __name__:
     #ClientDisconnect();
 
     #测试多线程
-    client_nums = 1
     for i in range(client_nums):
         client_list.append(ClientConnect())
 

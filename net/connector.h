@@ -4,6 +4,7 @@
 //---------------------------------------------------------------------------
 #include "../base/share_inc.h"
 #include "inet_address.h"
+#include "timer_task_id.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -19,11 +20,11 @@ public:
     Connector(EventLoop* loop, const InetAddress& svr);
     ~Connector();
 
-    void set_callbakc_new_connection_(const CallbackNewConnection& callback)    { callback_new_connection_ = callback; }
+    void set_callbakc_new_connection_(CallbackNewConnection&& callback)    { callback_new_connection_ = std::move(callback); }
 
-    void Start();
-    void Restart();
-    void Stop();
+    void Start();   //thread safe
+    void Restart(); //must call in current loop thread
+    void Stop();    //thread safe
 
     const InetAddress& svr_addr() const { return svr_addr_; }
 
@@ -37,7 +38,7 @@ private:
     void HandleWrite();
     void HandleError();
 
-    void Retry();
+    void Retry(int fd);
     int  RemoveAndResetChannel();
     void ResetChannel();
 
@@ -55,6 +56,7 @@ private:
     }states_;
 
     int retry_delay_;
+    TimerTaskId timer_task_id_;
 
 private:
     static const int kMaxRetryDelay = 30 * 1000;

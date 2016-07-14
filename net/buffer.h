@@ -243,7 +243,7 @@ private:
     size_t              write_index_;
     std::vector<char>   buffer_;
 
-  static const size_t   kInitialSize = 1024;
+    static const size_t   kInitialSize = 1024;
 };
 
 }//namespace net

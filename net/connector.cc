@@ -9,13 +9,15 @@ namespace net
 {
 //---------------------------------------------------------------------------
 const int Connector::kMaxRetryDelay;
+const int Connector::kInitRetryDelay;
 //---------------------------------------------------------------------------
 Connector::Connector(EventLoop* loop, const InetAddress& svr)
 :   running_(false),
     loop_(loop),
     svr_addr_(svr),
     states_(DISCONNECTED),
-    retry_delay_(kInitRetryDelay)
+    retry_delay_(kInitRetryDelay),
+    timer_task_id_(0, 0)
 {
     SystemLog_Debug("Connector ctor");    
     return;
@@ -40,6 +42,7 @@ void Connector::Start()
 void Connector::Restart()
 {
     loop_->AssertInLoopThread();
+
     states_     = DISCONNECTED;
     retry_delay_= kInitRetryDelay;
     running_    = true;
@@ -52,6 +55,7 @@ void Connector::Stop()
 {
     running_ = false;
     loop_->RunInLoop(std::bind(&Connector::StopInLoop, this));
+    loop_->RunCancel(timer_task_id_);
 
     return;
 }
@@ -70,7 +74,7 @@ void Connector::StartInLoop()
 void Connector::StopInLoop()
 {
     loop_->AssertInLoopThread();
-    if(CONNECTED == states_)
+    if(CONNECTINTG == states_)
     {
         states_ = DISCONNECTED;
         int sockfd = RemoveAndResetChannel();
@@ -82,27 +86,22 @@ void Connector::StopInLoop()
 //---------------------------------------------------------------------------
 void Connector::Connect()
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0);
-    if(0 > sockfd)
-    {
-        SystemLog_Error("Create socket failed, errno:%d, msg:%s", errno, StrError(errno)); 
-        Retry();
-        return;
-    }
-
+    int sockfd  = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0);
     int err_code= ::connect(sockfd, reinterpret_cast<const sockaddr*>(&(svr_addr_.address())), sizeof(sockaddr));
     int err_no  = (0==err_code) ? 0 : errno;
     switch(err_no)
     {
         case 0:
-        case EINPROGRESS:
         case EINTR:
+        case EINPROGRESS:
         case EISCONN:
             Connecting(sockfd);
             break;
 
         default:
             SystemLog_Error("connect failed, errno:%d, msg:%s", err_no, StrError(err_no));
+            Retry(sockfd);
+
             break;
     }
 
@@ -113,6 +112,7 @@ void Connector::Connecting(int sockfd)
 {
     assert(DISCONNECTED == states_);
     assert(!channel_);
+
     states_ = CONNECTINTG;
 
     channel_.reset(new Channel(loop_, sockfd));
@@ -128,6 +128,9 @@ void Connector::HandleWrite()
 {
     assert(CONNECTINTG == states_);
 
+    //受到反馈事件，因为sock fd 不可以重用，
+    //所以当前监听channel取消，链接不成功继续新的监听，
+    //成功则不再监听
     int sockfd = RemoveAndResetChannel();
 
     //检查连接情况
@@ -142,8 +145,7 @@ void Connector::HandleWrite()
     if(Socket::GetLocalAddress(sockfd) == Socket::GetPeerAddress(sockfd))
     {
         SystemLog_Warning("self connection, retry");
-        ::close(sockfd);
-        Retry();
+        Retry(sockfd);
     }
 
     //连接成功,通知上层
@@ -163,17 +165,17 @@ void Connector::HandleError()
         int sockfd  = RemoveAndResetChannel();
         int err_code= Socket::GetSocketError(sockfd);
         SystemLog_Error("connect error, errno:%d, msg:%s", err_code, StrError(err_code));
-        ::close(sockfd);
-        Retry();
+        Retry(sockfd);
     }
 
     return;
 }
 //---------------------------------------------------------------------------
-void Connector::Retry()
+void Connector::Retry(int fd)
 {
+    ::close(fd);
     states_ = DISCONNECTED;
-    
+
     if(!running_) 
         return;
 
@@ -185,6 +187,7 @@ void Connector::Retry()
 //---------------------------------------------------------------------------
 int Connector::RemoveAndResetChannel()
 {
+    channel_->DisableAll();
     channel_->Remove();
     int sockfd = channel_->fd();
 
