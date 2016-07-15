@@ -10,7 +10,7 @@ import pdb
 HOST = "0.0.0.0"
 PORT = 9999
 
-TIMES = 100000
+TIMES = 1000000
 REPLY = 1
 NOTIFY = 2
 
@@ -67,54 +67,64 @@ class EpollConnector:
         self.Reconnect(list(keys)[idx])
 
     def handle_read(self, fileno):
-        dat = self.connections[fileno].recv(8, socket.MSG_WAITALL)
-        if 8 > len(dat):
-            print('no:', no(), "handle_read:", dat, " need reconnect")
-            self.Reconnect(fileno)
-            return
+        try:
+            dat = self.connections[fileno].recv(8, socket.MSG_WAITALL)
+            if 8 > len(dat):
+                print('no:', no(), "handle_read:", dat, " need reconnect")
+                self.Reconnect(fileno)
+                return
 
-        codec = struct.Struct(">ii")
-        header =codec.unpack(dat)
-        print('no:', no(), "type:", header[1], "len:", header[0])
+            codec = struct.Struct(">ii")
+            header =codec.unpack(dat)
+            print('no:', no(), "type:", header[1], "len:", header[0])
 
-        dat = self.connections[fileno].recv(header[0], socket.MSG_WAITALL)
-        if len(dat) == header[0]:
-            if REPLY == header[1]:
-                if dat != self.dats[fileno]:
-                    pdb.set_trace()
-                    assert False, "recv dat error"
+            dat = self.connections[fileno].recv(header[0], socket.MSG_WAITALL)
+            if len(dat) == header[0]:
+                if REPLY == header[1]:
+                    if dat != self.dats[fileno]:
+                        pdb.set_trace()
+                        assert False, "recv dat error"
+                    else:
+                        print('no:', no(), "recv dat success!!!!!")
+
+                elif NOTIFY == header[1]:
+
+                    addr = self.connections[fileno].getsockname()
+                    str_addr = addr[0] + ":" + str(addr[1])
+                    if str_addr != dat.decode("utf-8"):
+                        assert False,"notify error"
+                    else:
+                        print('no:', no(), "notify dat success!!!!!")
+
                 else:
-                    print('no:', no(), "recv dat success!!!!!")
-
-            elif NOTIFY == header[1]:
-
-                addr = self.connections[fileno].getsockname()
-                str_addr = addr[0] + ":" + str(addr[1])
-                if str_addr != dat.decode("utf-8"):
-                    assert False,"notify error"
-                else:
-                    print('no:', no(), "notify dat success!!!!!")
-
+                    assert False, "recv error type"
             else:
-                assert False, "recv error type"
-        else:
+                print('no:', no(), "handle_read:", dat, " need reconnect")
+                self.Reconnect(fileno)
+                return
+        except:
             print('no:', no(), "handle_read:", dat, " need reconnect")
             self.Reconnect(fileno)
-            return
 
-        self.epoll.modify(fileno, select.EPOLLOUT | select.EPOLLIN | select.EPOLLET)
+        finally:
+            self.epoll.modify(fileno, select.EPOLLOUT | select.EPOLLIN | select.EPOLLET)
 
         pass
 
     def handle_write(self, fileno):
         codec = struct.Struct(">ii")
         header = codec.pack(len(self.dats[fileno]), REPLY)
-        if 8 != self.connections[fileno].send(header):
-            assert False, "send false"
-        if len(self.dats[fileno]) != self.connections[fileno].send(self.dats[fileno]):
-            assert False, "send false"
+        try:
+            if 8 != self.connections[fileno].send(header):
+                assert False, "send false"
+            if len(self.dats[fileno]) != self.connections[fileno].send(self.dats[fileno]):
+                assert False, "send false"
 
-        print('no:', no(), "handle_write success!!!!    len:", len(self.dats[fileno]))
+            print('no:', no(), "handle_write success!!!!    len:", len(self.dats[fileno]))
+        except:
+            print('no:', no(), "handle_write close, need Reconnect")
+            self.Reconnect(fileno)
+
         return;
 
     def handle_close(self, fileno):

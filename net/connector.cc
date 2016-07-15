@@ -26,7 +26,7 @@ Connector::Connector(EventLoop* loop, const InetAddress& svr)
 Connector::~Connector()
 {
     SystemLog_Debug("Connector dtor");    
-    assert(!channel_);
+//    assert(!channel_);
 
     return;
 }

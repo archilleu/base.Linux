@@ -178,6 +178,9 @@ void EventLoop::Loop()
         DoPendingTasks();
     }
 
+    //处理完成工作
+    DoPendingTasks();
+
     SystemLog_Info("%p Event loop stop", this);
     return;
 }

@@ -34,6 +34,7 @@ TCPConn::~TCPConn()
     SystemLog_Debug("dtor==>name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     assert(DISCONNECTED == state_);
+    owner_loop_ = 0;
     return;
 }
 //---------------------------------------------------------------------------
@@ -61,7 +62,8 @@ void TCPConn::Send(const char* dat, size_t len)
         }
 
         //不在线程调用,则排入本线程发送队列
-        owner_loop_->QueueInLoop(std::bind(&TCPConn::SendInLoopA, this, base::MemoryBlock(dat, len)));
+        //该conn在EventLoop的DoPendingTask处理之前，可能被conn.reset()导致conn被析构，所以不能用this
+        owner_loop_->QueueInLoop(std::bind(&TCPConn::SendInLoopA, shared_from_this()/*this*/, base::MemoryBlock(dat, len)));
 
         return;
     }
@@ -81,7 +83,8 @@ void TCPConn::Send(const base::MemoryBlock& dat)
         }
 
         //不在线程调用,则排入本线程发送队列
-        owner_loop_->QueueInLoop(std::bind(&TCPConn::SendInLoopA, this, dat));
+        //该conn在EventLoop的DoPendingTask处理之前，可能被conn.reset()导致conn被析构，所以不能用this
+        owner_loop_->QueueInLoop(std::bind(&TCPConn::SendInLoopA, shared_from_this()/*this*/, dat));
     }
 
     return;

@@ -121,6 +121,9 @@ void TimerTaskQueue::CancelTimerInLoop(TimerTaskId timer_task_id)
 {
     owner_loop_->AssertInLoopThread();
 
+    if(0 == timer_task_id.timer_task_)
+        return;
+
     auto iter = entry_list_.find(Entry(timer_task_id.timer_task_->expairation(), timer_task_id.timer_task_));
     if(entry_list_.end() == iter)
         return;
