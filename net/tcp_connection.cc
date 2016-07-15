@@ -17,6 +17,7 @@ TCPConn::TCPConn(EventLoop* ownerloop, const std::string& tcpname, int fd, const
     local_addr_(localaddr),
     peer_addr_(peeraddr),
     state_(CONNECTING),
+    wating_closeing_(false),
     socket_(new Socket(fd)),
     channel_(new Channel(owner_loop_, fd)),
     overstock_size_(0)
@@ -88,11 +89,11 @@ void TCPConn::Send(const base::MemoryBlock& dat)
 //---------------------------------------------------------------------------
 void TCPConn::ShutdownWirte()
 {
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+
     if(CONNECTED == state_)
     {
-        SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-        state_ = DISCONNECTING;
         owner_loop_->QueueInLoop(std::bind(&TCPConn::ShutdownWriteInLoop, shared_from_this()));
     }
 
@@ -101,11 +102,10 @@ void TCPConn::ShutdownWirte()
 //---------------------------------------------------------------------------
 void TCPConn::ForceClose()
 {
-    if((CONNECTED==state_) || (DISCONNECTING==state_))
-    {
+    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-        SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
-        
+    if(CONNECTED==state_)
+    {
         state_ = DISCONNECTING;
         owner_loop_->QueueInLoop(std::bind(&TCPConn::ForceCloseInLoop, shared_from_this()));
     }
@@ -144,6 +144,9 @@ void TCPConn::ConnectionDestroy()
 //---------------------------------------------------------------------------
 std::string TCPConn::GetTCPInfo() const
 {
+    if(CONNECTED != state_)
+        return "";
+
     return socket_->GetTCPInfoString();
 }
 //---------------------------------------------------------------------------
@@ -156,23 +159,25 @@ void TCPConn::SendInLoopA(base::MemoryBlock dat)
 void TCPConn::SendInLoopB(const char* dat, size_t len)
 {
     owner_loop_->AssertInLoopThread();
-    assert(CONNECTED == state_);
 
-    ssize_t remain = _SendMostPossible(dat, len);
-    if(-1 == remain)
-        return;
+    if(CONNECTED == state_)
+    {
+        ssize_t remain = _SendMostPossible(dat, len);
+        if(-1 == remain)
+            return;
 
-    if(0 != remain)
-    {
-        //放入缓存
-        _SendDatQueueInBuffer(dat, remain);
-        return;
-    }
-    
-    //发送完成
-    if(callback_write_complete_)
-    {
-        owner_loop_->QueueInLoop(std::bind(callback_write_complete_, shared_from_this()));
+        if(0 != remain)
+        {
+            //放入缓存
+            _SendDatQueueInBuffer(dat, remain);
+            return;
+        }
+        
+        //发送完成
+        if(callback_write_complete_)
+        {
+            owner_loop_->QueueInLoop(std::bind(callback_write_complete_, shared_from_this()));
+        }
     }
 
     return;
@@ -192,7 +197,7 @@ ssize_t TCPConn::_SendMostPossible(const char* dat, size_t len)
             //发送出错,关闭连接
             //当Poll返回时， 某个channel 收到 ERR 等关闭连接事件，但是该channel在执行前，
             //在它前面的channel调用该channel所属的tcp_conn发送数据，此时会产生ECONNRESET错误
-            if((EAGAIN!=errno) || (EWOULDBLOCK!=errno) || (ECONNRESET!=errno) || (EPIPE!=errno))
+            //if((EAGAIN!=errno) && (EWOULDBLOCK!=errno) && (ECONNRESET!=errno) && (EPIPE!=errno))
             {
                 SystemLog_Warning("send failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
                         , errno, StrError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
@@ -231,7 +236,7 @@ void TCPConn::ShutdownWriteInLoop()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-    assert(CONNECTED == state_);
+    //assert(CONNECTED == state_);
 
     if(false == channel_->IsWriting())
         socket_->ShutDownWrite();
@@ -253,7 +258,7 @@ void TCPConn::ForceCloseInLoop()
 void TCPConn::HandleRead(base::Timestamp rcv_time)
 {
     owner_loop_->AssertInLoopThread();
-    assert(CONNECTED == state_);
+    //assert(CONNECTED == state_);
 
     int err_no  = 0;
     int rlen    = buffer_input_.ReadFd(socket_->fd(), &err_no);
@@ -336,7 +341,12 @@ void TCPConn::HandleClose()
     owner_loop_->AssertInLoopThread();
 //    assert((CONNECTED==state_) || (DISCONNECTING==state_));
 
-    state_ = DISCONNECTING;
+    if(wating_closeing_)
+        return;
+
+    state_              = DISCONNECTING;
+    wating_closeing_    = true;
+
     /*
     EPOLLERR
         Error condition happened on the associated file descriptor.  epoll_wait(2) will always wait for this event; it is not necessary to set it in events.

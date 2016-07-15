@@ -45,7 +45,7 @@ void InitLog()
 {
     //init log
     MyNetLog = new NetLog();
-    if(false == MyNetLog->Initialize("net io frame", "/tmp", "network_log", base::UNIT_MB))
+    if(false == MyNetLog->Initialize("net io frame", "/tmp", "network_log", base::UNIT_MB*10))
     {
         SystemLog_Error("log initialze failed");
         abort();

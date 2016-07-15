@@ -95,7 +95,8 @@ private:
         CONNECTED,
         DISCONNECTING
     };
-    std::atomic<int> state_;
+    std::atomic<int>    state_;
+    bool                wating_closeing_;//当前conn接收到链接断开事件的同时，其他线程调用ForceClose,导致会多次调用HandleClose，所以增加该状态提示是否被强制Close
 
     Buffer buffer_input_;
     Buffer buffer_output_;
