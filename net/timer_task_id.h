@@ -1,4 +1,3 @@
-
 //---------------------------------------------------------------------------
 #ifndef BASE_LINUX_NET_TIMER_TASK_ID_H_
 #define BASE_LINUX_NET_TIMER_TASK_ID_H_

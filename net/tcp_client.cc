@@ -31,13 +31,13 @@ TCPClient::~TCPClient()
     //析构的时候,connection必须是只有一个引用或者没有
     if(connection_)
     {
+        assert(loop_ == connection_->owner_loop());
+        connection_->ForceClose();
+
         {
         std::lock_guard<std::mutex> lock(mutex_);
         assert(connection_.unique());
         }
-
-        assert(loop_ == connection_->owner_loop());
-        connection_->ForceClose();
     }
 
     connector_->Stop();
@@ -60,7 +60,7 @@ void TCPClient::Disconnect()
     {
     std::lock_guard<std::mutex> lock(mutex_);
     if(connection_)
-        connection_->ShutdownWirte();
+        connection_->ForceClose();
     }
 
     return;

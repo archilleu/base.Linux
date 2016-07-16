@@ -26,6 +26,8 @@ void TestTCPClient::OnConnection(const TCPConnPtr& conn_ptr)
     std::cout << "OnConnection:";
     std::cout << conn_ptr->name() << std::endl;
 
+    std::cout << "count:" << conn_ptr.use_count()<< std::endl;
+
     std::unique_lock<std::mutex> lock(mutex_);
     flag_ = true;
     cond_.notify_one();
@@ -61,7 +63,7 @@ void TestTCPClient::OnWriteComplete(const TCPConnPtr& )
 void TestTCPClient::OnThreadSend()
 {
     size_t size = msg_queue_.size();
-    size = 0;
+
     for(size_t i=0; i<size; i++)
     {
         {
@@ -79,6 +81,7 @@ void TestTCPClient::OnThreadSend()
         }
     }
 
+    g_client->Disconnect();
     g_loop->Quit();
     return;
 }
@@ -106,8 +109,6 @@ bool TestTCPClient::Test_Normal()
     thread_.Start();
     loop.Loop();
     thread_.Join();
-    client.Disconnect();
-    std::cout << "count:" << g_client->connection().use_count()<< std::endl;
     return true;
 }
 //---------------------------------------------------------------------------

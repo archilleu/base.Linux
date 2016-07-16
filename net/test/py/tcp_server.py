@@ -20,10 +20,10 @@ def SendAndRecv(conn_ptr):
 
     print("connet start")
     while True:
-        #if 0 == random.randint(0, 50):
-        #print("disconnect peer:", conn_ptr.getpeername(), "local:",conn_ptr.getsockname())
-        #conn_ptr.close();
-        #break;
+        if 0 == random.randint(0, 50):
+            print("disconnect peer:", conn_ptr.getpeername(), "local:",conn_ptr.getsockname())
+            conn_ptr.close();
+            break;
 
         try:
             data = conn_ptr.recv(LEN, socket.MSG_WAITALL)

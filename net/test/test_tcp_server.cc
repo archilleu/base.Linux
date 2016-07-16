@@ -23,11 +23,13 @@ bool TestTCPServer::DoTest()
 void TestTCPServer::OnConnection(const TCPConnPtr& conn_ptr)
 {
     std::cout << "TestTCPServer" << ": connect:" << conn_ptr->name() << std::endl;
+    std::cout << "count:" <<  conn_ptr.use_count() << std::endl;
 }
 //---------------------------------------------------------------------------
 void TestTCPServer::OnDisconnection(const TCPConnPtr& conn_ptr)
 {
     std::cout << "TestTCPServer" << ": disconnect:" << conn_ptr->name() << std::endl;
+    std::cout << "count:" <<  conn_ptr.use_count() << std::endl;
 }
 //---------------------------------------------------------------------------
 void TestTCPServer::OnThreadClientConnect()
