@@ -10,7 +10,7 @@ import pdb
 HOST = "0.0.0.0"
 PORT = 9999
 
-TIMES = 1000000
+TIMES = 100000
 REPLY = 1
 NOTIFY = 2
 

@@ -17,7 +17,6 @@ TCPConn::TCPConn(EventLoop* ownerloop, const std::string& tcpname, int fd, const
     local_addr_(localaddr),
     peer_addr_(peeraddr),
     state_(CONNECTING),
-    wating_closeing_(false),
     socket_(new Socket(fd)),
     channel_(new Channel(owner_loop_, fd)),
     overstock_size_(0)
@@ -96,7 +95,6 @@ void TCPConn::ShutdownWirte()
 
     if(CONNECTED == state_)
     {
-
         owner_loop_->QueueInLoop(std::bind(&TCPConn::ShutdownWriteInLoop, shared_from_this()));
     }
 
@@ -107,9 +105,8 @@ void TCPConn::ForceClose()
 {
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
-    if(CONNECTED==state_)
+    if(CONNECTED == state_)
     {
-        state_ = DISCONNECTING;
         owner_loop_->QueueInLoop(std::bind(&TCPConn::ForceCloseInLoop, shared_from_this()));
     }
 
@@ -121,9 +118,11 @@ void TCPConn::ConnectionEstablished()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-    assert(CONNECTING == state_);
 
-    state_ = CONNECTED;
+    int expected = CONNECTING;
+    if(!state_.compare_exchange_strong(expected, CONNECTED))
+        assert(0);
+
     channel_->Tie(shared_from_this());
     channel_->ReadEnable();
     
@@ -138,9 +137,11 @@ void TCPConn::ConnectionDestroy()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-    assert(DISCONNECTING == state_);
 
-    state_ = DISCONNECTED;
+    int expected = DISCONNECTING;
+    if(!state_.compare_exchange_strong(expected, DISCONNECTED))
+        assert(0);
+
     channel_->Remove();
     return;
 }
@@ -239,7 +240,6 @@ void TCPConn::ShutdownWriteInLoop()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-    //assert(CONNECTED == state_);
 
     if(false == channel_->IsWriting())
         socket_->ShutDownWrite();
@@ -252,7 +252,10 @@ void TCPConn::ForceCloseInLoop()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-    assert(DISCONNECTING == state_);
+
+    //假如是在QueueInLoop中调用的,如果conn在此之前已经接收到close,conn就已经被销毁,所以状态可能为DISCONNECTE
+    if((DISCONNECTING==state_) || (DISCONNECTED==state_))
+        return;
 
     HandleClose();
     return;
@@ -332,7 +335,6 @@ void TCPConn::HandleError()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-//    assert(CONNECTED == state_);
 
     return;
 }
@@ -342,13 +344,10 @@ void TCPConn::HandleClose()
     SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
-//    assert((CONNECTED==state_) || (DISCONNECTING==state_));
 
-    if(wating_closeing_)
-        return;
-
-    state_              = DISCONNECTING;
-    wating_closeing_    = true;
+    int expected = CONNECTED;
+    if(!state_.compare_exchange_strong(expected, DISCONNECTING))
+        assert(0);
 
     /*
     EPOLLERR
