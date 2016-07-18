@@ -157,7 +157,7 @@ class EpollConnector:
         try:
             for i in range(self.times):
 
-                if 0 == random.randint(0, 50):
+                if 0 == random.randint(0, 64):
                     self.random_reconnect()
 
                 events = self.epoll.poll()
@@ -168,5 +168,5 @@ class EpollConnector:
 
 
 if __name__ == "__main__":
-    svr = EpollConnector(10, (HOST, PORT), TIMES)
+    svr = EpollConnector(64, (HOST, PORT), TIMES)
     svr.loop_epoll()

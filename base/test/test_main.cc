@@ -1,18 +1,18 @@
 //---------------------------------------------------------------------------
 #include "test_main.h"
 #include "test_base.h"
-#include "test_memory_block.h"
-#include "test_timestamp.h"
-#include "test_function.h"
-#include "test_thread.h"
-#include "test_append_file.h"
-#include "test_log_file.h"
-#include "test_mysql_kit.h"
-#include "test_mysql_pool.h"
-#include "test_md5.h"
+//#include "test_memory_block.h"
+//#include "test_timestamp.h"
+//#include "test_function.h"
+//#include "test_thread.h"
+//#include "test_append_file.h"
+//#include "test_log_file.h"
+//#include "test_mysql_kit.h"
+//#include "test_mysql_pool.h"
+//#include "test_md5.h"
 //#include "test_semaphore.h"
-#include "test_computer_info.h"
-#include "test_thread_local.h"
+//#include "test_computer_info.h"
+//#include "test_thread_local.h"
 //---------------------------------------------------------------------------
 using namespace base;
 using namespace base::test;
@@ -46,7 +46,7 @@ TestMain::~TestMain()
 
 void TestMain::StartTest()
 {
-    std::cout << "验证没有bug后请使用 查看是否有内存问题: valgrind --tool=memcheck --leak-check=full ./test" << std::endl;
+    std::cout << "验证没有bug后请使用 查看是否有内存问题: valgrind --tool=memcheck --show-reachable=yes --leak-check=full ./test" << std::endl;
     std::cout << "lsof -p pid 验证句柄" << std::endl;
 
     for(auto iter=test_obj_list_.begin(); test_obj_list_.end()!=iter; ++iter)

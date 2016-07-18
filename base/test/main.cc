@@ -1,11 +1,11 @@
 //---------------------------------------------------------------------------
 #include "test_main.h"
 //---------------------------------------------------------------------------
-int main(int argc, char** argv)
+int main(int , char** )
 {
     base::test::TestMain test;
     test.StartTest();
-    
+
     getchar();
     return 0;
 }

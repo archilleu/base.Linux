@@ -50,7 +50,7 @@ TestMain::~TestMain()
 //---------------------------------------------------------------------------
 void TestMain::StartTest()
 {
-    std::cout << "验证没有bug后请使用 查看是否有内存问题: valgrind --tool=memcheck --leak-check=full ./test" << std::endl;
+    std::cout << "验证没有bug后请使用 查看是否有内存问题: valgrind --tool=memcheck --show-reachable=yes --leak-check=full ./test" << std::endl;
 
     for(auto iter=test_obj_list_.begin(); test_obj_list_.end()!=iter; ++iter)
     {
