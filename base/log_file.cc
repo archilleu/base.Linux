@@ -59,18 +59,6 @@ void LogFile::Uninitialze()
     }
     thread_.Join();
 
-    //把未写完的数据写入
-    for(auto iter=write_list_.begin(); write_list_.end()!=iter; ++iter)
-    {
-        if(log_file_)
-            log_file_->Append(iter->data(), iter->size());
-    }
-    for(auto iter=append_list_.begin(); append_list_.end()!=iter; ++iter)
-    {
-        if(log_file_)
-            log_file_->Append(iter->data(), iter->size());
-    }
-
     //关闭文件
     if(log_file_)
     {
@@ -89,13 +77,13 @@ bool LogFile::WriteLog(int log_level, const std::string& log)
 bool LogFile::WriteLog(int log_level, const char* log)
 {
     if(false == running_)       return false;
-    if(log_level_ >= log_level) return true;//设置输出等级比要输出的小,则不写log
+    if(log_level_ > log_level)  return true;//设置输出等级比要输出的小,则不写log
 
     std::string format_log = MakeLogString(log_level, log);
     if(true == output_console_)
         fprintf(stderr, "%s\n", format_log.c_str());
     {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     append_list_.push_back(std::move(format_log));
     }
     cond_.notify_one();
@@ -133,6 +121,8 @@ void LogFile::CreateLogFile()
             log_file_.reset();
             break;
         }
+
+        break;
     }
 
     //新文件,需要写标题
@@ -181,12 +171,17 @@ void LogFile::OnThreadWriteLog()
     {
         {
         std::unique_lock<std::mutex> lock(mutex_);
-        while((32>append_list_.size()) && (running_))  //如果不是超时并且append_list_条数不足32条,则等下一次在写日志
+        while(32>append_list_.size())  //如果不是超时并且append_list_条数不足32条,则等下一次在写日志
         {
             if(std::cv_status::timeout == cond_.wait_for(lock, std::chrono::seconds(5)))
             {
+                //如果列表不为空,不管收不到线程退出指令,把log写入到文件中
                 if(!append_list_.empty())
                     break;
+
+                //如果列表为空,并且线程收到退出指令,则可以直接退出线程了
+                if(false == running_)
+                    return;
             }
         }
 
