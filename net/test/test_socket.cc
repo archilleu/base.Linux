@@ -46,6 +46,18 @@ bool TestSocket::Test_Normal()
     sock.Bind(InetAddress("127.0.0.1", 9999));
     printf("local addr:%s perr addr:\n", sock.GetLocalAddress().IPPort().c_str());
 
+    sock.SetKeepAlive(60);
+    int val = 0;                                                                                                                                                              
+    socklen_t   len = sizeof(val);
+    if(0 > getsockopt(fd_, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&val), &len))
+    {
+        assert(0);
+        return false;
+    }
+    else
+    {
+        assert(1 == val);
+    }
 
     std::string info = sock.GetTCPInfoString();
     std::cout << "tcp info:" << info << std::endl;

@@ -97,6 +97,11 @@ void Socket::SetNodelay()
     return;
 }
 //---------------------------------------------------------------------------
+void Socket::SetKeepAlive(int interval)
+{
+    Socket::SetKeepAlive(fd_, interval);
+}
+//---------------------------------------------------------------------------
 void Socket::SetTimeoutRecv(int timeoutS)
 {
     struct timeval timeout;
@@ -231,6 +236,50 @@ InetAddress Socket::GetPeerAddress(int sockfd)
     }
 
     return peer_address;
+}
+//---------------------------------------------------------------------------
+void Socket::SetKeepAlive(int sockfd, int interval)
+{
+    int val = 1;
+    if(0 > setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &val, sizeof(val)))
+    {
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        assert(0);
+        return;
+    }
+
+    //send first probe after val interval.
+    val = interval;
+    if(0 > setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &val, sizeof(val)))
+    {
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        assert(0);
+        return;
+    }
+
+    /* Send next probes after the specified interval.
+    * Note that we set the delay as interval / 3,
+    * as we send three probes before detecting an error
+    * (see the next setsockopt call). */ 
+    val = interval/3;
+    if(0 > setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, &val, sizeof(val)))
+    {
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        assert(0);
+        return;
+    }
+
+    /* Consider the socket in error state after three we send three ACK
+     * probes without getting a reply. */ 
+    val = 3;
+    if(0 > setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, &val, sizeof(val)))
+    {
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        assert(0);
+        return;
+    }
+
+    return;
 }
 //---------------------------------------------------------------------------
 int Socket::GetSocketError(int sockfd)

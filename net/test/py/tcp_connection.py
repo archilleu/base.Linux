@@ -122,9 +122,10 @@ def ClientSendData(tname, conn_ptr):
 
 if "__main__" == __name__:
     #测试单线程
-    #client = ClientConnect()
-    #ClientSendData("s", client);
-    #ClientDisconnect();
+    client = ClientConnect()
+    import pdb; pdb.set_trace()
+    #ClientSendData("s", client)
+    ClientDisconnect()
 
     #测试多线程
     for i in range(client_nums):

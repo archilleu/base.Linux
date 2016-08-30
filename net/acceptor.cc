@@ -101,7 +101,10 @@ void Acceptor::HandleRead(base::Timestamp rcv_time)
 
             //处理连接,如果不处理,则关闭
             if(callback_new_connection_)
+            {
+                Socket::SetKeepAlive(clientfd, 30);
                 callback_new_connection_(clientfd, peer_addr, rcv_time);
+            }
             else
                 ::close(clientfd);
         }

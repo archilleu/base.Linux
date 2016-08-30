@@ -42,6 +42,7 @@ public:
     void SetReuseAddress();
     void SetReusePort();
     void SetNodelay();
+    void SetKeepAlive(int interval);
     
     void SetTimeoutRecv(int timeoutS);
     void SetTimeoutSend(int timeoutS);
@@ -60,6 +61,8 @@ public:
 public:
     static InetAddress GetLocalAddress(int sockfd);
     static InetAddress GetPeerAddress(int sockfd);
+
+    static void SetKeepAlive(int sockfd, int interval); //total detect disconnect time=interval*2 secs
     
     static int GetSocketError(int sockfd);
 
