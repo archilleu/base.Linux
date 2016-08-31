@@ -12,19 +12,43 @@
 namespace net
 {
 //---------------------------------------------------------------------------
-TCPServer::TCPServer(EventLoop* owner_loop, InetAddress& listen_addr)
+TCPServer::TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& listen_addr)
 :   mark_(0),
     owner_loop_(owner_loop),
-    name_(listen_addr.IPPort()),
     next_connect_id_(0),
-    acceptor_(new Acceptor(owner_loop, listen_addr)),
     tcp_conn_count_(0),
-    loop_thread_pool_(new EventLoopThreadPool(owner_loop, name_))
+    loop_thread_pool_(new EventLoopThreadPool(owner_loop))
 {
-    SystemLog_Debug("ctor tcp server, listen address:%s", name_.c_str());
+    std::string msg = "ctor tcp server";
+    for(auto iter : listen_addr)
+    {
+        msg += " " + iter.IPPort();
+        acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, iter));
+        acceptor_.back()->set_callback_new_connection(std::bind(&TCPServer::OnNewConnection, this, 
+                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    }
 
     tcp_conn_list_.resize(base::UNIT_MB);
-    acceptor_->set_callback_new_connection(std::bind(&TCPServer::OnNewConnection, this, 
+    SystemLog_Debug("%s", msg.c_str());
+
+    return;
+}
+//---------------------------------------------------------------------------
+TCPServer::TCPServer(EventLoop* owner_loop, short port)
+:   mark_(0),
+    owner_loop_(owner_loop),
+    next_connect_id_(0),
+    tcp_conn_count_(0),
+    loop_thread_pool_(new EventLoopThreadPool(owner_loop))
+{
+    SystemLog_Debug("ctor tcp server, listen address:*");
+
+    acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, AF_INET6)));
+    acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, AF_INET)));
+    tcp_conn_list_.resize(base::UNIT_MB);
+    acceptor_[0]->set_callback_new_connection(std::bind(&TCPServer::OnNewConnection, this, 
+                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    acceptor_[1]->set_callback_new_connection(std::bind(&TCPServer::OnNewConnection, this, 
                 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
     return;
@@ -32,7 +56,7 @@ TCPServer::TCPServer(EventLoop* owner_loop, InetAddress& listen_addr)
 //---------------------------------------------------------------------------
 TCPServer::~TCPServer()
 {
-    SystemLog_Debug("ctor tcp server, listen address:%s", name_.c_str());
+    SystemLog_Debug("ctor tcp server");
 
     return;
 }
@@ -49,7 +73,11 @@ void TCPServer::Start()
     SystemLog_Info("TCPServer start");
 
     loop_thread_pool_->Start();
-    owner_loop_->RunInLoop(std::bind(&Acceptor::Listen, acceptor_));
+
+    for(auto iter : acceptor_)
+    {
+        owner_loop_->RunInLoop(std::bind(&Acceptor::Listen, iter));
+    }
 
     return;
 }
@@ -105,7 +133,7 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ba
     //获取一个event_loop
     EventLoop* loop = loop_thread_pool_->GetNextEventLoop();
 
-    std::string new_conn_name = base::CombineString("%s#%zu", name_.c_str(), next_connect_id_++);
+    std::string new_conn_name = base::CombineString("%zu", next_connect_id_++);
     InetAddress local_addr = Socket::GetLocalAddress(clientfd);
 
     SystemLog_Debug("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s\n", accept_time.Datetime(true).c_str(),
@@ -148,8 +176,8 @@ void TCPServer::OnConnectionRemoveInLoop(const TCPConnPtr& conn_ptr)
     //在TCPserver的线程销毁连接
     owner_loop_->AssertInLoopThread();
 
-    SystemLog_Debug("server name:[%s], total[%zu]- name:%s,  fd:%d, from :%s to :%s\n", 
-            name_.c_str(), tcp_conn_count_, conn_ptr->name().c_str(), conn_ptr->socket()->fd(), conn_ptr->local_addr().IPPort().c_str(),
+    SystemLog_Debug("server total[%zu]- name:%s,  fd:%d, from :%s to :%s\n", 
+            tcp_conn_count_, conn_ptr->name().c_str(), conn_ptr->socket()->fd(), conn_ptr->local_addr().IPPort().c_str(),
             conn_ptr->peer_addr().IPPort().c_str());
 
     ConnDelList(conn_ptr);

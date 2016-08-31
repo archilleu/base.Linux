@@ -41,8 +41,12 @@ public:
 
     void SetReuseAddress();
     void SetReusePort();
+
     void SetNodelay();
+
     void SetKeepAlive(int interval);
+
+    void SetIPV6Only();
     
     void SetTimeoutRecv(int timeoutS);
     void SetTimeoutSend(int timeoutS);

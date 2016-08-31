@@ -71,8 +71,8 @@ bool TestTCPServer::Test_Normal()
     {
     EventLoop loop;
     g_loop = &loop;
-    InetAddress listen_addr(9999);
-    TCPServer tcp_server(&loop, listen_addr);
+    //InetAddress listen_addr(9999);
+    TCPServer tcp_server(&loop, 9999);
     svr = &tcp_server;
     
     loop.set_sig_usr1_callback(Dump);
@@ -92,8 +92,8 @@ bool TestTCPServer::Test_MultiThread()
 {
     EventLoop loop;
     g_loop = &loop;
-    InetAddress listen_addr(9999);
-    TCPServer tcp_server(&loop, listen_addr);
+    //InetAddress listen_addr(9999);
+    TCPServer tcp_server(&loop, 9999);
     loop.set_sig_usr1_callback(Dump);
     loop.set_sig_quit_callback(Quit);
     loop.SetAsSignalHandleEventLoop();

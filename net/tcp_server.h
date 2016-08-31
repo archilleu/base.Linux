@@ -17,7 +17,8 @@ class EventLoopThreadPool;
 class TCPServer
 {
 public:
-    TCPServer(EventLoop* owner_loop, InetAddress& listen_addr);
+    TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& listen_addr);
+    TCPServer(EventLoop* owner_loop, short port);
     ~TCPServer();
 
     void set_callback_connection        (CallbackConnection&& callback)                     { callback_connection_   = std::move(callback); }
@@ -55,13 +56,12 @@ private:
     CallbackWriteHighWaterMark  callback_high_water_mark_;
     size_t                      mark_;
 
-    EventLoop*                  owner_loop_;
-    std::string                 name_;
-    size_t                      next_connect_id_;
-    std::shared_ptr<Acceptor>   acceptor_;
+    EventLoop* owner_loop_;
+    size_t next_connect_id_;
+    std::vector<std::shared_ptr<Acceptor>> acceptor_;
 
-    std::vector<TCPConnPtr>     tcp_conn_list_;            
-    size_t                      tcp_conn_count_;
+    std::vector<TCPConnPtr> tcp_conn_list_;            
+    size_t tcp_conn_count_;
 
     std::shared_ptr<EventLoopThreadPool>    loop_thread_pool_;
 };

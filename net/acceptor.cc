@@ -13,8 +13,6 @@ namespace net
 //---------------------------------------------------------------------------
 Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
 :   owner_loop_(owner_loop),
-    listen_sock_(new Socket(::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0))),
-    channel_listen_(new Channel(owner_loop, listen_sock_->fd())),
     idle_fd_(::open("/dev/null", O_RDONLY|O_CLOEXEC))
 {
     SystemLog_Info("Acceptor ctor");
@@ -24,11 +22,26 @@ Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
         abort();
     }
 
-    if(0 > listen_sock_->fd())
+    if(true == inet_listen.IsIPV4())
     {
-        SystemLog_Error("listen sock create failed, errno:%d, msg:%s", errno, StrError(errno));
-        abort();
+        listen_sock_ = std::make_shared<Socket>(::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0));
+        if(0 > listen_sock_->fd())
+        {
+            SystemLog_Error("listen sock create failed, errno:%d, msg:%s", errno, StrError(errno));
+            abort();
+        }
     }
+    else
+    {
+        listen_sock_ = std::make_shared<Socket>(::socket(AF_INET6, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0));
+        if(0 > listen_sock_->fd())
+        {
+            SystemLog_Error("listen sock create failed, errno:%d, msg:%s", errno, StrError(errno));
+            abort();
+        }
+        listen_sock_->SetIPV6Only();
+    }
+    channel_listen_ = std::make_shared<Channel>(owner_loop, listen_sock_->fd());
 
     listen_sock_->SetReuseAddress();
     listen_sock_->Bind(inet_listen);
@@ -68,8 +81,8 @@ void Acceptor::Listen()
 //---------------------------------------------------------------------------
 int Acceptor::AcceptConnection(InetAddress* inet_peer)
 {
-    sockaddr_in client_addr;
-    socklen_t   len     = sizeof(sockaddr_in);
+    sockaddr_storage client_addr;
+    socklen_t   len     = sizeof(client_addr);
     int         clientfd= ::accept4(channel_listen_->fd(), reinterpret_cast<sockaddr*>(&client_addr), &len , SOCK_NONBLOCK|SOCK_CLOEXEC);
     if(0 > clientfd)
     {

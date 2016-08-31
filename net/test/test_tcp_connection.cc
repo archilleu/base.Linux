@@ -81,8 +81,8 @@ bool TestTCPConnection::Test_Normal()
 {
     EventLoop   loop;
     g_loop = &loop;
-    InetAddress listen_addr(9999);
-    TCPServer   server(&loop, listen_addr);
+    //InetAddress listen_addr(9999);
+    TCPServer   server(&loop, 9999);
     loop.set_sig_quit_callback(Quit);
     loop.SetAsSignalHandleEventLoop();
 

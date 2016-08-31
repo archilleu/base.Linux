@@ -102,6 +102,18 @@ void Socket::SetKeepAlive(int interval)
     Socket::SetKeepAlive(fd_, interval);
 }
 //---------------------------------------------------------------------------
+void Socket::SetIPV6Only()
+{
+    int yes = 1;
+    if(0 > setsockopt(fd_, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(yes)))
+    {
+        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        assert(0);
+    }
+    
+    return;
+}
+//---------------------------------------------------------------------------
 void Socket::SetTimeoutRecv(int timeoutS)
 {
     struct timeval timeout;
@@ -180,28 +192,12 @@ int Socket::GetRecvBufferSize()
 //---------------------------------------------------------------------------
 InetAddress Socket::GetLocalAddress()
 {
-    struct sockaddr_in  local_address;
-    socklen_t           len = static_cast<socklen_t>(sizeof(local_address));
-    if(0 > ::getsockname(fd_, reinterpret_cast<sockaddr*>(&local_address), &len))
-    {
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
-        assert(0);
-    }
-
-    return local_address;
+    return Socket::GetLocalAddress(fd_);
 }
 //---------------------------------------------------------------------------
 InetAddress Socket::GetPeerAddress()
 {
-    struct sockaddr_in  peer_address;
-    socklen_t           len = static_cast<socklen_t>(sizeof(peer_address));
-    if(0 > ::getpeername(fd_, reinterpret_cast<sockaddr*>(&peer_address), &len))
-    {
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
-        assert(0);
-    }
-
-    return peer_address;
+    return Socket::GetPeerAddress(fd_);
 }
 //---------------------------------------------------------------------------
 bool Socket::IsSelfConnect()
@@ -214,7 +210,7 @@ bool Socket::IsSelfConnect()
 //---------------------------------------------------------------------------
 InetAddress Socket::GetLocalAddress(int sockfd)
 {
-    struct sockaddr_in  local_address;
+    struct sockaddr_storage  local_address;
     socklen_t           len = static_cast<socklen_t>(sizeof(local_address));
     if(0 > ::getsockname(sockfd, reinterpret_cast<sockaddr*>(&local_address), &len))
     {
@@ -227,7 +223,7 @@ InetAddress Socket::GetLocalAddress(int sockfd)
 //---------------------------------------------------------------------------
 InetAddress Socket::GetPeerAddress(int sockfd)
 {
-    struct sockaddr_in  peer_address;
+    struct sockaddr_storage  peer_address;
     socklen_t           len = static_cast<socklen_t>(sizeof(peer_address));
     if(0 > ::getpeername(sockfd, reinterpret_cast<sockaddr*>(&peer_address), &len))
     {

@@ -141,11 +141,11 @@ void DatagramSocket::SetReuseAddress()
 //---------------------------------------------------------------------------
 DatagramPacket DatagramSocket::Receive(int len)
 {
-    sockaddr_in from;
-    bzero(&from, sizeof(sockaddr_in));
+    sockaddr_storage from;
+    bzero(&from, sizeof(sockaddr_storage));
 
     DatagramPacket  pkt(len);
-    socklen_t       length  = sizeof(sockaddr_in);
+    socklen_t       length  = sizeof(sockaddr_storage);
     ssize_t         rlen    = ::recvfrom(sockfd_->fd(), pkt.dat().dat(), len, 0, reinterpret_cast<sockaddr*>(&from), &length) ;
     if(0 < rlen)
     {
@@ -158,10 +158,10 @@ DatagramPacket DatagramSocket::Receive(int len)
 //---------------------------------------------------------------------------
 void DatagramSocket::Receive(DatagramPacket& pkt)
 {
-    sockaddr_in from;
-    bzero(&from, sizeof(sockaddr_in));
+    sockaddr_storage from;
+    bzero(&from, sizeof(sockaddr_storage));
 
-    socklen_t   length  = sizeof(sockaddr_in);
+    socklen_t   length  = sizeof(sockaddr_storage);
     ssize_t     rlen    = ::recvfrom(sockfd_->fd(), pkt.dat().dat(), pkt.dat().len(), 0, reinterpret_cast<sockaddr*>(&from), &length) ;
     if(0 < rlen)
     {

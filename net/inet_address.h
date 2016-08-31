@@ -12,19 +12,25 @@ class InetAddress
 {
 public:
     InetAddress();
-    InetAddress(short port, bool only_loopback=false);
-    InetAddress(const struct sockaddr_in& address);
-    InetAddress(uint32_t raw_ip, short port); InetAddress(const std::string& ip, short port); 
-    static std::vector<InetAddress> GetAllByDomain(std::string domain_name="", short port=0);//获取域名的所有ip,会进行DNS查询
+    InetAddress(short port, int af=AF_INET6, bool only_loopback=false);
+    InetAddress(const struct sockaddr_storage& address);
+    InetAddress(struct in_addr raw_ip, short port);
+    InetAddress(struct in6_addr raw_ip, short port);
+    InetAddress(const std::string& ip, short port); 
 
 public:
-    void set_address(const sockaddr_in& addr)    { address_ = addr; }
+    void set_address(const sockaddr_storage& addr)    { address_ = addr; }
 
     std::string IP()    const;
     std::string Port()  const;
     std::string IPPort()const;
 
-    const struct sockaddr_in& address() const { return address_; }
+    bool IsIPV4() const { return (AF_INET == address_.ss_family); }
+
+    const struct sockaddr_storage& address() const { return address_; }
+
+public:
+    static std::vector<InetAddress> GetAllByDomain(std::string domain_name="", short port=0);//获取域名的所有ip,会进行DNS查询
 
 public:
     friend bool operator==(const InetAddress& left, const InetAddress& right);
@@ -36,7 +42,7 @@ public:
     const static InetAddress INVALID_ADDR;
 
 private:
-    struct sockaddr_in address_;
+    struct sockaddr_storage address_;
 };
 //---------------------------------------------------------------------------
 inline bool operator==(const InetAddress& left, const InetAddress& right)
