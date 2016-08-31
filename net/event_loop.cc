@@ -77,7 +77,7 @@ public:
     {
         UninitLog();
     }
-}g_handle_signal;
+}g_init;
 //---------------------------------------------------------------------------
 int CreateEventFd()
 {
@@ -102,9 +102,7 @@ EventLoop::EventLoop()
     need_wakup_(true),
     poller_(Poller::NewDefaultPoller(this)),
     timer_task_queue_(new TimerTaskQueue(this)),
-    sig_fd_(0),
-    d_event_handling_(false),
-    d_current_active_channel_(nullptr)
+    sig_fd_(0)
 {
     SystemLog_Info("event loop create:%p, in thread tid:%d, tname:%s", this, tid_, tname_);
 
@@ -115,8 +113,6 @@ EventLoop::EventLoop()
         return;
     }
     
-    active_channel_list_.resize(128);
-
     channel_wakeup_->set_callback_read(std::bind(&EventLoop::HandleWakeup, this));
     channel_wakeup_->ReadEnable();
 
@@ -153,27 +149,21 @@ void EventLoop::Loop()
     looping_ = true;
     while(looping_)
     {
-        active_channel_list_[0] = nullptr;
-        base::Timestamp time = poller_->Poll(kPollTimeS, &active_channel_list_);
+        base::Timestamp time = poller_->Poll(kPollTimeS);
+        const std::vector<Channel*>& active_channel_list = poller_->active_channels();
         ++iteration_;
         
     #ifdef _DEBUG
         PrintActiveChannels();
     #endif
         
-        d_event_handling_ = true;
-
-            for(auto iter : active_channel_list_)
+            for(auto iter : active_channel_list)
             {
                 if(nullptr == iter)
                     break;
 
-                d_current_active_channel_ = iter;
                 iter->HandleEvent(time);
             }
-
-        d_current_active_channel_   = nullptr;
-        d_event_handling_           = false;
 
         DoPendingTasks();
     }
@@ -436,7 +426,7 @@ void EventLoop::DoPendingTasks()
 //---------------------------------------------------------------------------
 void EventLoop::PrintActiveChannels() const
 {
-    for(auto iter : active_channel_list_)
+    for(auto iter : poller_->active_channels())
     {
         if(nullptr == iter)
             break;

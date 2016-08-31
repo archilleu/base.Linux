@@ -9,6 +9,8 @@ namespace
     const int kNew  = 1;
     const int kAdded= 2;
     const int kDel  = 3;
+
+    const int kInitActiveChannelSize = 512;
 }
 //---------------------------------------------------------------------------
 namespace net
@@ -25,7 +27,10 @@ EPoller::EPoller(EventLoop* owner)
     }
     egen_ = 0;
 
-    event_list_.resize(128);
+    this->channels_.resize(base::UNIT_MB);
+    this->active_channels_.resize(kInitActiveChannelSize);
+    event_list_.resize(kInitActiveChannelSize);
+
     return;
 }
 //---------------------------------------------------------------------------
@@ -37,9 +42,11 @@ EPoller::~EPoller()
     return;
 }
 //---------------------------------------------------------------------------
-base::Timestamp EPoller::Poll(int timeoutS, ChannelList* active_channel_list)
+base::Timestamp EPoller::Poll(int timeoutS)
 {
     this->AssertInLoopThread();
+
+    this->active_channels_[0] = nullptr;
 
     int nums = ::epoll_wait(efd_, static_cast<struct epoll_event*>(event_list_.data()), static_cast<int>(event_list_.size()), timeoutS*1000);
     base::Timestamp rcv_time = base::Timestamp::Now();
@@ -49,11 +56,16 @@ base::Timestamp EPoller::Poll(int timeoutS, ChannelList* active_channel_list)
     {
         SystemLog_Debug("event nums:%d", nums);
 
-        FillActiveChannel(nums, active_channel_list);
-
         if(nums == static_cast<int>(event_list_.size()))
-            event_list_.resize(event_list_.size()*2);
+        {
+            size_t size = event_list_.size();
+            event_list_.clear();
+            event_list_.resize(size*2);
+            this->active_channels_.clear();
+            this->active_channels_.resize(size*2);
+        }
 
+        FillActiveChannel(nums);
         return rcv_time;
     }
 
@@ -89,7 +101,7 @@ void EPoller::ChannelUpdate(Channel* channel)
     switch(status)
     {
         case kNew:
-            assert(((void)"channel alreeady add", nullptr == channels_[fd]));
+            assert(((void)"channel alreeady add", nullptr == this->channels_[fd]));
             if(!channel->IsNoneEvent())
             {
                 if(false == Update(EPOLL_CTL_ADD, channel))
@@ -102,7 +114,7 @@ void EPoller::ChannelUpdate(Channel* channel)
                 channel->set_status(kDel);
             }
 
-            AddfdList(fd, channel);
+            AddfdList(channel);
 
             break;
 
@@ -147,8 +159,8 @@ void EPoller::ChannelRemove(Channel* channel)
 
     if(kNew != status)
     {
-        assert(((void)"idx must <= channels_'s size", fd <= static_cast<int>(channels_.size())));
-        assert(channel == channels_[fd]);
+        assert(((void)"idx must <= channels_'s size", fd <= static_cast<int>(this->channels_.size())));
+        assert(channel == this->channels_[fd]);
         
         if(!channel->IsNoneEvent())
         {
@@ -162,17 +174,14 @@ void EPoller::ChannelRemove(Channel* channel)
         }
 
         channel->set_status(kNew);
-        DeldList(channel);
+        DelfdList(channel);
     }
 
     return;
 }
 //---------------------------------------------------------------------------
-void EPoller::FillActiveChannel(int active_nums, ChannelList* active_channel_list)
+void EPoller::FillActiveChannel(int active_nums)
 {
-    if(active_nums >= static_cast<int>(active_channel_list->size()))
-        active_channel_list->resize(active_channel_list->size()*2);
-
     int i = 0;
     for(; i<active_nums; i++)
     {
@@ -181,7 +190,7 @@ void EPoller::FillActiveChannel(int active_nums, ChannelList* active_channel_lis
         if(!channel->IsNoneEvent())
         {
             channel->set_revents(event_list_[i].events);
-            (*active_channel_list)[i] = channel;
+            this->active_channels_[i] = channel;
         }
         else
         {
@@ -190,7 +199,7 @@ void EPoller::FillActiveChannel(int active_nums, ChannelList* active_channel_lis
         }
     }
 
-    (*active_channel_list)[i] = nullptr;
+    this->active_channels_[i] = nullptr;
 
     return;
 }
@@ -231,21 +240,45 @@ bool EPoller::Update(int op, Channel* channel)
     return true;
 }
 //---------------------------------------------------------------------------
-void EPoller::AddfdList(int fd, Channel* channel)
+void EPoller::AddfdList(Channel* channel)
 {
-    if(fd >= static_cast<int>(this->channels_.size()))
-        this->channels_.resize(channels_.size()*2);
-
-    channels_[fd] = channel;
+    int fd = channel->fd();
+    this->channels_[fd] = channel;
     channel_num_++;
+
+    if(this->cur_max_fd_ < fd)
+        this->cur_max_fd_ = fd;
+
+#ifdef _DEBUG
+    this->DumpChannel();
+#endif
 
     return;
 }
 //---------------------------------------------------------------------------
-void EPoller::DeldList(Channel* channel)
+void EPoller::DelfdList(Channel* channel)
 {
-    channels_[channel->fd()] = nullptr;
+    int fd = channel->fd();
+    this->channels_[fd] = nullptr;
     channel_num_--;
+
+    if(fd == this->cur_max_fd_)
+    {
+        for(int i=fd-1; i>=0; i--)
+        {
+            if(nullptr == this->channels_[i])
+                continue;
+
+            this->cur_max_fd_ = i;
+            break;
+        }
+    }
+
+#ifdef _DEBUG
+    this->DumpChannel();
+#endif
+
+    return;
 }
 //---------------------------------------------------------------------------
 }//namespace net

@@ -16,7 +16,7 @@ Channel::Channel(EventLoop* loop, int _fd)
     fd_(_fd),
     events_(kNone),//在TCPServer通知TCPConn对应成功建立连接前,loop都不能接收任何事件
     revents_(0),
-    status_(1),
+    status_(1), //kNew
     handling_(false),
     tied_(false)
 {

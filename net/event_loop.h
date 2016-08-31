@@ -87,7 +87,6 @@ private:
     std::mutex          mutex_;
     std::atomic<bool>   need_wakup_;
 
-    std::vector<Channel*>           active_channel_list_;
     std::shared_ptr<Poller>         poller_;
     std::shared_ptr<TimerTaskQueue> timer_task_queue_;
 
@@ -98,10 +97,6 @@ private:
     SignalFunc  sig_usr1_callback_;
     SignalFunc  sig_usr2_callback_;
     std::shared_ptr<Channel> channel_sig_;
-
-    //for debug
-    bool        d_event_handling_;
-    Channel*    d_current_active_channel_;
 
 protected:
     DISALLOW_COPY_AND_ASSIGN(EventLoop);

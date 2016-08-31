@@ -16,18 +16,18 @@ public:
     EPoller(EventLoop* owner);
     virtual ~EPoller();
 
-    virtual base::Timestamp Poll(int timeoutS, ChannelList* active_channel_list);
+    virtual base::Timestamp Poll(int timeoutS);
 
     virtual void ChannelUpdate(Channel* channel);
     virtual void ChannelRemove(Channel* channel);
 
 private:
-    void FillActiveChannel(int active_nums, ChannelList* active_channel_list);
+    void FillActiveChannel(int active_nums);
 
     bool Update(int op, Channel* channel);
 
-    void AddfdList(int fd, Channel* channel);
-    void DeldList(Channel* channel);
+    void AddfdList(Channel* channel);
+    void DelfdList(Channel* channel);
 
 private:
     int efd_;

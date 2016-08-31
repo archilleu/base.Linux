@@ -107,10 +107,10 @@ bool TestTCPConnection::Test_MultiThread()
 void TestTCPConnection::OnConnection(const TCPConnPtr& conn_ptr)
 {
     ConnectionAdd(conn_ptr);
-    std::cout << "OnConnectio name:" << conn_ptr->name()
-        << " local addr:" << conn_ptr->local_addr().IPPort()
-        << " peer addr:" << conn_ptr->peer_addr().IPPort()
-        << std::endl;
+    //std::cout << "OnConnectio name:" << conn_ptr->name()
+    //    << " local addr:" << conn_ptr->local_addr().IPPort()
+    //    << " peer addr:" << conn_ptr->peer_addr().IPPort()
+    //    << std::endl;
 
     return;
 }
@@ -118,10 +118,10 @@ void TestTCPConnection::OnConnection(const TCPConnPtr& conn_ptr)
 void TestTCPConnection::OnDisconnection(const TCPConnPtr& conn_ptr)
 {
     ConnectionDel(conn_ptr);
-    std::cout << "OnDisconnectio name:" << conn_ptr->name()
-        << " local addr:" << conn_ptr->local_addr().IPPort()
-        << " peer addr:" << conn_ptr->peer_addr().IPPort()
-        << std::endl;
+    //std::cout << "OnDisconnectio name:" << conn_ptr->name()
+    //    << " local addr:" << conn_ptr->local_addr().IPPort()
+    //    << " peer addr:" << conn_ptr->peer_addr().IPPort()
+    //    << std::endl;
 
     return;
 }
