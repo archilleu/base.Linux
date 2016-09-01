@@ -48,7 +48,7 @@ void Socket::ShutDownWrite()
 //---------------------------------------------------------------------------
 void Socket::Bind(const InetAddress& inet_addr)
 {
-    if(0 > ::bind(fd_, reinterpret_cast<const sockaddr*>(&inet_addr.address()), sizeof(struct sockaddr_in)))
+    if(0 > ::bind(fd_, reinterpret_cast<const sockaddr*>(&inet_addr.address()), sizeof(inet_addr.address())))
     {
         SystemLog_Error("bind failed errno:%d, msg:%s", errno, StrError(errno));
         abort();

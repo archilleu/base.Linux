@@ -7,7 +7,7 @@ import time
 import random
 import struct
 
-HOST = "0.0.0.0"
+HOST = '127.0.0.1'
 PORT = 9999
 
 REPLY = 1
@@ -18,10 +18,26 @@ client_nums = 50
 client_list = []
 cond = threading.Condition()
 
+def fetch_local_ipv6_address(port=PORT):
+    if not socket.has_ipv6:
+        raise Exception("the local machine has no IPv6 support enabled")
+    #addrs = socket.getaddrinfo("localhost", port, socket.AF_INET6, 0, socket.SOL_TCP)
+    addrs = ('::1', port, 0, 0)
+    return addrs
+    # example output: [(23, 0, 6, '', ('::1', 10008, 0, 0))]
+    if len(addrs) == 0:
+        raise Exception("there is no IPv6 address configured for localhost")
+    entry0 = addrs[0]
+    sockaddr = entry0[-1]
+    return sockaddr
+
+
 def ClientConnect():
     try:
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
-        client.connect((HOST, PORT))
+        addr = fetch_local_ipv6_address(PORT)
+        print(addr)
+        client = socket.socket(socket.AF_INET6, socket.SOCK_STREAM);
+        client.connect(addr)
         print("connect nums:peer:", client.getpeername(), "local:", client.getsockname())
 
         return client
@@ -122,8 +138,8 @@ def ClientSendData(tname, conn_ptr):
 
 if "__main__" == __name__:
     #测试单线程
-    client = ClientConnect()
     import pdb; pdb.set_trace()
+    client = ClientConnect()
     #ClientSendData("s", client)
     ClientDisconnect()
 

@@ -16,11 +16,11 @@ InetAddress::InetAddress()
     return;
 }
 //---------------------------------------------------------------------------
-InetAddress::InetAddress(short port, int af, bool only_loopback)
+InetAddress::InetAddress(short port, bool is_ipv4, bool only_loopback)
 {
     bzero(&address_, sizeof(address_));
 
-    if(af == AF_INET)
+    if(true == is_ipv4)
     {
         auto ip = only_loopback ? INADDR_LOOPBACK : INADDR_ANY;
         sockaddr_in* addr   = reinterpret_cast<sockaddr_in*>(&address_);
@@ -28,7 +28,7 @@ InetAddress::InetAddress(short port, int af, bool only_loopback)
         addr->sin_port      = htobe16(port);
         addr->sin_addr.s_addr= htobe32(ip);
     }
-    else if(af == AF_INET6)
+    else
     {
         auto ip = only_loopback ? in6addr_loopback : in6addr_any;
         sockaddr_in6* addr  = reinterpret_cast<sockaddr_in6*>(&address_);
@@ -37,8 +37,6 @@ InetAddress::InetAddress(short port, int af, bool only_loopback)
         addr->sin6_addr     = ip;
         
     }
-    else
-        assert(0);
 
     return;
 }
@@ -104,7 +102,6 @@ std::string InetAddress::IP() const
     if(AF_INET == address_.ss_family)
     {
         char buf[INET_ADDRSTRLEN];
-
         const sockaddr_in* addr = reinterpret_cast<const sockaddr_in*>(&address_);
         inet_ntop(AF_INET, &(addr->sin_addr), buf, sizeof(buf));
         return buf;

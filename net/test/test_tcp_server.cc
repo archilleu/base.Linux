@@ -13,8 +13,8 @@ using namespace net::test;
 //---------------------------------------------------------------------------
 bool TestTCPServer::DoTest()
 {
-    //if(false == Test_Illegal())     return false;
-    //if(false == Test_Normal())      return false;
+    if(false == Test_Illegal())     return false;
+    if(false == Test_Normal())      return false;
     if(false == Test_MultiThread()) return false;
 
     return true;
@@ -63,15 +63,16 @@ void Quit()
 bool TestTCPServer::Test_Normal()
 {
     {
-    //EventLoop loop;
-    //InetAddress listen_addr(9999);
-    //TCPServer tcp_server(&loop, listen_addr);
+    EventLoop loop;
+    InetAddress listen_addr(9999);
+    std::vector<InetAddress> addrs;
+    addrs.push_back(listen_addr);
+    TCPServer tcp_server(&loop, addrs);
     }
 
     {
     EventLoop loop;
     g_loop = &loop;
-    //InetAddress listen_addr(9999);
     TCPServer tcp_server(&loop, 9999);
     svr = &tcp_server;
     
@@ -92,7 +93,6 @@ bool TestTCPServer::Test_MultiThread()
 {
     EventLoop loop;
     g_loop = &loop;
-    //InetAddress listen_addr(9999);
     TCPServer tcp_server(&loop, 9999);
     loop.set_sig_usr1_callback(Dump);
     loop.set_sig_quit_callback(Quit);

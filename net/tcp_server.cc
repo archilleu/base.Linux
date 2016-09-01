@@ -43,8 +43,8 @@ TCPServer::TCPServer(EventLoop* owner_loop, short port)
 {
     SystemLog_Debug("ctor tcp server, listen address:*");
 
-    acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, AF_INET6)));
-    acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, AF_INET)));
+    acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, true)));
+    acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, false)));
     tcp_conn_list_.resize(base::UNIT_MB);
     acceptor_[0]->set_callback_new_connection(std::bind(&TCPServer::OnNewConnection, this, 
                 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));

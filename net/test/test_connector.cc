@@ -16,8 +16,8 @@ bool TestConnector::DoTest()
 //---------------------------------------------------------------------------
 namespace
 {
-    //const char* SVR_IP  = "127.0.0.1";
-   // const short SVR_PORT= 9981; 
+    const char* SVR_IP  = "127.0.0.1";
+    const short SVR_PORT= 9981; 
 }
 //---------------------------------------------------------------------------
 void TestConnector::NewConnection(int sockfd)
@@ -27,16 +27,16 @@ void TestConnector::NewConnection(int sockfd)
 //---------------------------------------------------------------------------
 bool TestConnector::Test_Normal()
 {
-    //EventLoop loop;
-    //InetAddress inet_svr(SVR_IP, SVR_PORT);
-    //std::shared_ptr<Connector> connector(new Connector(&loop, inet_svr));
-    //connector->set_callbakc_new_connection_(std::bind(&TestConnector::NewConnection, this, std::placeholders::_1));
+    EventLoop loop;
+    InetAddress inet_svr(SVR_IP, SVR_PORT);
+    std::shared_ptr<Connector> connector(new Connector(&loop, inet_svr));
+    connector->set_callbakc_new_connection_(std::bind(&TestConnector::NewConnection, this, std::placeholders::_1));
 
-    //std::cout << "svr addr:" << connector->svr_addr().IPPort() << std::endl;
-    //connector->Start();
-    //loop.Loop();
-    //connector->Stop();
-    //loop.Quit();
+    std::cout << "svr addr:" << connector->svr_addr().IPPort() << std::endl;
+    connector->Start();
+    loop.Loop();
+    connector->Stop();
+    loop.Quit();
 
     return true;
 }

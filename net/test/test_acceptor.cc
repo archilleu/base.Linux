@@ -30,12 +30,24 @@ bool TestAcceptor::Test_Illgal()
 //---------------------------------------------------------------------------
 static EventLoop* g_loop = 0;
 //---------------------------------------------------------------------------
+void NewConn(int fd, const InetAddress& addr, base::Timestamp)
+{
+    std::cout << "=====================>fd:" << fd << " addr:"
+        << addr.IPPort() << std::endl;
+}
+//---------------------------------------------------------------------------
 bool TestAcceptor::Test_Normal()
 {
     EventLoop       loop;
-    InetAddress     listen_addr("127.0.0.1", 9999);
+    //ipv4
+    InetAddress     listen_addr(9999, true);
+    InetAddress     listen_addr6(9999, false);
     Acceptor        acceptor(&loop, listen_addr);
+    Acceptor        acceptor6(&loop, listen_addr6);
+    acceptor.set_callback_new_connection(NewConn);
+    acceptor6.set_callback_new_connection(NewConn);
     acceptor.Listen();
+    acceptor6.Listen();
 
     g_loop = &loop;
 
@@ -49,6 +61,8 @@ bool TestAcceptor::Test_Normal()
 //---------------------------------------------------------------------------
 void TestAcceptor::ClientConnect()
 {
+    //ipv4
+    {
     int clientfd = ::socket(AF_INET, SOCK_STREAM, 0);
     if(0 > clientfd)
     {
@@ -61,10 +75,30 @@ void TestAcceptor::ClientConnect()
     {
         printf("connect error:%s\n", strerror(errno));
         ::close(clientfd);
+    }
+
+    ::close(clientfd);
+    }
+    //ipv6
+    {
+    int clientfd = ::socket(AF_INET6, SOCK_STREAM, 0);
+    if(0 > clientfd)
+    {
+        printf("socket error:%s\n", strerror(errno));
+        return;
+    }
+
+    InetAddress inet_svr6(9999, false);
+    if(0 > ::connect(clientfd, reinterpret_cast<const sockaddr*>(&(inet_svr6.address())), sizeof(inet_svr6.address())))
+    {
+        printf("connect error:%s\n", strerror(errno));
+        ::close(clientfd);
         return;
     }
 
     ::close(clientfd);
+
+    }
     g_loop->Quit();
     return;
 }

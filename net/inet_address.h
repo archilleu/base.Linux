@@ -12,7 +12,7 @@ class InetAddress
 {
 public:
     InetAddress();
-    InetAddress(short port, int af=AF_INET6, bool only_loopback=false);
+    explicit InetAddress(short port, bool is_ipv4=true, bool only_loopback=false);
     InetAddress(const struct sockaddr_storage& address);
     InetAddress(struct in_addr raw_ip, short port);
     InetAddress(struct in6_addr raw_ip, short port);
