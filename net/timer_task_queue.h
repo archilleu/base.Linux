@@ -3,14 +3,15 @@
 #define BASE_LINUX_NET_TIMER_TASK_QUEUE_H_
 //---------------------------------------------------------------------------
 #include "../base/share_inc.h"
-#include "timer_task.h"
 #include "timer_task_id.h"
+#include "timer_task.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 class EventLoop;
 class Channel;
+class TimerTask;
 
 class TimerTaskQueue
 {

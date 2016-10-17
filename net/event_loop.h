@@ -4,9 +4,8 @@
 //---------------------------------------------------------------------------
 #include "../base/share_inc.h"
 #include "callback.h"
-#include "timer_task.h"
-#include <atomic>
 #include "timer_task_id.h"
+#include <atomic>
 //---------------------------------------------------------------------------
 namespace net
 {

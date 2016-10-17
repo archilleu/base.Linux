@@ -11,7 +11,7 @@ namespace net
 class TCPConn;
 class Buffer;
 
-typedef std::shared_ptr<TCPConn> TCPConnPtr;
+using TCPConnPtr = std::shared_ptr<TCPConn>;
 
 typedef std::function<void (const TCPConnPtr&)>                           CallbackConnection;
 typedef std::function<void (const TCPConnPtr&)>                           CallbackDisconnection;
