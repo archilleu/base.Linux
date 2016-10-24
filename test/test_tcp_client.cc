@@ -3,6 +3,7 @@
 #include "../src/tcp_client.h"
 #include "../src/event_loop.h"
 #include "../src/tcp_connection.h"
+#include "../depend/base/include/timestamp.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;
@@ -33,9 +34,9 @@ void TestTCPClient::OnConnection(const TCPConnPtr& conn_ptr)
     cond_.notify_one();
 }
 //---------------------------------------------------------------------------
-void TestTCPClient::OnRead(const TCPConnPtr& , Buffer& buffer, base::Timestamp rcv_time)
+void TestTCPClient::OnRead(const TCPConnPtr& , Buffer& buffer, uint64_t rcv_time)
 {
-    std::cout << "time:" << rcv_time.Datetime(true) << "OnRead" << "size:" << buffer.ReadableBytes() << std::endl;
+    std::cout << "time:" << base::Timestamp(rcv_time).Datetime(true) << "OnRead" << "size:" << buffer.ReadableBytes() << std::endl;
     
     const std::string& msg = msg_queue_.front();
     if(msg.size() > buffer.ReadableBytes())

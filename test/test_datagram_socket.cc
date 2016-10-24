@@ -87,12 +87,12 @@ bool TestDatagramSocket::Test_Normal()
     for(uint64_t i=0; i<1024; i++)
     {
         DatagramPacket pkt(rand()%65536, InetAddress(svr_ip, svr_port));
-        memset(pkt.dat().dat(), rand()%256, pkt.dat().len());
-        pkt.set_effective(pkt.dat().len());
+        memset(pkt.dat().data(), rand()%256, pkt.dat().size());
+        pkt.set_effective(pkt.dat().size());
 
         ds.Send(pkt);
         DatagramPacket pkt_rcv = ds.Receive(65536);
-        MY_ASSERT(0 == memcmp(pkt_rcv.dat().dat(), pkt.dat().dat(), pkt.effective()));
+        MY_ASSERT(0 == memcmp(pkt_rcv.dat().data(), pkt.dat().data(), pkt.effective()));
     }
     }
 
@@ -103,12 +103,12 @@ bool TestDatagramSocket::Test_Normal()
     for(uint64_t i=0; i<1024; i++)
     {
         DatagramPacket pkt(rand()%65536);
-        memset(pkt.dat().dat(), rand()%256, pkt.dat().len());
-        pkt.set_effective(pkt.dat().len());
+        memset(pkt.dat().data(), rand()%256, pkt.dat().size());
+        pkt.set_effective(pkt.dat().size());
 
         ds.Send(pkt);
         DatagramPacket pkt_rcv = ds.Receive(65536);
-        MY_ASSERT(0 == memcmp(pkt_rcv.dat().dat(), pkt.dat().dat(), pkt.effective()));
+        MY_ASSERT(0 == memcmp(pkt_rcv.dat().data(), pkt.dat().data(), pkt.effective()));
     }
     }
 
@@ -122,12 +122,12 @@ bool TestDatagramSocket::Test_Normal()
     for(uint64_t i=0; i<1024; i++)
     {
         DatagramPacket pkt(rand()%65536);
-        memset(pkt.dat().dat(), rand()%256, pkt.dat().len());
-        pkt.set_effective(pkt.dat().len());
+        memset(pkt.dat().data(), rand()%256, pkt.dat().size());
+        pkt.set_effective(pkt.dat().size());
 
         ds.Send(pkt);
         DatagramPacket pkt_rcv = ds.Receive(65536);
-        MY_ASSERT(0 == memcmp(pkt_rcv.dat().dat(), pkt.dat().dat(), pkt.effective()));
+        MY_ASSERT(0 == memcmp(pkt_rcv.dat().data(), pkt.dat().data(), pkt.effective()));
     }
     }
     return true;

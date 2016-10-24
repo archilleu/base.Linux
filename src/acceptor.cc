@@ -98,7 +98,7 @@ int Acceptor::AcceptConnection(InetAddress* inet_peer)
     return clientfd;
 }
 //---------------------------------------------------------------------------
-void Acceptor::HandleRead(base::Timestamp rcv_time)
+void Acceptor::HandleRead(uint64_t rcv_time)
 {
     for(;;)
     {

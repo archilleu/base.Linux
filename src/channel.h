@@ -15,7 +15,7 @@ class Channel
 {
 public:
     using EventCallback     = std::function<void (void)>;
-    using EventCallbackRead = std::function<void (base::Timestamp)>;
+    using EventCallbackRead = std::function<void (uint64_t)>;
     
 public:
     Channel(EventLoop* loop, int fd);
@@ -42,7 +42,7 @@ public:
     void DisableAll()   { events_ = kNone; UpdateEvent(); }
 
     //处理活动事件
-    void HandleEvent(base::Timestamp rcv_time);
+    void HandleEvent(uint64_t rcv_time);
 
     //通知EventLoop移除Channel
     void Remove();
@@ -65,7 +65,7 @@ public:
     std::string EventsToString();
 
 private:
-    void _HandleEvent(base::Timestamp rcv_time);
+    void _HandleEvent(uint64_t rcv_time);
 
     void UpdateEvent();
 

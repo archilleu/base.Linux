@@ -26,7 +26,7 @@ void TestUDPServer::OnRcvPacket(const DatagramPacket& pkt)
 {
     static uint64_t times = 0;
     
-    std::cout << "times:" << ++times << " from:" << pkt.address().IPPort() << " len:" << pkt.dat().len() << " effective:" << pkt.effective() << std::endl;
+    std::cout << "times:" << ++times << " from:" << pkt.address().IPPort() << " len:" << pkt.dat().size() << " effective:" << pkt.effective() << std::endl;
     
     g_udp_server->Send(pkt);
     return;

@@ -2,9 +2,9 @@
 #ifndef NET_CALLBACK_H_
 #define NET_CALLBACK_H_
 //---------------------------------------------------------------------------
+#include <vector>
 #include <memory>
 #include <functional>
-#include "../depend/base/include/timestamp.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -13,12 +13,14 @@ namespace net
 class TCPConn;
 class Buffer;
 
+using MemoryBlock = std::vector<char>;
+
 using TCPConnPtr = std::shared_ptr<TCPConn>;
 
 using CallbackConnection            = std::function<void (const TCPConnPtr&)>;
 using CallbackDisconnection         = std::function<void (const TCPConnPtr&)>;
 using CallbackRemove                = std::function<void (const TCPConnPtr&)>;
-using CallbackRead                  = std::function<void (const TCPConnPtr&, Buffer&, base::Timestamp)>;
+using CallbackRead                  = std::function<void (const TCPConnPtr&, Buffer&, uint64_t mic_secs)>;
 using CallbackWriteComplete         = std::function<void (const TCPConnPtr&)>;
 using CallbackWriteHighWaterMark    = std::function<void (const TCPConnPtr&, size_t)>;
 

@@ -152,7 +152,9 @@ void EventLoop::Loop()
     looping_ = true;
     while(looping_)
     {
-        base::Timestamp time = poller_->Poll(kPollTimeS);
+        if(befor_func_) befor_func_();
+
+        uint64_t time = poller_->Poll(kPollTimeS);
         const std::vector<Channel*>& active_channel_list = poller_->active_channels();
         ++iteration_;
         
@@ -169,6 +171,8 @@ void EventLoop::Loop()
         }
 
         DoPendingTasks();
+
+        if(after_func_) after_func_();
     }
 
     //处理完成工作
@@ -267,20 +271,20 @@ void EventLoop::QueueInLoop(Task&& task)
     return;
 }
 //---------------------------------------------------------------------------
-TimerTaskId EventLoop::RunAt(base::Timestamp when, CallbackTimerTask&& callback)
+TimerTaskId EventLoop::RunAt(uint64_t when, CallbackTimerTask&& callback)
 {
     return timer_task_queue_->TimerTaskAdd(std::move(callback), when, 0);
 }
 //---------------------------------------------------------------------------
 TimerTaskId EventLoop::RunAfter(int delayS, CallbackTimerTask&& callback)
 {
-    base::Timestamp when = base::Timestamp::Now().AddTime(delayS);
+    uint64_t when  = base::Timestamp::Now().AddTime(delayS).Microseconds();
     return timer_task_queue_->TimerTaskAdd(std::move(callback), when, 0);
 }
 //---------------------------------------------------------------------------
 TimerTaskId EventLoop::RunInterval(int intervalS, CallbackTimerTask&& callback)
 {
-    return timer_task_queue_->TimerTaskAdd(std::move(callback), base::Timestamp::Now(), intervalS);
+    return timer_task_queue_->TimerTaskAdd(std::move(callback), base::Timestamp::Now().Microseconds(), intervalS);
 }
 //---------------------------------------------------------------------------
 void EventLoop::RunCancel(TimerTaskId timer_task_id)

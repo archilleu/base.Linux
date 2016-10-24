@@ -127,7 +127,7 @@ void TCPServer::DumpConnection()
     return;
 }
 //---------------------------------------------------------------------------
-void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, base::Timestamp accept_time)
+void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, uint64_t accept_time)
 {
     owner_loop_->AssertInLoopThread();
 
@@ -137,7 +137,7 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ba
     std::string new_conn_name = base::CombineString("%zu", next_connect_id_++);
     InetAddress local_addr = Socket::GetLocalAddress(clientfd);
 
-    SystemLog_Debug("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s\n", accept_time.Datetime(true).c_str(),
+    SystemLog_Debug("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s\n", base::Timestamp(accept_time).Datetime(true).c_str(),
             new_conn_name.c_str(), clientfd, tcp_conn_count_, local_addr.IPPort().c_str(), client_addr.IPPort().c_str());
 
     TCPConnPtr conn_ptr = std::make_shared<TCPConn>(loop, new_conn_name, clientfd, local_addr, client_addr);

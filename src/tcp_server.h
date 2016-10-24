@@ -4,7 +4,6 @@
 //---------------------------------------------------------------------------
 #include <vector>
 #include "callback.h"
-#include "../depend/base/include/timestamp.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -42,7 +41,7 @@ public:
     void DumpConnection();
 
 private:
-    void OnNewConnection(int clientfd, const InetAddress& client_addr, base::Timestamp accept_time);
+    void OnNewConnection(int clientfd, const InetAddress& client_addr, uint64_t accept_time);
 
     void OnConnectionRemove        (const TCPConnPtr& conn_ptr);
     void OnConnectionRemoveInLoop  (const TCPConnPtr& conn_ptr);

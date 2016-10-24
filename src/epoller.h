@@ -15,7 +15,7 @@ public:
     EPoller(EventLoop* owner);
     virtual ~EPoller();
 
-    virtual base::Timestamp Poll(int timeoutS);
+    virtual uint64_t Poll(int timeoutS);
 
     virtual void ChannelUpdate(Channel* channel);
     virtual void ChannelRemove(Channel* channel);

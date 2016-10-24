@@ -18,8 +18,10 @@ class TimerTaskQueue;
 class EventLoop
 {
 public:
-    using Task      = std::function<void (void)>;
-    using SignalFunc= std::function<void (void)>;
+    using Task          = std::function<void (void)>;
+    using SignalFunc    = std::function<void (void)>;
+    using BeforLoopFunc = std::function<void (void)>;
+    using AfterLoopFunc = std::function<void (void)>;
 
     EventLoop();
     ~EventLoop();
@@ -30,6 +32,9 @@ public:
     void set_sig_quit_callback(SignalFunc&& callback)    { sig_quit_callback_   = std::move(callback); }
     void set_sig_usr1_callback(SignalFunc&& callback)    { sig_usr1_callback_   = std::move(callback); }
     void set_sig_usr2_callback(SignalFunc&& callback)    { sig_usr2_callback_   = std::move(callback); }
+
+    void set_befor_function(BeforLoopFunc&& callback)   { befor_func_ = std::move(callback); }
+    void set_after_function(AfterLoopFunc&& callback)   { after_func_ = std::move(callback); }
 
     //启动和退出
     void Loop();
@@ -47,7 +52,7 @@ public:
     void QueueInLoop(Task&& task);
 
     //定时任务
-    TimerTaskId RunAt       (base::Timestamp when, CallbackTimerTask&& callback);
+    TimerTaskId RunAt       (uint64_t when, CallbackTimerTask&& callback);
     TimerTaskId RunAfter    (int delayS, CallbackTimerTask&& callback);
     TimerTaskId RunInterval (int intervalS, CallbackTimerTask&& callback);
     void        RunCancel   (TimerTaskId timer_task_id);
@@ -102,6 +107,10 @@ private:
     SignalFunc  sig_usr1_callback_;
     SignalFunc  sig_usr2_callback_;
     std::shared_ptr<Channel> channel_sig_;
+
+    //befor after run
+    BeforLoopFunc befor_func_;
+    AfterLoopFunc after_func_;
 };
 
 }//namespace net

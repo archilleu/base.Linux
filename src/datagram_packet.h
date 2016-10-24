@@ -3,8 +3,9 @@
 #define NET_DATAGRAM_PACKET_H_
 //---------------------------------------------------------------------------
 #include <cassert>
+#include <vector>
 #include "inet_address.h"
-#include "../depend/base/include/memory_block.h"
+#include "callback.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -19,14 +20,14 @@ public:
         return;
     }
 
-    DatagramPacket(const base::MemoryBlock& data)
+    DatagramPacket(const MemoryBlock& data)
     :   dat_(data),
         effective_(0)
     {
         return;
     }
 
-    DatagramPacket(const base::MemoryBlock&& data)
+    DatagramPacket(const MemoryBlock&& data)
     :   dat_(std::move(data)),
         effective_(0)
     {
@@ -81,19 +82,19 @@ public:
         return *this;
     }
 
-    const base::MemoryBlock&    dat()   const   { return dat_; }
-    base::MemoryBlock&          dat()           { return dat_; }
+    const MemoryBlock&    dat()   const   { return dat_; }
+    MemoryBlock&          dat()           { return dat_; }
 
     const InetAddress&  address     ()                          const   { return address_; }
     void                set_address (const InetAddress& addr)           { address_ = addr; }
 
     size_t  effective       ()  const       { return effective_; }
-    void    set_effective   (size_t len)    { assert(len <= dat_.len()); effective_ = len; }
+    void    set_effective   (size_t len)    { assert(len <= dat_.size()); effective_ = len; }
 
 private:
-    base::MemoryBlock   dat_;
-    size_t              effective_;
-    InetAddress         address_;
+    MemoryBlock dat_;
+    size_t      effective_;
+    InetAddress address_;
 };
 
 }//namespace net

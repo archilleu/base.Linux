@@ -31,9 +31,9 @@ bool TestAcceptor::Test_Illgal()
 //---------------------------------------------------------------------------
 static EventLoop* g_loop = 0;
 //---------------------------------------------------------------------------
-void NewConn(int fd, const InetAddress& addr, base::Timestamp)
+void NewConn(int fd, const InetAddress& addr, uint64_t rcv_time)
 {
-    std::cout << "=====================>fd:" << fd << " addr:"
+    std::cout << "=====================>rcv: " << base::Timestamp(rcv_time).Datetime(true) <<  "fd:" << fd << " addr:"
         << addr.IPPort() << std::endl;
 }
 //---------------------------------------------------------------------------

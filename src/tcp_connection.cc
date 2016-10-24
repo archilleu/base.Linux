@@ -63,7 +63,7 @@ void TCPConn::Send(const char* dat, size_t len)
 
         //不在线程调用,则排入本线程发送队列
         //该conn在EventLoop的DoPendingTask处理之前，可能被conn.reset()导致conn被析构，所以不能用this
-        owner_loop_->QueueInLoop(std::bind(&TCPConn::SendInLoopA, shared_from_this()/*this*/, base::MemoryBlock(dat, len)));
+        owner_loop_->QueueInLoop(std::bind(&TCPConn::SendInLoopA, shared_from_this()/*this*/, net::MemoryBlock(dat, dat+len)));
 
         return;
     }
@@ -71,7 +71,7 @@ void TCPConn::Send(const char* dat, size_t len)
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConn::Send(const base::MemoryBlock& dat)
+void TCPConn::Send(const net::MemoryBlock& dat)
 {
     if(CONNECTED == state_)
     {
@@ -155,9 +155,9 @@ std::string TCPConn::GetTCPInfo() const
     return socket_->GetTCPInfoString();
 }
 //---------------------------------------------------------------------------
-void TCPConn::SendInLoopA(base::MemoryBlock dat)
+void TCPConn::SendInLoopA(net::MemoryBlock dat)
 {
-    SendInLoopB(dat.dat(), dat.len());
+    SendInLoopB(dat.data(), dat.size());
     return;
 }
 //---------------------------------------------------------------------------
@@ -262,7 +262,7 @@ void TCPConn::ForceCloseInLoop()
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConn::HandleRead(base::Timestamp rcv_time)
+void TCPConn::HandleRead(uint64_t rcv_time)
 {
     owner_loop_->AssertInLoopThread();
     //assert(CONNECTED == state_);

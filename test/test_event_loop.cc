@@ -44,12 +44,12 @@ void ThreadEventLoop1()
 //---------------------------------------------------------------------------
 bool TestEventLoop::DoTest()
 {
-    //if(false == Test_Channel())     return false;
-    //if(false == Test_Normal())      return false;
+    if(false == Test_Channel())     return false;
+    if(false == Test_Normal())      return false;
     if(false == Test_Signal())      return false;
-    //if(false == Test_RunInLoop())   return false;
-    //if(false == Test_Timefd())      return false;
-    //if(false == Test_TimerTask())   return false;
+    if(false == Test_RunInLoop())   return false;
+    if(false == Test_Timefd())      return false;
+    if(false == Test_TimerTask())   return false;
 
     return true;
 }
@@ -294,11 +294,23 @@ void OnTimerTaskRunInterval()
     printf("==================================>OnTimerTaskRunInterval:%d\n", r++);
 }
 //---------------------------------------------------------------------------
+void BeforLoop()
+{
+    static int count = 0;
+    std::cout << "befor:" << count++ << std::endl;
+}
+//---------------------------------------------------------------------------
+void AfterLoop()
+{
+    static int count = 0;
+    std::cout << "after:" << count++ << std::endl;
+}
+//---------------------------------------------------------------------------
 void OnTimerTask()
 {
     g_flag = false;
     printf("thread start.......\n");
-    base::Timestamp when = base::Timestamp::Now().AddTime(2);
+    uint64_t when = base::Timestamp::Now().AddTime(2).Microseconds();
     g_loop->RunAt(when, OnTimerTaskRunAt);
     g_loop->RunAt(when, OnTimerTaskRunAt);
     g_loop->RunAt(when, OnTimerTaskRunAt);
@@ -310,6 +322,7 @@ void OnTimerTask()
     g_loop->RunAt(when, OnTimerTaskRunAt);
     g_loop->RunAt(when, OnTimerTaskRunAt);
 
+    printf("sleep 5s.......\n");
     sleep(5);
     assert(true == g_flag);
 
@@ -339,6 +352,8 @@ bool TestEventLoop::Test_TimerTask()
 {
     EventLoop loop;
     g_loop = &loop;
+    loop.set_befor_function(BeforLoop);
+    loop.set_after_function(AfterLoop);
 
     base::Thread t(OnTimerTask);
     t.Start();

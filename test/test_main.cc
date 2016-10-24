@@ -24,7 +24,7 @@ TestMain::TestMain()
 {
 #define TEST_ADD(TypeName)   test_obj_list_[#TypeName]=std::shared_ptr<TestBase>(dynamic_cast<TestBase*>(new TypeName))
 
-    //TEST_ADD(TestEventLoop);
+    TEST_ADD(TestEventLoop);
     //TEST_ADD(TestEventLoopThread);
     //TEST_ADD(TestEventLoopThreadPool);
     //TEST_ADD(TestInetAddress);
@@ -37,7 +37,7 @@ TestMain::TestMain()
     //TEST_ADD(TestTCPClient);
     //TEST_ADD(TestDatagramPacket);
     //TEST_ADD(TestDatagramSocket);
-    TEST_ADD(TestUDPReceiver); 
+    //TEST_ADD(TestUDPReceiver); 
     //TEST_ADD(TestUDPServer); 
 
 #undef TEST_ADD

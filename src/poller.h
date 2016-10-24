@@ -27,7 +27,7 @@ public:
     {
     }
 
-    virtual base::Timestamp Poll(int timeoutS) =0;
+    virtual uint64_t Poll(int timeoutS) =0;
 
     const ChannelList& active_channels() const { return active_channels_; }
 

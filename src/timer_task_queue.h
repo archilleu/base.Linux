@@ -22,7 +22,7 @@ public:
     ~TimerTaskQueue();
 
     //add timer task
-    TimerTaskId TimerTaskAdd(TimerTask::TimerTaskCallback&& callback, base::Timestamp when, int intervalS);
+    TimerTaskId TimerTaskAdd(TimerTask::TimerTaskCallback&& callback, uint64_t when, int intervalS);
 
     //cancel timer task, can't cannel itself!!!
     void TimerTaskCancel(TimerTaskId timer_task_id);
@@ -30,7 +30,7 @@ public:
     size_t TimerTaskCount() const { return entry_list_.size(); }
 
 private:
-    using Entry = std::pair<base::Timestamp, TimerTask*> ;
+    using Entry = std::pair<uint64_t, TimerTask*> ;
     using EntryList = std::set<Entry>;
 
     void AddTimerInLoop     (TimerTask* timer_task);
@@ -38,7 +38,7 @@ private:
 
     void HandRead();
 
-    std::vector<Entry>  GetExpired  (base::Timestamp now);
+    std::vector<Entry>  GetExpired  (uint64_t now);
     void                Reset       (std::vector<Entry>& expired);
 
     bool Insert(TimerTask* timer_task);

@@ -6,7 +6,6 @@
 #include "callback.h"
 #include "inet_address.h"
 #include "buffer.h"
-#include "../depend/base/include/memory_block.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -46,7 +45,7 @@ public:
 
     //发送数据,线程安全
     void Send(const char* dat, size_t len);
-    void Send(const base::MemoryBlock& dat);
+    void Send(const net::MemoryBlock& dat);
 
     //关闭链接
     void ShutdownWirte();
@@ -69,7 +68,7 @@ public:
 
 private:
     //如果上面的Send调用不在本io线程中调用,则转换到本线程发送数据,达到线程安全的目的
-    void    SendInLoopA             (base::MemoryBlock dat);
+    void    SendInLoopA             (net::MemoryBlock dat);
     void    SendInLoopB             (const char* dat, size_t len);
     ssize_t _SendMostPossible       (const char* dat, size_t len);      //尽可能的发送数据
     void    _SendDatQueueInBuffer   (const char* dat, size_t remain);   //未完成发送的数据放入缓存
@@ -79,7 +78,7 @@ private:
     void ForceCloseInLoop();
 
     //事件处理
-    void HandleRead(base::Timestamp rcv_time);
+    void HandleRead(uint64_t rcv_time);
     void HandleWrite();
     void HandleError();
     void HandleClose();

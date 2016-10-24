@@ -17,7 +17,7 @@ class Channel;
 class Acceptor
 {
 public:
-    using CallbackNewConnection = std::function<void (int, const InetAddress&, base::Timestamp)>;
+    using CallbackNewConnection = std::function<void (int, const InetAddress&, uint64_t)>;
 
     Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen);
     Acceptor(const Acceptor&) =delete;
@@ -31,7 +31,7 @@ public:
 private:
     int AcceptConnection(InetAddress* inet_peer);
 
-    void HandleRead(base::Timestamp rcv_time);
+    void HandleRead(uint64_t rcv_time);
 
     bool CheckConnection(int fd);
 

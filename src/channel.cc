@@ -47,7 +47,7 @@ void Channel::Tie(const std::shared_ptr<void>& owner)
     return;
 }
 //---------------------------------------------------------------------------
-void Channel::HandleEvent(base::Timestamp rcv_time)
+void Channel::HandleEvent(uint64_t rcv_time)
 {
     if(true == tied_)
     {
@@ -81,7 +81,7 @@ std::string Channel::EventsToString()
     return _EventsToString(events_);
 }
 //---------------------------------------------------------------------------
-void Channel::_HandleEvent(base::Timestamp rcv_time)
+void Channel::_HandleEvent(uint64_t rcv_time)
 {
     //标记正在处理事件中
     handling_ = true;

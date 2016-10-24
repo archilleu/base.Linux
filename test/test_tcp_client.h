@@ -28,7 +28,7 @@ public:
 
 private:
     void OnConnection   (const TCPConnPtr& conn_ptr);
-    void OnRead         (const TCPConnPtr& conn_ptr, Buffer& buffer, base::Timestamp rcv_time);
+    void OnRead         (const TCPConnPtr& conn_ptr, Buffer& buffer, uint64_t rcv_time);
     void OnWriteComplete(const TCPConnPtr& conn_ptr);
 
 private:

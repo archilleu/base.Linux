@@ -4,7 +4,6 @@
 //---------------------------------------------------------------------------
 #include <atomic>
 #include <functional>
-#include "../depend/base/include/timestamp.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -14,7 +13,7 @@ class TimerTask
 public:
     using TimerTaskCallback = std::function<void (void)>;
 
-    TimerTask(TimerTaskCallback&& callback, base::Timestamp when, int intervalS=0)
+    TimerTask(TimerTaskCallback&& callback, uint64_t when, int intervalS=0)
     :   task_callback_(std::move(callback)),
         expairation_(when),
         interval_(intervalS),
@@ -31,15 +30,15 @@ public:
 
     void Restart(); //如果任务是间隔时间运行的,则重启任务
 
-    base::Timestamp expairation() const { return expairation_; }
-    bool            interval() const    { return interval_; }
-    int64_t         id() const          { return id_; }
+    uint64_t    expairation() const { return expairation_; }
+    bool        interval() const    { return interval_; }
+    int64_t     id() const          { return id_; }
 
 private:
     const TimerTaskCallback task_callback_;
-    base::Timestamp         expairation_;
-    int                     interval_;
-    const int64_t           id_;
+    uint64_t expairation_;
+    int interval_;
+    const int64_t id_;
 
 private:
     static std::atomic<int64_t> no_;

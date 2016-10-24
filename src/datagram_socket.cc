@@ -144,7 +144,7 @@ DatagramPacket DatagramSocket::Receive(int len)
 
     DatagramPacket  pkt(len);
     socklen_t       length  = sizeof(sockaddr_storage);
-    ssize_t         rlen    = ::recvfrom(sockfd_->fd(), pkt.dat().dat(), len, 0, reinterpret_cast<sockaddr*>(&from), &length) ;
+    ssize_t         rlen    = ::recvfrom(sockfd_->fd(), pkt.dat().data(), len, 0, reinterpret_cast<sockaddr*>(&from), &length) ;
     if(0 < rlen)
     {
         pkt.set_effective(rlen);
@@ -160,7 +160,7 @@ void DatagramSocket::Receive(DatagramPacket& pkt)
     bzero(&from, sizeof(sockaddr_storage));
 
     socklen_t   length  = sizeof(sockaddr_storage);
-    ssize_t     rlen    = ::recvfrom(sockfd_->fd(), pkt.dat().dat(), pkt.dat().len(), 0, reinterpret_cast<sockaddr*>(&from), &length) ;
+    ssize_t     rlen    = ::recvfrom(sockfd_->fd(), pkt.dat().data(), pkt.dat().size(), 0, reinterpret_cast<sockaddr*>(&from), &length) ;
     if(0 < rlen)
     {
         pkt.set_effective(rlen);
@@ -174,9 +174,9 @@ int DatagramSocket::Send(const DatagramPacket& pkt)
 {
     ssize_t wlen = 0;
     if(true == connected_)
-        wlen = ::send(sockfd_->fd(), pkt.dat().dat(), pkt.effective(), 0);
+        wlen = ::send(sockfd_->fd(), pkt.dat().data(), pkt.effective(), 0);
     else
-        wlen = ::sendto(sockfd_->fd(), pkt.dat().dat(), pkt.effective(), 0, reinterpret_cast<const sockaddr*>(&pkt.address().address()), sizeof(sockaddr));
+        wlen = ::sendto(sockfd_->fd(), pkt.dat().data(), pkt.effective(), 0, reinterpret_cast<const sockaddr*>(&pkt.address().address()), sizeof(sockaddr));
 
     return static_cast<int>(wlen);
 }

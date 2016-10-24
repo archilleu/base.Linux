@@ -4,7 +4,6 @@
 //---------------------------------------------------------------------------
 #include <functional>
 #include <memory>
-#include "../depend/base/include/timestamp.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -31,7 +30,7 @@ public:
     void set_pkt_size(int size)  { pkt_size_ = size; }
 
 private:
-    void HandleRead (base::Timestamp rcv_time);
+    void HandleRead (uint64_t rcv_time);
     void HandleError();
 
 private:

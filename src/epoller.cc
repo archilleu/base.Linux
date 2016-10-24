@@ -46,14 +46,14 @@ EPoller::~EPoller()
     return;
 }
 //---------------------------------------------------------------------------
-base::Timestamp EPoller::Poll(int timeoutS)
+uint64_t EPoller::Poll(int timeoutS)
 {
     this->AssertInLoopThread();
 
     this->active_channels_[0] = nullptr;
 
     int nums = ::epoll_wait(efd_, static_cast<struct epoll_event*>(event_list_.data()), static_cast<int>(event_list_.size()), timeoutS*1000);
-    base::Timestamp rcv_time = base::Timestamp::Now();
+    uint64_t rcv_time = base::Timestamp::Now().Microseconds();
     
     //有事件
     if(0 < nums)

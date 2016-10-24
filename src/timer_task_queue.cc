@@ -25,9 +25,9 @@ static int CreateTimerfd()
     return timerfd;
 }
 //---------------------------------------------------------------------------
-static struct timespec HowManyTimeLeftNow(base::Timestamp when)
+static struct timespec HowManyTimeLeftNow(uint64_t when)
 {
-    int64_t micro_seconds = when - base::Timestamp::Now();
+    int64_t micro_seconds = when - base::Timestamp::Now().Microseconds();
     if(100 > micro_seconds)
         micro_seconds = 100;
 
@@ -50,7 +50,7 @@ static void ReadTimer(int timerfd)
     return;
 }
 //---------------------------------------------------------------------------
-static void ResetTimerfd(int timerfd, base::Timestamp expired)
+static void ResetTimerfd(int timerfd, uint64_t expired)
 {
     struct itimerspec new_val;
     struct itimerspec old_val;
@@ -96,7 +96,7 @@ TimerTaskQueue::~TimerTaskQueue()
     return;
 }
 //---------------------------------------------------------------------------
-TimerTaskId TimerTaskQueue::TimerTaskAdd(TimerTask::TimerTaskCallback&& callback, base::Timestamp when, int intervalS)
+TimerTaskId TimerTaskQueue::TimerTaskAdd(TimerTask::TimerTaskCallback&& callback, uint64_t when, int intervalS)
 {
     TimerTask* timer_task = new TimerTask(std::move(callback), when, intervalS);
     owner_loop_->RunInLoop(std::bind(&TimerTaskQueue::AddTimerInLoop, this, timer_task));
@@ -142,7 +142,7 @@ void TimerTaskQueue::HandRead()
 {
     owner_loop_->AssertInLoopThread();
 
-    base::Timestamp now = base::Timestamp::Now();
+    uint64_t now = base::Timestamp::Now().Microseconds();
     ReadTimer(timerfd_);
 
     std::vector<Entry> expired = GetExpired(now);
@@ -152,7 +152,7 @@ void TimerTaskQueue::HandRead()
     Reset(expired);
 }
 //---------------------------------------------------------------------------
-std::vector<TimerTaskQueue::Entry> TimerTaskQueue::GetExpired(base::Timestamp now)
+std::vector<TimerTaskQueue::Entry> TimerTaskQueue::GetExpired(uint64_t now)
 {
     std::vector<Entry>  expired;
     Entry               sentry(now, reinterpret_cast<TimerTask*>(UINTPTR_MAX));
@@ -179,7 +179,7 @@ void TimerTaskQueue::Reset(std::vector<Entry>& expired)
 
     if(!entry_list_.empty())
     {
-        base::Timestamp next_expired = entry_list_.begin()->second->expairation();
+        uint64_t next_expired = entry_list_.begin()->second->expairation();
         ResetTimerfd(timerfd_, next_expired);
     }
 
@@ -190,7 +190,7 @@ bool TimerTaskQueue::Insert(TimerTask* timer_task)
 {
     bool earliest = false;
    
-    base::Timestamp when = timer_task->expairation();
+    uint64_t when = timer_task->expairation();
     auto            iter = entry_list_.begin();
     if((iter==entry_list_.end()) || (when<iter->first))
         earliest = true;

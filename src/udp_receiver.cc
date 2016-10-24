@@ -70,7 +70,7 @@ void UDPReceiver::Stop()
     return;
 }
 //---------------------------------------------------------------------------
-void UDPReceiver::HandleRead(base::Timestamp)
+void UDPReceiver::HandleRead(uint64_t)
 {
     DatagramPacket pkt = socket_->Receive(pkt_size_);
     if(0 == pkt.effective())
