@@ -57,6 +57,9 @@ public:
     void ConnectionEstablished();
     void ConnectionDestroy();
 
+    //自定义附加数据
+    std::shared_ptr<void> any_;
+
     const std::string   name()          { return name_; }
     const InetAddress&  local_addr()    { return local_addr_; }
     const InetAddress&  peer_addr()     { return peer_addr_; }
