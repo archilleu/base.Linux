@@ -20,7 +20,7 @@ using TCPConnPtr = std::shared_ptr<TCPConn>;
 using CallbackConnection            = std::function<void (const TCPConnPtr&)>;
 using CallbackDisconnection         = std::function<void (const TCPConnPtr&)>;
 using CallbackRemove                = std::function<void (const TCPConnPtr&)>;
-using CallbackRead                  = std::function<void (const TCPConnPtr&, Buffer&, uint64_t mic_secs)>;
+using CallbackRead                  = std::function<void (const TCPConnPtr&, Buffer&, uint64_t)>;
 using CallbackWriteComplete         = std::function<void (const TCPConnPtr&)>;
 using CallbackWriteHighWaterMark    = std::function<void (const TCPConnPtr&, size_t)>;
 
