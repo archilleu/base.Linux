@@ -35,7 +35,7 @@ std::string PathName    (const char* path);
 //---------------------------------------------------------------------------
 //文件夹操作
 bool FolderCreate   (const std::string& path, bool recursive);
-bool FolderDelete   (const std::string& path, bool recursive);
+bool FolderDelete   (const std::string& path);
 bool FolderExist    (const std::string& path);
 bool FolderExist    (const char* path);
 //---------------------------------------------------------------------------

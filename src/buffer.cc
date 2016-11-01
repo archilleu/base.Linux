@@ -21,7 +21,7 @@ int Buffer::ReadFd(int fd, int* saved_errno)
     if(0 > rlen)
     {
         *saved_errno = errno;
-        SystemLog_Error("readv failed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_error("readv failed, errno:%d, msg:%s", errno, OSError(errno));
     }
     else if(static_cast<size_t>(rlen) <= writable)
     {

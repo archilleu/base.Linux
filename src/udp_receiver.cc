@@ -17,16 +17,16 @@ UDPReceiver::UDPReceiver(EventLoop* owner_loop, DatagramSocket* sock, PacketQueu
     socket_(sock),
     channel_(new Channel(owner_loop, socket_->fd()))
 {
-    SystemLog_Info("UDPReceiver ctor");
+    NetLogger_info("UDPReceiver ctor");
 
     if(0 > socket_->fd())
     {
-        SystemLog_Error("svr socket create filed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_off("svr socket create filed, errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
         return;
     }
 
-    SystemLog_Debug("rcv buf:%d snd buf:%d", socket_->GetRcvBufferSize(), socket_->GetSndBufferSize());
+    NetLogger_info("rcv buf:%d snd buf:%d", socket_->GetRcvBufferSize(), socket_->GetSndBufferSize());
 
     socket_->SetReuseAddress();
     socket_->SetSndBufferSize(1024*256);
@@ -40,7 +40,7 @@ UDPReceiver::UDPReceiver(EventLoop* owner_loop, DatagramSocket* sock, PacketQueu
 //---------------------------------------------------------------------------
 UDPReceiver::~UDPReceiver()
 {
-    SystemLog_Info("UDPReceiver dtor");
+    NetLogger_info("UDPReceiver dtor");
 
     if(!channel_)
         return;
@@ -53,7 +53,7 @@ UDPReceiver::~UDPReceiver()
 //---------------------------------------------------------------------------
 void UDPReceiver::Start()
 {
-    SystemLog_Info("Start...");
+    NetLogger_info("Start...");
     channel_->ReadEnable();
 
     return;
@@ -61,7 +61,7 @@ void UDPReceiver::Start()
 //---------------------------------------------------------------------------
 void UDPReceiver::Stop()
 {
-    SystemLog_Info("Stop...");
+    NetLogger_info("Stop...");
     channel_->DisableAll();
 
     //停止读,不停止写,可以继续处理完成的包
@@ -85,7 +85,7 @@ void UDPReceiver::HandleRead(uint64_t)
 //---------------------------------------------------------------------------
 void UDPReceiver::HandleError()
 {
-    SystemLog_Error("receive failed, errno:%d, msg:%s", errno, StrError(errno));
+    NetLogger_error("receive failed, errno:%d, msg:%s", errno, OSError(errno));
 
     channel_->DisableAll();
     channel_->Remove();

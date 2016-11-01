@@ -80,7 +80,8 @@ bool TestTCPConnection::Test_Illegal()
 //---------------------------------------------------------------------------
 bool TestTCPConnection::Test_Normal()
 {
-    EventLoop   loop;
+    EventLoop::SetLogger("/tmp/logger", EventLoop::ERROR);
+    EventLoop loop;
     g_loop = &loop;
     TCPServer   server(&loop, 9999);
     loop.set_sig_quit_callback(Quit);

@@ -16,10 +16,10 @@ Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
 :   owner_loop_(owner_loop),
     idle_fd_(::open("/dev/null", O_RDONLY|O_CLOEXEC))
 {
-    SystemLog_Info("Acceptor ctor");
+    NetLogger_info("Acceptor ctor");
     if(0 > idle_fd_)
     {
-        SystemLog_Error("open idle_fd failed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_off("open idle_fd failed, errno:%d, msg:%s", errno, OSError(errno));
         abort();
     }
 
@@ -28,7 +28,7 @@ Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
         listen_sock_ = std::make_shared<Socket>(::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0));
         if(0 > listen_sock_->fd())
         {
-            SystemLog_Error("listen sock create failed, errno:%d, msg:%s", errno, StrError(errno));
+            NetLogger_off("listen sock create failed, errno:%d, msg:%s", errno, OSError(errno));
             abort();
         }
     }
@@ -37,7 +37,7 @@ Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
         listen_sock_ = std::make_shared<Socket>(::socket(AF_INET6, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0));
         if(0 > listen_sock_->fd())
         {
-            SystemLog_Error("listen sock create failed, errno:%d, msg:%s", errno, StrError(errno));
+            NetLogger_off("listen sock create failed, errno:%d, msg:%s", errno, OSError(errno));
             abort();
         }
         listen_sock_->SetIPV6Only();
@@ -53,7 +53,7 @@ Acceptor::Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen)
 //---------------------------------------------------------------------------
 Acceptor::~Acceptor()
 {
-    SystemLog_Info("Acceptor dtor");
+    NetLogger_info("Acceptor dtor");
 
     if(!channel_listen_)
         return;
@@ -67,12 +67,12 @@ Acceptor::~Acceptor()
 //---------------------------------------------------------------------------
 void Acceptor::Listen()
 {
-    SystemLog_Info("Acceptor listen");
+    NetLogger_info("Acceptor listen");
     owner_loop_->AssertInLoopThread();
 
     if(0 > ::listen(channel_listen_->fd(), SOMAXCONN))
     {
-        SystemLog_Error("listen sock failed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_off("listen sock failed, errno:%d, msg:%s", errno, OSError(errno));
         abort();
     }
 
@@ -90,7 +90,7 @@ int Acceptor::AcceptConnection(InetAddress* inet_peer)
         if(EAGAIN == errno)
             return clientfd;
 
-        SystemLog_Error("accept client failed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_error("accept client failed, errno:%d, msg:%s", errno, OSError(errno));
         return -1;
     }
 
@@ -108,7 +108,7 @@ void Acceptor::HandleRead(uint64_t rcv_time)
         {
             if(false == CheckConnection(clientfd))
             {
-                SystemLog_Warning("bad connection");
+                NetLogger_warn("bad connection");
                 ::close(clientfd);
                 continue;
             }
@@ -135,7 +135,7 @@ void Acceptor::HandleRead(uint64_t rcv_time)
                 idle_fd_ = ::open("/dev/null", O_RDONLY|O_CLOEXEC);
             }
 
-            SystemLog_Error("AcceptConnection failed");
+            NetLogger_warn("AcceptConnection failed");
             assert(0);
             return;
         }

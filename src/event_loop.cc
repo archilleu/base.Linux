@@ -10,6 +10,7 @@
 #include "channel.h"
 #include "timer_task_queue.h"
 #include "poller.h"
+#include "../depend/base/include/thread.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -17,14 +18,14 @@ namespace net
 //---------------------------------------------------------------------------
 namespace
 {
+
 //---------------------------------------------------------------------------
-const int           kPollTimeS              = 5;
-__thread EventLoop* t_loop_in_current_thread= 0;
+const int kPollTimeS = 5;
+__thread EventLoop* t_loop_in_current_thread = 0;
 //---------------------------------------------------------------------------
 void InitSignal()
 {
     //信号屏蔽需要在其他线程创建之前初始化,这样其他线程可以继承该屏蔽字,
-    //因为Log里面带有线程,所以log要后初始化
  
     //block signal
     sigset_t signal_mask;
@@ -37,31 +38,7 @@ void InitSignal()
 
     if(-1 == pthread_sigmask(SIG_BLOCK, &signal_mask, NULL))
     {
-        SystemLog_Error("BOLCK SIGPIPE failed");
         abort();
-    }
-
-    return;
-}
-//---------------------------------------------------------------------------
-void InitLog()
-{
-    //init log
-    MyNetLog = new NetLog();
-    if(false == MyNetLog->Initialize("net io frame", "/tmp", "network_log", 1024*1024*128))
-    {
-        SystemLog_Error("log initialze failed");
-        abort();
-    }
-}
-//---------------------------------------------------------------------------
-void UninitLog()
-{
-    if(0 != MyNetLog)
-    {
-        MyNetLog->Uninitialize();
-        delete MyNetLog;
-        MyNetLog = 0;
     }
 
     return;
@@ -73,12 +50,10 @@ public:
     GlobalInit()
     {
         InitSignal();
-        InitLog();
     }
 
     ~GlobalInit()
     {
-        UninitLog();
     }
 }g_init;
 //---------------------------------------------------------------------------
@@ -87,7 +62,7 @@ int CreateEventFd()
     int fd = ::eventfd(0, EFD_NONBLOCK|EFD_CLOEXEC);
     if(0 > fd)
     {
-        SystemLog_Error("eventfd create failed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_off("eventfd create failed, errno:%d, msg:%s", errno, OSError(errno));
         abort();
     }
 
@@ -107,12 +82,12 @@ EventLoop::EventLoop()
     timer_task_queue_(new TimerTaskQueue(this)),
     sig_fd_(0)
 {
-    SystemLog_Info("event loop create:%p, in thread tid:%d, tname:%s", this, tid_, tname_);
+    NetLogger_info("event loop create:%p, in thread tid:%d, tname:%s", this, tid_, tname_);
 
     if(t_loop_in_current_thread)
     {
-        SystemLog_Error("another event loop in this thread, loop:%p, tid:%d, tname:%s", t_loop_in_current_thread, tid_, tname_);
-        assert(0);
+        NetLogger_off("another event loop in this thread, loop:%p, tid:%d, tname:%s", t_loop_in_current_thread, tid_, tname_);
+        abort();
         return;
     }
     
@@ -125,7 +100,7 @@ EventLoop::EventLoop()
 //---------------------------------------------------------------------------
 EventLoop::~EventLoop()
 {
-    SystemLog_Info("event loop exit:%p, in thread tid:%d, tname:%s", this, tid_, tname_);
+    NetLogger_info("event loop exit:%p, in thread tid:%d, tname:%s", this, tid_, tname_);
 
     channel_wakeup_->DisableAll();
     channel_wakeup_->Remove();
@@ -142,25 +117,31 @@ EventLoop::~EventLoop()
     return;
 }
 //---------------------------------------------------------------------------
+void EventLoop::SetLogger(const std::string& path, int lv)
+{
+    logger = base::Logger::file_stdout_logger_mt("debug", path, "net", "log", true);
+
+    logger->set_level(base::Logger::Level(lv));
+    logger->set_flush_level(base::Logger::Level::ERROR);
+
+    return;
+}
+//---------------------------------------------------------------------------
 void EventLoop::Loop()
 {
     assert(((void)"already looping!", !looping_));
     AssertInLoopThread();
 
-    SystemLog_Info("%p Event loop start", this);
+    NetLogger_info("%p Event loop start", this);
 
     looping_ = true;
     while(looping_)
     {
-        if(befor_func_) befor_func_();
+        if(loop_befor_func_) loop_befor_func_();
 
         uint64_t time = poller_->Poll(kPollTimeS);
         const std::vector<Channel*>& active_channel_list = poller_->active_channels();
         ++iteration_;
-        
-    #ifdef _DEBUG
-        PrintActiveChannels();
-    #endif
         
         for(auto iter : active_channel_list)
         {
@@ -172,19 +153,20 @@ void EventLoop::Loop()
 
         DoPendingTasks();
 
-        if(after_func_) after_func_();
+        if(loop_after_func_) loop_after_func_();
+        logger->Flush(); //刷新日志
     }
 
     //处理完成工作
     DoPendingTasks();
 
-    SystemLog_Info("%p Event loop stop", this);
+    NetLogger_info("%p Event loop stop", this);
     return;
 }
 //---------------------------------------------------------------------------
 void EventLoop::Quit()
 {
-    SystemLog_Info("%p Event loop quit", this);
+    NetLogger_info("%p Event loop quit", this);
 
     looping_ = false;
     
@@ -209,7 +191,7 @@ void EventLoop::SetAsSignalHandleEventLoop()
     int sfd = signalfd(-1, &signal_mask, SFD_NONBLOCK|SFD_CLOEXEC);
     if(-1 == sfd)
     {
-        SystemLog_Error("create signal fd failed");
+        NetLogger_off("create signal fd failed");
         abort();
         return;
     }
@@ -325,7 +307,7 @@ bool EventLoop::HasChannel(Channel* channel) const
 //---------------------------------------------------------------------------
 void EventLoop::AbortNotInLoopThread() const
 {
-    SystemLog_Error("%p was create in tid:%u, tname:%s, but current tid:%d, tname:%s",
+    NetLogger_off("%p was create in tid:%u, tname:%s, but current tid:%d, tname:%s",
                     this, tid_, tname_, base::CurrentThread::tid(), base::CurrentThread::tname());
 
     assert(0);
@@ -337,7 +319,7 @@ void EventLoop::Wakeup()
     eventfd_t dat = 1;
     if(-1 == eventfd_write(wakeupfd_, dat))
     {
-        SystemLog_Error("write failed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_error("write failed, errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -349,7 +331,7 @@ void EventLoop::HandleWakeup()
     eventfd_t dat;
     if(-1 == eventfd_read(wakeupfd_, &dat))
     {
-        SystemLog_Error("read failed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_error("read failed, errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -369,7 +351,7 @@ void EventLoop::HandleSignal()
             if(EINTR==errno || (EAGAIN==errno))
                 continue;
 
-            SystemLog_Error("read failed, errno:%d, msg:%s", errno, StrError(errno));
+            NetLogger_error("read failed, errno:%d, msg:%s", errno, OSError(errno));
             return;
         }
 
@@ -404,7 +386,7 @@ void EventLoop::HandleSignal()
             break;
 
         default:
-            SystemLog_Error("recv error signal, signo:%d", siginfo.ssi_signo);
+            NetLogger_error("recv error signal, signo:%d", siginfo.ssi_signo);
             assert(0);
     }
 
@@ -438,7 +420,7 @@ void EventLoop::PrintActiveChannels() const
         if(nullptr == iter)
             break;
 
-        SystemLog_Debug("{ fd:%d event:%s }", iter->fd(), iter->REventsToString().c_str());
+        NetLogger_trace("{ fd:%d event:%s }", iter->fd(), iter->REventsToString().c_str());
     }
 
     return;

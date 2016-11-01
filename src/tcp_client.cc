@@ -19,7 +19,7 @@ TCPClient::TCPClient(EventLoop* event_loop, const InetAddress& svr, const std::s
     name_(cli_name),
     connector_(new Connector(loop_, svr))
 {
-    SystemLog_Debug("TCPClient ctor");
+    NetLogger_info("TCPClient ctor");
 
     connector_->set_callbakc_new_connection_(std::bind(&TCPClient::NewConnection, this, std::placeholders::_1));
     return;
@@ -27,7 +27,7 @@ TCPClient::TCPClient(EventLoop* event_loop, const InetAddress& svr, const std::s
 //---------------------------------------------------------------------------
 TCPClient::~TCPClient()
 {
-    SystemLog_Debug("TCPClient dtor");
+    NetLogger_info("TCPClient dtor");
 
     //析构的时候,connection必须是只有一个引用或者没有
     if(connection_)
@@ -47,7 +47,7 @@ TCPClient::~TCPClient()
 //---------------------------------------------------------------------------
 void TCPClient::Connect()
 {
-    SystemLog_Info("TCPClient:[%s] connect to %s", name_.c_str(), connector_->svr_addr().IPPort().c_str());
+    NetLogger_info("TCPClient:[%s] connect to %s", name_.c_str(), connector_->svr_addr().IPPort().c_str());
 
     connect_ = true;
     connector_->Start();
@@ -113,7 +113,7 @@ void TCPClient::RemoveConnection(const TCPConnPtr& conn_ptr)
 
     if(retry_ && connect_)
     {
-        SystemLog_Info("connect[%s] reconnect to %s", name_.c_str(), connector_->svr_addr().IPPort().c_str());
+        NetLogger_info("connect[%s] reconnect to %s", name_.c_str(), connector_->svr_addr().IPPort().c_str());
         connector_->Restart();
     }
 

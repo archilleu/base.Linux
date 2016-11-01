@@ -18,7 +18,7 @@ static int CreateTimerfd()
     int timerfd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK|TFD_CLOEXEC);
     if(0 > timerfd)
     {
-        SystemLog_Error("timerfd create failed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_off("timerfd create failed, errno:%d, msg:%s", errno, OSError(errno));
         abort();
     }
 
@@ -43,7 +43,7 @@ static void ReadTimer(int timerfd)
     ssize_t rlen = ::read(timerfd, &dat, sizeof(dat));
     if(rlen != sizeof(dat))
     {
-        SystemLog_Error("ReadTimer failed");
+        NetLogger_error("ReadTimer failed");
         assert(0);
     }
 
@@ -60,7 +60,7 @@ static void ResetTimerfd(int timerfd, uint64_t expired)
     int err_code = ::timerfd_settime(timerfd, 0, &new_val, &old_val);
     if(0 > err_code)
     {
-        SystemLog_Error("timerfd_settime error.errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_error("timerfd_settime error.errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -70,7 +70,7 @@ static void ResetTimerfd(int timerfd, uint64_t expired)
 TimerTaskQueue::TimerTaskQueue(EventLoop* owner_loop)
 :   owner_loop_(owner_loop)
 {
-    SystemLog_Debug("timer task queue conn_ptr");
+    NetLogger_info("timer task queue conn_ptr");
 
     timerfd_ = CreateTimerfd();
     channel_timer_.reset(new Channel(owner_loop_, timerfd_));
@@ -83,7 +83,7 @@ TimerTaskQueue::TimerTaskQueue(EventLoop* owner_loop)
 //---------------------------------------------------------------------------
 TimerTaskQueue::~TimerTaskQueue()
 {
-    SystemLog_Debug("timer task queue destory");
+    NetLogger_info("timer task queue destory");
 
     channel_timer_->DisableAll();
     channel_timer_->Remove();
@@ -197,7 +197,7 @@ bool TimerTaskQueue::Insert(TimerTask* timer_task)
 
     if(false == entry_list_.insert(Entry(when, timer_task)).second)
     {
-        SystemLog_Error("insert timer_task error");
+        NetLogger_error("insert timer_task error");
         assert(0);
         return false;
     }

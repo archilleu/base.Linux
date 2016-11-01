@@ -20,14 +20,13 @@ Connector::Connector(EventLoop* loop, const InetAddress& svr)
     retry_delay_(kInitRetryDelay),
     timer_task_id_(0, 0)
 {
-    SystemLog_Debug("Connector ctor");    
+    NetLogger_info("Connector ctor");    
     return;
 }
 //---------------------------------------------------------------------------
 Connector::~Connector()
 {
-    SystemLog_Debug("Connector dtor");    
-//    assert(!channel_);
+    NetLogger_info("Connector dtor");    
 
     return;
 }
@@ -100,7 +99,7 @@ void Connector::Connect()
             break;
 
         default:
-            SystemLog_Error("connect failed, errno:%d, msg:%s", err_no, StrError(err_no));
+            NetLogger_error("connect failed, errno:%d, msg:%s", err_no, OSError(err_no));
             Retry(sockfd);
 
             break;
@@ -138,7 +137,7 @@ void Connector::HandleWrite()
     int err_code = Socket::GetSocketError(sockfd);
     if(0 < err_code)//大于0表示出错
     {
-        SystemLog_Error("connect failed, errno:%d, msg:%s", err_code, StrError(err_code));
+        NetLogger_warn("connect failed, errno:%d, msg:%s", err_code, OSError(err_code));
 
         Retry(sockfd);
         return;
@@ -147,7 +146,7 @@ void Connector::HandleWrite()
     //是否自连接 
     if(Socket::GetLocalAddress(sockfd) == Socket::GetPeerAddress(sockfd))
     {
-        SystemLog_Warning("self connection, retry");
+        NetLogger_warn("self connection, retry");
 
         Retry(sockfd);
     }
@@ -164,13 +163,13 @@ void Connector::HandleWrite()
 //---------------------------------------------------------------------------
 void Connector::HandleError()
 {
-    SystemLog_Warning("connect error");
+    NetLogger_error("connect error");
 
     if(CONNECTINTG == states_)
     {
         int sockfd  = RemoveAndResetChannel();
         int err_code= Socket::GetSocketError(sockfd);
-        SystemLog_Error("connect error, errno:%d, msg:%s", err_code, StrError(err_code));
+        NetLogger_error("connect error, errno:%d, msg:%s", err_code, OSError(err_code));
         Retry(sockfd);
     }
 
@@ -184,7 +183,7 @@ void Connector::Retry(int fd)
 
     if(running_) 
     {
-        SystemLog_Info("Connector retry connect to %s in seconds %d",  svr_addr_.IPPort().c_str(), retry_delay_/1000);
+        NetLogger_warn("Connector retry connect to %s in seconds %d",  svr_addr_.IPPort().c_str(), retry_delay_/1000);
         loop_->RunAfter(retry_delay_/1000, std::bind(&Connector::StartInLoop, shared_from_this()));
         retry_delay_ = std::min(retry_delay_*2, kMaxRetryDelay);
     }

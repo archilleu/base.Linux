@@ -30,7 +30,7 @@ TCPServer::TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& list
     }
 
     tcp_conn_list_.resize(1024*1024);
-    SystemLog_Debug("%s", msg.c_str());
+    NetLogger_info("%s", msg.c_str());
 
     return;
 }
@@ -42,7 +42,7 @@ TCPServer::TCPServer(EventLoop* owner_loop, short port)
     tcp_conn_count_(0),
     loop_thread_pool_(new EventLoopThreadPool(owner_loop))
 {
-    SystemLog_Debug("ctor tcp server, listen address:*");
+    NetLogger_info("ctor tcp server, listen address:*");
 
     acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, true)));
     acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, false)));
@@ -57,7 +57,7 @@ TCPServer::TCPServer(EventLoop* owner_loop, short port)
 //---------------------------------------------------------------------------
 TCPServer::~TCPServer()
 {
-    SystemLog_Debug("ctor tcp server");
+    NetLogger_info("ctor tcp server");
 
     return;
 }
@@ -71,7 +71,7 @@ void TCPServer::Start()
 {
     owner_loop_->AssertInLoopThread();
 
-    SystemLog_Info("TCPServer start");
+    NetLogger_info("TCPServer start");
 
     loop_thread_pool_->Start();
 
@@ -87,7 +87,7 @@ void TCPServer::Stop()
 {
     owner_loop_->AssertInLoopThread();
 
-    SystemLog_Info("TCPServer sopt");
+    NetLogger_info("TCPServer sopt");
 
     loop_thread_pool_->Stop();
 
@@ -122,7 +122,7 @@ void TCPServer::DumpConnection()
     }
 
     assert(((void)"conns no eq count", count == tcp_conn_count_));
-    SystemLog_Debug("has tcp connections:%zu", tcp_conn_count_);
+    NetLogger_trace("has tcp connections:%zu", tcp_conn_count_);
 
     return;
 }
@@ -137,7 +137,7 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ui
     std::string new_conn_name = base::CombineString("%zu", next_connect_id_++);
     InetAddress local_addr = Socket::GetLocalAddress(clientfd);
 
-    SystemLog_Debug("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s\n", base::Timestamp(accept_time).Datetime(true).c_str(),
+    NetLogger_trace("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s", base::Timestamp(accept_time).Datetime(true).c_str(),
             new_conn_name.c_str(), clientfd, tcp_conn_count_, local_addr.IPPort().c_str(), client_addr.IPPort().c_str());
 
     TCPConnPtr conn_ptr = std::make_shared<TCPConn>(loop, new_conn_name, clientfd, local_addr, client_addr);
@@ -158,10 +158,6 @@ void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, ui
     //只有在加入到list中后才允许该连接的事件,防止在未加入list前,该连接又close掉导致list里找不到该连接
     loop->RunInLoop(std::bind(&TCPConn::ConnectionEstablished, conn_ptr)); 
 
-#ifdef _DEBUG
-    DumpConnection();
-#endif
-
     return;
 }
 //---------------------------------------------------------------------------
@@ -177,7 +173,7 @@ void TCPServer::OnConnectionRemoveInLoop(const TCPConnPtr& conn_ptr)
     //在TCPserver的线程销毁连接
     owner_loop_->AssertInLoopThread();
 
-    SystemLog_Debug("server total[%zu]- name:%s,  fd:%d, from :%s to :%s\n", 
+    NetLogger_trace("server total[%zu]- name:%s,  fd:%d, from :%s to :%s",
             tcp_conn_count_, conn_ptr->name().c_str(), conn_ptr->socket()->fd(), conn_ptr->local_addr().IPPort().c_str(),
             conn_ptr->peer_addr().IPPort().c_str());
 
@@ -200,7 +196,7 @@ void TCPServer::ConnAddList(const TCPConnPtr& conn_ptr)
 
     if(tcp_conn_list_[conn_ptr->socket()->fd()])
     {
-        SystemLog_Warning("connection:%s already exist!!!", conn_ptr->name().c_str());
+        NetLogger_warn("connection:%s already exist!!!", conn_ptr->name().c_str());
         assert(0);
     }
 
@@ -213,7 +209,7 @@ void TCPServer::ConnDelList(const TCPConnPtr& conn_ptr)
 {
     if(!tcp_conn_list_[conn_ptr->socket()->fd()])
     {
-        SystemLog_Warning("connection:%s not exist!!!", conn_ptr->name().c_str());
+        NetLogger_warn("connection:%s not exist!!!", conn_ptr->name().c_str());
         assert(0);
     }
 

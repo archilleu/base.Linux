@@ -23,6 +23,17 @@ public:
     using BeforLoopFunc = std::function<void (void)>;
     using AfterLoopFunc = std::function<void (void)>;
 
+    enum
+    {
+        TRACE =0,
+        DEBUG,
+        INFO,
+        WARN,
+        ERROR,
+        CRITICAL,
+        OFF
+    };
+
     EventLoop();
     ~EventLoop();
     EventLoop(const EventLoop&) =delete;
@@ -33,13 +44,14 @@ public:
     void set_sig_usr1_callback(SignalFunc&& callback)    { sig_usr1_callback_   = std::move(callback); }
     void set_sig_usr2_callback(SignalFunc&& callback)    { sig_usr2_callback_   = std::move(callback); }
 
-    void set_befor_function(BeforLoopFunc&& callback)   { befor_func_ = std::move(callback); }
-    void set_after_function(AfterLoopFunc&& callback)   { after_func_ = std::move(callback); }
+    void set_loop_befor_function(BeforLoopFunc&& callback)   { loop_befor_func_ = std::move(callback); }
+    void set_loop_after_function(AfterLoopFunc&& callback)   { loop_after_func_ = std::move(callback); }
 
     //启动和退出
     void Loop();
     void Quit();
 
+    static void SetLogger(const std::string& path, int lv);
     void SetAsSignalHandleEventLoop();
 
     uint64_t iteration() const { return iteration_; }
@@ -109,8 +121,8 @@ private:
     std::shared_ptr<Channel> channel_sig_;
 
     //befor after run
-    BeforLoopFunc befor_func_;
-    AfterLoopFunc after_func_;
+    BeforLoopFunc loop_befor_func_;
+    AfterLoopFunc loop_after_func_;
 };
 
 }//namespace net

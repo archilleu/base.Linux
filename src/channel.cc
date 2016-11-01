@@ -23,7 +23,7 @@ Channel::Channel(EventLoop* loop, int _fd)
     handling_(false),
     tied_(false)
 {
-    SystemLog_Debug("Channel ctor");
+    NetLogger_info("Channel ctor, fd:%d", fd_);
 
     assert(0 != owner_loop_);
     assert(0 < fd_);
@@ -33,7 +33,7 @@ Channel::Channel(EventLoop* loop, int _fd)
 //---------------------------------------------------------------------------
 Channel::~Channel()
 {
-    SystemLog_Debug("Channel dtor");
+    NetLogger_info("Channel dtor, fd:%d", fd_);
 
     assert(false == handling_);
     return;
@@ -86,7 +86,7 @@ void Channel::_HandleEvent(uint64_t rcv_time)
     //标记正在处理事件中
     handling_ = true;
 
-    SystemLog_Debug("Handle event:fd:%d event:%s", fd_, REventsToString().c_str());
+    NetLogger_trace("Handle event:fd:%d event:%s", fd_, REventsToString().c_str());
 
     //优先处理断线情况
     if((EPOLLHUP | EPOLLRDHUP) & revents_)

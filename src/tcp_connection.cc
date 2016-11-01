@@ -22,7 +22,7 @@ TCPConn::TCPConn(EventLoop* ownerloop, const std::string& tcpname, int fd, const
     channel_(new Channel(owner_loop_, fd)),
     overstock_size_(0)
 {
-    SystemLog_Debug("ctor==>name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), fd, local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_trace("ctor-->name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), fd, local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     assert(0 != owner_loop_);
     assert(0 < fd);
@@ -31,7 +31,7 @@ TCPConn::TCPConn(EventLoop* ownerloop, const std::string& tcpname, int fd, const
 //---------------------------------------------------------------------------
 TCPConn::~TCPConn()
 {
-    SystemLog_Debug("dtor==>name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_trace("dtor-->name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     assert(DISCONNECTED == state_);
     owner_loop_ = 0;
@@ -92,7 +92,7 @@ void TCPConn::Send(const net::MemoryBlock& dat)
 //---------------------------------------------------------------------------
 void TCPConn::ShutdownWirte()
 {
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_trace("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     if(CONNECTED == state_)
     {
@@ -104,7 +104,7 @@ void TCPConn::ShutdownWirte()
 //---------------------------------------------------------------------------
 void TCPConn::ForceClose()
 {
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_trace("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     if(CONNECTED == state_)
     {
@@ -116,7 +116,7 @@ void TCPConn::ForceClose()
 //---------------------------------------------------------------------------
 void TCPConn::ConnectionEstablished()
 {
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_trace("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
 
@@ -135,7 +135,7 @@ void TCPConn::ConnectionEstablished()
 //---------------------------------------------------------------------------
 void TCPConn::ConnectionDestroy()
 {
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_trace("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
 
@@ -204,8 +204,8 @@ ssize_t TCPConn::_SendMostPossible(const char* dat, size_t len)
             //在它前面的channel调用该channel所属的tcp_conn发送数据，此时会产生ECONNRESET错误
             //if((EAGAIN!=errno) && (EWOULDBLOCK!=errno) && (ECONNRESET!=errno) && (EPIPE!=errno))
             {
-                SystemLog_Warning("send failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
-                        , errno, StrError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+                NetLogger_info("send failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
+                        , errno, OSError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
                 //不需要HandleClose，原因如上
                 //HandleClose();
@@ -238,7 +238,7 @@ void TCPConn::_SendDatQueueInBuffer(const char* dat, size_t remain)
 //---------------------------------------------------------------------------
 void TCPConn::ShutdownWriteInLoop()
 {
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_trace("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
 
@@ -250,7 +250,7 @@ void TCPConn::ShutdownWriteInLoop()
 //---------------------------------------------------------------------------
 void TCPConn::ForceCloseInLoop()
 {
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_info("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
 
@@ -290,9 +290,9 @@ void TCPConn::HandleRead(uint64_t rcv_time)
     if((EAGAIN==err_no) || (EWOULDBLOCK==err_no))
         return;
 
-    SystemLog_Error("read failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
-            , errno, StrError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
-    assert(0);
+    NetLogger_error("read failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
+            , errno, OSError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+
     return;
 }
 //---------------------------------------------------------------------------
@@ -325,15 +325,15 @@ void TCPConn::HandleWrite()
     if((EAGAIN!=errno) || (EWOULDBLOCK!=errno))
         return;
 
-    SystemLog_Error("write failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
-            , errno, StrError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
-    assert(0);
+    NetLogger_error("write failed, errno:%d, msg:%s, name:%s, fd:%d, localaddr:%s, peeraddr:%s"
+            , errno, OSError(errno), name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+
     return;
 }
 //---------------------------------------------------------------------------
 void TCPConn::HandleError()
 {
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_error("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
 
@@ -342,7 +342,7 @@ void TCPConn::HandleError()
 //---------------------------------------------------------------------------
 void TCPConn::HandleClose()
 {
-    SystemLog_Debug("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
+    NetLogger_trace("name:%s, fd:%d, localaddr:%s, peeraddr:%s", name_.c_str(), socket_->fd(), local_addr_.IPPort().c_str(), peer_addr_.IPPort().c_str());
 
     owner_loop_->AssertInLoopThread();
 

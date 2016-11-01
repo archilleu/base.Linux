@@ -44,7 +44,7 @@ void Poller::DumpChannel()
     }
 
     assert(((void)"channels num not eq num", count == channel_num_));
-    SystemLog_Debug("has channels:%zu, current max fd:%d, egen:%zu", count, cur_max_fd_, egen_); 
+    NetLogger_trace("has channels:%zu, current max fd:%d, egen:%zu", count, cur_max_fd_, egen_); 
 
     return;
 }

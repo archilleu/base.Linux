@@ -18,13 +18,13 @@ UDPServer::UDPServer(const InetAddress& rcv_addr)
     receiver_(new UDPReceiver(loop_.get(), socket_.get(), pkt_queue_.get())),
     worker_(new UDPWorkder(pkt_queue_.get()))
 {
-    SystemLog_Info("udp server ctor");
+    NetLogger_info("udp server ctor");
     return;
 }
 //---------------------------------------------------------------------------
 UDPServer::~UDPServer()
 {
-    SystemLog_Info("udp server dtor");
+    NetLogger_info("udp server dtor");
     return;
 }
 //---------------------------------------------------------------------------
@@ -36,7 +36,7 @@ void UDPServer::set_callback_rcv_pkt(const CallbackRcvPacket& callback)
 //---------------------------------------------------------------------------
 void UDPServer::Start(int thread_nums)
 {
-    SystemLog_Info("udp server start");
+    NetLogger_off("udp server start");
 
     receiver_->set_pkt_size(1500);
     receiver_->set_callback_error(std::bind(&UDPServer::OnReceiverError, this));
@@ -50,14 +50,14 @@ void UDPServer::Start(int thread_nums)
 //---------------------------------------------------------------------------
 void UDPServer::Stop()
 {
-    SystemLog_Info("udp server stopping");
+    NetLogger_info("udp server stopping");
 
     receiver_->Stop();
     worker_->Stop();
     loop_->Quit();
 
 
-    SystemLog_Info("udp server stoped");
+    NetLogger_info("udp server stoped");
     return;
 }
 //---------------------------------------------------------------------------
@@ -75,14 +75,14 @@ void UDPServer::Send(const char* dat, size_t len, const InetAddress& to)
 //---------------------------------------------------------------------------
 void UDPServer::OnReceiverError()
 {
-    SystemLog_Error("reciever error, restart now!!");
+    NetLogger_error("reciever error, restart now!!");
 
     receiver_->Stop();
     receiver_.reset(new UDPReceiver(loop_.get(), socket_.get(), pkt_queue_.get()));
     receiver_->set_pkt_size(1500);
     receiver_->Start();
 
-    SystemLog_Info("reciever restart success!");
+    NetLogger_warn("reciever restart success!");
     return;
 }
 //---------------------------------------------------------------------------

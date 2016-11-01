@@ -167,7 +167,7 @@ std::vector<InetAddress> InetAddress::GetAllByDomain(std::string domain_name, sh
     int err_code = getaddrinfo(domain_name.c_str(), 0, &hints, &info);
     if(0 != err_code)
     {
-        SystemLog_Error("get addrinfo error:%s", gai_strerror(err_code));
+        NetLogger_error("get addrinfo error:%s", gai_strerror(err_code));
         return addr_list;
     }
 

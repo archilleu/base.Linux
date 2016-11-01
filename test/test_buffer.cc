@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "../depend/base/include/function.h"
-#include "../depend/base/include/append_file.h"
 #include "../depend/base/include/timestamp.h"
 #include "../depend/base/include/memory_block.h"
 //---------------------------------------------------------------------------

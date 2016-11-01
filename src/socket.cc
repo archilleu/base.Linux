@@ -51,8 +51,8 @@ void Socket::Bind(const InetAddress& inet_addr)
 {
     if(0 > ::bind(fd_, reinterpret_cast<const sockaddr*>(&inet_addr.address()), sizeof(inet_addr.address())))
     {
-        SystemLog_Error("bind failed errno:%d, msg:%s", errno, StrError(errno));
-        abort();
+        NetLogger_error("bind failed errno:%d, msg:%s", errno, OSError(errno));
+        assert(0);
     }
 
     return;
@@ -63,7 +63,7 @@ void Socket::SetReuseAddress()
     int reuse = 1;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -77,7 +77,7 @@ void Socket::SetReusePort()
     int reuse = 1;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(int)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -91,7 +91,7 @@ void Socket::SetNodelay()
     int nodelay = 1;
     if(0 > setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
     
@@ -108,7 +108,7 @@ void Socket::SetIPV6Only()
     int yes = 1;
     if(0 > setsockopt(fd_, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(yes)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
     
@@ -122,7 +122,7 @@ void Socket::SetTimeoutRecv(int timeoutS)
     timeout.tv_usec = 0;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -136,7 +136,7 @@ void Socket::SetTimeoutSend(int timeoutS)
     timeout.tv_usec = 0;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -147,7 +147,7 @@ void Socket::SetSendBufferSize(int size)
 {
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&size), sizeof(int)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -158,7 +158,7 @@ void Socket::SetRecvBufferSize(int size)
 {
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&size), sizeof(int)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -171,7 +171,7 @@ int Socket::GetSendBufferSize()
     socklen_t   len = sizeof(val);
     if(0 > getsockopt(fd_, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&val), &len))
     {
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("getsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -184,7 +184,7 @@ int Socket::GetRecvBufferSize()
     socklen_t   len = sizeof(val);
     if(0 > getsockopt(fd_, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&val), &len))
     {
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("getsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -215,7 +215,7 @@ InetAddress Socket::GetLocalAddress(int sockfd)
     socklen_t           len = static_cast<socklen_t>(sizeof(local_address));
     if(0 > ::getsockname(sockfd, reinterpret_cast<sockaddr*>(&local_address), &len))
     {
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("getsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -228,7 +228,7 @@ InetAddress Socket::GetPeerAddress(int sockfd)
     socklen_t           len = static_cast<socklen_t>(sizeof(peer_address));
     if(0 > ::getpeername(sockfd, reinterpret_cast<sockaddr*>(&peer_address), &len))
     {
-        SystemLog_Error("getsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("getsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
     }
 
@@ -240,7 +240,7 @@ void Socket::SetKeepAlive(int sockfd, int interval)
     int val = 1;
     if(0 > setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &val, sizeof(val)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
         return;
     }
@@ -249,7 +249,7 @@ void Socket::SetKeepAlive(int sockfd, int interval)
     val = interval;
     if(0 > setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &val, sizeof(val)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
         return;
     }
@@ -261,7 +261,7 @@ void Socket::SetKeepAlive(int sockfd, int interval)
     val = interval/3;
     if(0 > setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, &val, sizeof(val)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
         return;
     }
@@ -271,7 +271,7 @@ void Socket::SetKeepAlive(int sockfd, int interval)
     val = 3;
     if(0 > setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, &val, sizeof(val)))
     {
-        SystemLog_Error("setsockopt failed errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("setsockopt failed errno:%d, msg:%s", errno, OSError(errno));
         assert(0);
         return;
     }
@@ -285,7 +285,7 @@ int Socket::GetSocketError(int sockfd)
     socklen_t   optlen = static_cast<socklen_t>(sizeof optval);
     if(0 > ::getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &optval, &optlen))
     {
-        SystemLog_Error("getsocket failed, errno:%d, msg:%s", errno, StrError(errno));
+        NetLogger_warn("getsocket failed, errno:%d, msg:%s", errno, OSError(errno));
         return errno;
     }
     

@@ -352,8 +352,8 @@ bool TestEventLoop::Test_TimerTask()
 {
     EventLoop loop;
     g_loop = &loop;
-    loop.set_befor_function(BeforLoop);
-    loop.set_after_function(AfterLoop);
+    loop.set_loop_befor_function(BeforLoop);
+    loop.set_loop_after_function(AfterLoop);
 
     base::Thread t(OnTimerTask);
     t.Start();
