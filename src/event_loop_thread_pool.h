@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include "../thirdpart/base/include/noncopyable.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -12,10 +13,10 @@ namespace net
 class EventLoop;
 class EventLoopThread;
 
-class EventLoopThreadPool
+class EventLoopThreadPool : public base::Noncopyable
 {
 public:
-    EventLoopThreadPool(EventLoop* loop_main, const std::string& name="");
+    EventLoopThreadPool(EventLoop* loop_main);
     ~EventLoopThreadPool();
 
     void set_thread_nums(int nums)  { thread_nums_ = nums; }
@@ -25,17 +26,14 @@ public:
 
     EventLoop* GetNextEventLoop();
 
-    const std::string& name()   { return name_; }
-
 private:
-    EventLoop*  loop_main_;
-    std::string name_;
-    bool        running_;
-    int         thread_nums_;
-    int         next_;
+    EventLoop* loop_main_;
+    bool running_;
+    int thread_nums_;
+    int next_;
 
-    std::vector<std::shared_ptr<EventLoopThread>>   loop_threads_;
-    std::vector<EventLoop*>                         loops_;
+    std::vector<std::shared_ptr<EventLoopThread>> loop_threads_;
+    std::vector<EventLoop*> loops_;
 };
 
 }//namespace net

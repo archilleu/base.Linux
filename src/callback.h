@@ -10,26 +10,27 @@ namespace net
 {
 
 //TCP
-class TCPConn;
+class TCPConnection;
 class Buffer;
 
 using MemoryBlock = std::vector<char>;
 
-using TCPConnPtr = std::shared_ptr<TCPConn>;
+using TCPConnectionPtr = std::shared_ptr<TCPConnection>;
+using TCPConnectionWeakPtr = std::weak_ptr<TCPConnection>;
 
-using CallbackConnection            = std::function<void (const TCPConnPtr&)>;
-using CallbackDisconnection         = std::function<void (const TCPConnPtr&)>;
-using CallbackRemove                = std::function<void (const TCPConnPtr&)>;
-using CallbackRead                  = std::function<void (const TCPConnPtr&, Buffer&, uint64_t)>;
-using CallbackWriteComplete         = std::function<void (const TCPConnPtr&)>;
-using CallbackWriteHighWaterMark    = std::function<void (const TCPConnPtr&, size_t)>;
+using ConnectionCallback = std::function<void (const TCPConnectionPtr&)>;
+using DisconnectionCallback = std::function<void (const TCPConnectionPtr&)>;
+using RemoveCallback = std::function<void (const TCPConnectionPtr&)>;
+using ReadCallback = std::function<void (const TCPConnectionPtr&, Buffer&, uint64_t)>;
+using WriteCompleteCallback = std::function<void (const TCPConnectionPtr&)>;
+using WriteHighWaterMarkCallback = std::function<void (const TCPConnectionPtr&, size_t)>;
 
-//Task
-using CallbackTimerTask = std::function<void (void)>;
+//timer task
+using TimerCallback = std::function<void (void)>;
 
 //UDP
 class DatagramPacket;
 using CallbackRcvPacket = std::function<void (const DatagramPacket& pkt)>;
-}//namespace net
+}
 //---------------------------------------------------------------------------
 #endif //NET_CALLBACK_H_

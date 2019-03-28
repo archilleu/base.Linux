@@ -1,8 +1,9 @@
 //---------------------------------------------------------------------------
+#include <memory>
 #include "connector.h"
 #include "event_loop.h"
 #include "channel.h"
-#include "net_log.h"
+#include "net_logger.h"
 #include "socket.h"
 //---------------------------------------------------------------------------
 namespace net
@@ -18,7 +19,7 @@ Connector::Connector(EventLoop* loop, const InetAddress& svr)
     svr_addr_(svr),
     states_(DISCONNECTED),
     retry_delay_(kInitRetryDelay),
-    timer_task_id_(0, 0)
+    timer_id_(0, 0)
 {
     NetLogger_info("Connector ctor");    
     return;
@@ -55,7 +56,7 @@ void Connector::Stop()
 {
     running_ = false;
     loop_->RunInLoop(std::bind(&Connector::StopInLoop, this));
-    loop_->RunCancel(timer_task_id_);
+    loop_->TimerCancel(timer_id_);
 
     return;
 }
@@ -116,11 +117,11 @@ void Connector::Connecting(int sockfd)
     states_ = CONNECTINTG;
 
     channel_.reset(new Channel(loop_, sockfd));
-    channel_->set_callback_write(std::bind(&Connector::HandleWrite, this));
-    channel_->set_callback_error(std::bind(&Connector::HandleError, this));
-    channel_->set_callback_close(std::bind(&Connector::HandleError, this));
+    channel_->set_write_cb(std::bind(&Connector::HandleWrite, this));
+    channel_->set_error_cb(std::bind(&Connector::HandleError, this));
+    channel_->set_close_cb(std::bind(&Connector::HandleError, this));
 
-    channel_->WriteEnable();
+    channel_->EnableWriting();
     return;
 }
 //---------------------------------------------------------------------------
@@ -158,6 +159,7 @@ void Connector::HandleWrite()
     else
         ::close(sockfd);
 
+    retry_delay_ = kInitRetryDelay;
     return;
 }
 //---------------------------------------------------------------------------
@@ -183,8 +185,8 @@ void Connector::Retry(int fd)
 
     if(running_) 
     {
-        NetLogger_warn("Connector retry connect to %s in seconds %d",  svr_addr_.IPPort().c_str(), retry_delay_/1000);
-        loop_->RunAfter(retry_delay_/1000, std::bind(&Connector::StartInLoop, shared_from_this()));
+        NetLogger_warn("Connector retry connect to %s in seconds %d",  svr_addr_.IpPort().c_str(), retry_delay_/1000);
+        //loop_->TimerAfter(retry_delay_/1000, std::bind(&Connector::StartInLoop, shared_from_this()));
         retry_delay_ = std::min(retry_delay_*2, kMaxRetryDelay);
     }
 

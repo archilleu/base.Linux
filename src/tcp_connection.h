@@ -6,46 +6,48 @@
 #include "callback.h"
 #include "inet_address.h"
 #include "buffer.h"
+#include "socket.h"
+#include "channel.h"
+#include "../thirdpart/base/include/noncopyable.h"
+#include "../thirdpart/base/include/any.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 class EventLoop;
-class InetAddress;
-class Socket;
-class Channel;
 
-class TCPConn : public std::enable_shared_from_this<TCPConn>
+class TCPConnection : public base::Noncopyable,
+    public std::enable_shared_from_this<TCPConnection>
 {
 public:
-    using CalllbackDestroy = std::function<void (const TCPConnPtr&)>;
+    using CalllbackDestroy = std::function<void (const TCPConnectionPtr&)>;
 
-    TCPConn(EventLoop* owner_loop, const std::string& name, int fd, const InetAddress& local_addr, const InetAddress& peer_addr);
-    TCPConn(const TCPConn&) =delete;
-    TCPConn& operator=(const TCPConn&) =delete;
-    ~TCPConn();
+    TCPConnection(EventLoop* owner_loop, std::string&& name, Socket&& socket,
+            InetAddress&& local_addr, InetAddress&& peer_addr);
+    TCPConnection(EventLoop* owner_loop, std::string&& name, Socket&& socket,
+            InetAddress&& local_addr, InetAddress&& peer_addr, const base::any& config_data);
+    ~TCPConnection();
 
-    //各种回调
-    //注意:connection 回调不能在回调里面发送数据
-    void set_callback_connection        (const CallbackConnection& callback)        { callback_connection_      = callback; }
-    void set_callback_disconnection     (const CallbackDisconnection& callback)     { callback_disconnection_   = callback; }
-    void set_callback_read              (const CallbackRead& callback)              { callback_read_            = callback; }
-    void set_callback_write_complete    (const CallbackWriteComplete& callback)     { callback_write_complete_  = callback; }
-    void set_callback_high_water_mark   (const CallbackWriteHighWaterMark& callback, size_t overstock_size)
+    //注意:connection回调不能在回调里面发送数据
+    void set_connection_cb(const ConnectionCallback& cb) { connection_cb_ = cb; }
+    void set_disconnection_cb(const DisconnectionCallback& cb) { disconnection_cb_ = cb; }
+    void set_read_cb(const ReadCallback& cb) { read_cb_ = cb; }
+    void set_write_complete_cb(const WriteCompleteCallback& cb) { write_complete_cb_ = cb; }
+    void set_high_water_mark_cb(const WriteHighWaterMarkCallback& cb, size_t overstock_size)
     {
-        callback_high_water_mark_   = callback; 
-        overstock_size_             = overstock_size;
+        high_water_mark_cb_ = cb;
+        overstock_size_ = overstock_size;
     }
 
     //for TCPServer use
-    void set_callback_remove (const CallbackRemove& callback) { callback_remove_ = callback; }
+    void set_remove_cb(const RemoveCallback& callback) { remove_cb_ = callback; }
 
-    //初始化
+    //初始化,绑定事件
     void Initialize();
 
     //发送数据,线程安全
     void Send(const char* dat, size_t len);
-    void Send(const net::MemoryBlock& dat);
+    void Send(net::MemoryBlock&& dat);
 
     //关闭链接
     void ShutdownWirte();
@@ -53,28 +55,42 @@ public:
     //强制断线
     void ForceClose();
 
-    //连接就绪
-    void ConnectionEstablished();
-    void ConnectionDestroy();
+public:
+    const std::string name() const { return name_; }
+    const InetAddress& local_addr() const { return local_addr_; }
+    const InetAddress& peer_addr() const { return peer_addr_; }
 
-    //自定义附加数据
-    std::shared_ptr<void> any_;
+    void AddRequests() { requests_++; }
+    int requests() const { return requests_; }
 
-    const std::string   name()          { return name_; }
-    const InetAddress&  local_addr()    { return local_addr_; }
-    const InetAddress&  peer_addr()     { return peer_addr_; }
-
-    EventLoop*                      owner_loop()    { return owner_loop_; }
-    const std::shared_ptr<Socket>   socket()        { return socket_; }
+    EventLoop* owner_loop() const { return owner_loop_; }
+    const Socket& socket() const { return socket_; }
 
     std::string GetTCPInfo() const;
 
+    const base::any& config_data() const { return config_data_; }
+
+    void set_context(const base::any& context) { context_ = context; }
+    const base::any& context() const { return context_; }
+    base::any* getContext() { return &context_; }
+
 private:
+    //以下方法仅供TCPServer调用
+    friend class TCPServer;
+    friend class TCPClient;
+    //连接就绪,这会让该连接可以收发数据
+    void ConnectionEstablished();
+
+    //连接销毁
+    void ConnectionDestroy();
+
+private:
+    void _Send(const char* dat, size_t len);
     //如果上面的Send调用不在本io线程中调用,则转换到本线程发送数据,达到线程安全的目的
-    void    SendInLoopA             (net::MemoryBlock dat);
-    void    SendInLoopB             (const char* dat, size_t len);
-    ssize_t _SendMostPossible       (const char* dat, size_t len);      //尽可能的发送数据
-    void    _SendDatQueueInBuffer   (const char* dat, size_t remain);   //未完成发送的数据放入缓存
+    void SendInLoop(const net::MemoryBlock& dat);
+
+    ssize_t _SendMostPossible(const char* dat, size_t len);         //尽可能的发送数据
+    void  _SendDatQueueInBuffer (const char* dat, size_t remain);   //未完成发送的数据放入缓存
 
     //关闭和断开连接都需要在本线程做
     void ShutdownWriteInLoop();
@@ -87,32 +103,41 @@ private:
     void HandleClose();
 
 private:
-    EventLoop*  owner_loop_;
+    EventLoop* owner_loop_;
     std::string name_;
     InetAddress local_addr_;
     InetAddress peer_addr_;
     enum
     {
-        DISCONNECTED=1,
+        DISCONNECTED,
         CONNECTING,
         CONNECTED,
         DISCONNECTING
     };
     std::atomic<int> state_;
 
+    //完成请求次数
+    std::atomic<int> requests_;
+
     Buffer buffer_input_;
     Buffer buffer_output_;
 
-    std::shared_ptr<Socket>     socket_;
-    std::shared_ptr<Channel>    channel_;
+    Socket socket_;
+    Channel channel_;
 
-    CallbackConnection          callback_connection_;
-    CallbackDisconnection       callback_disconnection_;
-    CallbackRead                callback_read_;
-    CallbackWriteComplete       callback_write_complete_;
-    CallbackWriteHighWaterMark  callback_high_water_mark_;
-    CallbackRemove              callback_remove_;
-    size_t                      overstock_size_;
+    ConnectionCallback connection_cb_;
+    DisconnectionCallback disconnection_cb_;
+    ReadCallback read_cb_;
+    WriteCompleteCallback write_complete_cb_;
+    WriteHighWaterMarkCallback high_water_mark_cb_;
+    RemoveCallback remove_cb_;
+    size_t overstock_size_;
+
+    //配置文件数据
+    base::any config_data_;
+
+    //该连接上下文数据
+    base::any context_;
 };
 
 }//namespace net

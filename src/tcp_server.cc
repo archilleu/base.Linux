@@ -1,36 +1,64 @@
 //---------------------------------------------------------------------------
+#include <algorithm>
+#include "../thirdpart/base/include/function.h"
 #include "tcp_server.h"
 #include "event_loop.h"
 #include "acceptor.h"
 #include "inet_address.h"
 #include "socket.h"
-#include "net_log.h"
+#include "net_logger.h"
 #include "tcp_connection.h"
 #include "event_loop_thread_pool.h"
-#include "../depend/base/include/function.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
+using namespace std::placeholders;
+
 //---------------------------------------------------------------------------
-TCPServer::TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& listen_addr)
+static const size_t kConnSize = 1024 * 1024;
+//---------------------------------------------------------------------------
+TCPServer::TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& addresses)
 :   mark_(0),
     owner_loop_(owner_loop),
     next_connect_id_(0),
     tcp_conn_count_(0),
-    loop_thread_pool_(new EventLoopThreadPool(owner_loop))
+    loop_thread_pool_(owner_loop)
 {
-    std::string msg = "ctor tcp server";
-    for(auto iter : listen_addr)
+    std::string msg = "ctor tcp server, listen address:";
+    for(auto& addr : addresses)
     {
-        msg += " " + iter.IPPort();
-        acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, iter));
-        acceptor_.back()->set_callback_new_connection(std::bind(&TCPServer::OnNewConnection, this, 
-                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+        msg += " " + addr.IpPort();
+        acceptors_.push_back(std::make_shared<Acceptor>(owner_loop, addr));
+        acceptors_.back()->set_new_conn_cb(std::bind(&TCPServer::OnNewConnection, this, 
+                _1, _2, _3));
     }
 
-    tcp_conn_list_.resize(1024*1024);
-    NetLogger_info("%s", msg.c_str());
+    tcp_conn_list_.resize(kConnSize);
+    NetLogger_trace("%s", msg.c_str());
+
+    return;
+}
+//---------------------------------------------------------------------------
+TCPServer::TCPServer(EventLoop* owner_loop, const std::vector<InetAddressData>& addr_datas)
+:   mark_(0),
+    owner_loop_(owner_loop),
+    next_connect_id_(0),
+    tcp_conn_count_(0),
+    loop_thread_pool_(owner_loop)
+{
+    std::string msg = "ctor tcp server, listen address:";
+    for(auto& addr_data : addr_datas)
+    {
+        msg += " " + addr_data.address.IpPort();
+        acceptors_.push_back(std::make_shared<Acceptor>(owner_loop, addr_data.address));
+        acceptors_.back()->set_new_conn_data_cb(std::bind(&TCPServer::OnNewConnectionData, this, 
+                _1, _2, _3, _4));
+        acceptors_.back()->set_config_data(addr_data.data);
+    }
+
+    tcp_conn_list_.resize(kConnSize);
+    NetLogger_trace("%s", msg.c_str());
 
     return;
 }
@@ -40,16 +68,16 @@ TCPServer::TCPServer(EventLoop* owner_loop, short port)
     owner_loop_(owner_loop),
     next_connect_id_(0),
     tcp_conn_count_(0),
-    loop_thread_pool_(new EventLoopThreadPool(owner_loop))
+    loop_thread_pool_(owner_loop)
 {
-    NetLogger_info("ctor tcp server, listen address:*");
+    NetLogger_trace("ctor tcp server, listen address:localhost");
 
-    acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, true)));
-    acceptor_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, false)));
-    tcp_conn_list_.resize(1024*1024);
-    acceptor_[0]->set_callback_new_connection(std::bind(&TCPServer::OnNewConnection, this, 
+    acceptors_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, true)));
+    acceptors_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, false)));
+    tcp_conn_list_.resize(kConnSize);
+    acceptors_[0]->set_new_conn_cb(std::bind(&TCPServer::OnNewConnection, this, 
                 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    acceptor_[1]->set_callback_new_connection(std::bind(&TCPServer::OnNewConnection, this, 
+    acceptors_[1]->set_new_conn_cb(std::bind(&TCPServer::OnNewConnection, this, 
                 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
     return;
@@ -57,27 +85,27 @@ TCPServer::TCPServer(EventLoop* owner_loop, short port)
 //---------------------------------------------------------------------------
 TCPServer::~TCPServer()
 {
-    NetLogger_info("ctor tcp server");
+    NetLogger_trace("dtor tcp server");
 
     return;
 }
 //---------------------------------------------------------------------------
 void TCPServer::set_event_loop_nums(int nums)
 {
-    loop_thread_pool_->set_thread_nums(nums);    
+    loop_thread_pool_.set_thread_nums(nums);    
 }
 //---------------------------------------------------------------------------
 void TCPServer::Start()
 {
     owner_loop_->AssertInLoopThread();
-
     NetLogger_info("TCPServer start");
 
-    loop_thread_pool_->Start();
+    loop_thread_pool_.Start();
 
-    for(auto iter : acceptor_)
+    for(auto& acceptor : acceptors_)
     {
-        owner_loop_->RunInLoop(std::bind(&Acceptor::Listen, iter));
+        //确保在owner_loop的线程监听（有可能调用线程和owner_loop线程不在同一个）
+        owner_loop_->RunInLoop(std::bind(&Acceptor::Listen, acceptor));
     }
 
     return;
@@ -86,28 +114,32 @@ void TCPServer::Start()
 void TCPServer::Stop()
 {
     owner_loop_->AssertInLoopThread();
+    NetLogger_info("TCPServer stop");
 
-    NetLogger_info("TCPServer sopt");
-
-    loop_thread_pool_->Stop();
+    loop_thread_pool_.Stop();
 
     //断开所有连接
-    for(auto iter : tcp_conn_list_)
+    size_t count = 0;
+    for(auto& conn : tcp_conn_list_)
     {
-        if(!iter)
+        if(!conn)
+        {
+            //连续32(数值大概）个连接为空则认为后面都是无效连接，因为fd系统是按最小可用分配的。
+            if(32 == count++)
+                break;
+
             continue;
+        }
 
-        TCPConnPtr conn_ptr = iter;
-        iter.reset();
-
-        //客户端的连接需要在自己的线程中回调
-        conn_ptr->owner_loop()->RunInLoop(std::bind(&TCPConn::ConnectionDestroy, conn_ptr));
+        count = 0;
+        //客户端的连接需要在自己的线程中回调销毁
+        conn->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, conn));
     }
 
     return;
 }
 //---------------------------------------------------------------------------
-void TCPServer::DumpConnection()
+void TCPServer::DumpConnections()
 {
     owner_loop_->AssertInLoopThread();
 
@@ -117,7 +149,7 @@ void TCPServer::DumpConnection()
         if(!tcp_conn_list_[i])
             continue;
 
-        assert(((void)"conn_ptr fd no eq idx", tcp_conn_list_[i]->socket()->fd() == static_cast<int>(i)));
+        assert(((void)"conn_ptr fd != idx", tcp_conn_list_[i]->socket().fd() == static_cast<int>(i)));
         count++;
     }
 
@@ -127,94 +159,150 @@ void TCPServer::DumpConnection()
     return;
 }
 //---------------------------------------------------------------------------
-void TCPServer::OnNewConnection(int clientfd, const InetAddress& client_addr, uint64_t accept_time)
+void TCPServer::OnNewConnection(Socket&& client, InetAddress&& client_addr, uint64_t accept_time)
 {
     owner_loop_->AssertInLoopThread();
 
     //获取一个event_loop
-    EventLoop* loop = loop_thread_pool_->GetNextEventLoop();
+    EventLoop* loop = loop_thread_pool_.GetNextEventLoop();
 
     std::string new_conn_name = base::CombineString("%zu", next_connect_id_++);
-    InetAddress local_addr = Socket::GetLocalAddress(clientfd);
+    InetAddress local_addr = Socket::GetLocalAddress(client.fd());
 
-    NetLogger_trace("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s", base::Timestamp(accept_time).Datetime(true).c_str(),
-            new_conn_name.c_str(), clientfd, tcp_conn_count_, local_addr.IPPort().c_str(), client_addr.IPPort().c_str());
+    NetLogger_trace("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s",
+            base::Timestamp(accept_time).Datetime(true).c_str(), new_conn_name.c_str(), client.fd(),
+            tcp_conn_count_, local_addr.IpPort().c_str(), client_addr.IpPort().c_str());
 
-    TCPConnPtr conn_ptr = std::make_shared<TCPConn>(loop, new_conn_name, clientfd, local_addr, client_addr);
+    TCPConnectionPtr conn_ptr = std::make_shared<TCPConnection>(loop, std::move(new_conn_name),
+            std::move(client), std::move(local_addr), std::move(client_addr));
+
     //初始化连接
-    conn_ptr->set_callback_connection(callback_connection_);
-    conn_ptr->set_callback_disconnection(callback_disconnection_);
-    conn_ptr->set_callback_read(callback_read_);
-    conn_ptr->set_callback_write_complete(callback_write_complete_);
-    conn_ptr->set_callback_high_water_mark(callback_high_water_mark_, mark_);
-    conn_ptr->set_callback_remove(std::bind(&TCPServer::OnConnectionRemove, this, std::placeholders::_1));
+    conn_ptr->set_connection_cb(connection_cb_);
+    conn_ptr->set_disconnection_cb(disconnection_cb_);
+    conn_ptr->set_read_cb(read_cb_);
+    conn_ptr->set_write_complete_cb(write_complete_cb_);
+    conn_ptr->set_high_water_mark_cb(high_water_mark_cb_, mark_);
+    conn_ptr->set_remove_cb(std::bind(&TCPServer::OnConnectionRemove, this, std::placeholders::_1));
     
     //加入到连接list中
-    ConnAddList(conn_ptr);
+    if(false == AddConnListItem(conn_ptr))
+        return;
 
     conn_ptr->Initialize();
     
-    //通知连接已经就绪,在conn_ptr中通知
-    //只有在加入到list中后才允许该连接的事件,防止在未加入list前,该连接又close掉导致list里找不到该连接
-    loop->RunInLoop(std::bind(&TCPConn::ConnectionEstablished, conn_ptr)); 
+    //通知连接已经就绪,监听事件，在conn_ptr中通知,只有在加入到tcp_conn_list_中后才
+    //允许该连接的事件,防止在未加入list前,该连接又close掉导致list里找不到该连接
+    loop->RunInLoop(std::bind(&TCPConnection::ConnectionEstablished, conn_ptr)); 
 
     return;
 }
 //---------------------------------------------------------------------------
-void TCPServer::OnConnectionRemove(const TCPConnPtr& conn_ptr)
+void TCPServer::OnNewConnectionData(Socket&& client, InetAddress&& client_addr, uint64_t accept_time,
+        const base::any& config_data)
 {
-    //该回调是由连接的线程回调上来的,但是销毁连接需要在TCPServer的线程中执行(conn_ptr是拷贝的一个副本,即是是引用参数!!)
+    owner_loop_->AssertInLoopThread();
+
+    //获取一个event_loop
+    EventLoop* loop = loop_thread_pool_.GetNextEventLoop();
+
+    std::string new_conn_name = base::CombineString("%zu", next_connect_id_++);
+    InetAddress local_addr = Socket::GetLocalAddress(client.fd());
+
+    NetLogger_trace("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s",
+            base::Timestamp(accept_time).Datetime(true).c_str(), new_conn_name.c_str(), client.fd(),
+            tcp_conn_count_, local_addr.IpPort().c_str(), client_addr.IpPort().c_str());
+
+    TCPConnectionPtr conn_ptr = std::make_shared<TCPConnection>(loop, std::move(new_conn_name),
+            std::move(client), std::move(local_addr), std::move(client_addr), config_data);
+
+    //初始化连接
+    conn_ptr->set_connection_cb(connection_cb_);
+    conn_ptr->set_disconnection_cb(disconnection_cb_);
+    conn_ptr->set_read_cb(read_cb_);
+    conn_ptr->set_write_complete_cb(write_complete_cb_);
+    conn_ptr->set_high_water_mark_cb(high_water_mark_cb_, mark_);
+    conn_ptr->set_remove_cb(std::bind(&TCPServer::OnConnectionRemove, this, std::placeholders::_1));
+    
+    //加入到连接list中
+    if(false == AddConnListItem(conn_ptr))
+        return;
+
+    conn_ptr->Initialize();
+    
+    //通知连接已经就绪,监听事件，在conn_ptr中通知,只有在加入到tcp_conn_list_中后才
+    //允许该连接的事件,防止在未加入list前,该连接又close掉导致list里找不到该连接
+    loop->RunInLoop(std::bind(&TCPConnection::ConnectionEstablished, conn_ptr)); 
+
+    return;
+}
+//---------------------------------------------------------------------------
+void TCPServer::OnConnectionRemove(const TCPConnectionPtr& conn_ptr)
+{
+    //该回调是由连接的线程回调上来的,但是销毁连接需要在TCPServer的线程中执行
     owner_loop_->RunInLoop(std::bind(&TCPServer::OnConnectionRemoveInLoop, this, conn_ptr));
     return;
 }
 //---------------------------------------------------------------------------
-void TCPServer::OnConnectionRemoveInLoop(const TCPConnPtr& conn_ptr)
+void TCPServer::OnConnectionRemoveInLoop(const TCPConnectionPtr& conn_ptr)
 {
     //在TCPserver的线程销毁连接
     owner_loop_->AssertInLoopThread();
 
-    NetLogger_trace("server total[%zu]- name:%s,  fd:%d, from :%s to :%s",
-            tcp_conn_count_, conn_ptr->name().c_str(), conn_ptr->socket()->fd(), conn_ptr->local_addr().IPPort().c_str(),
-            conn_ptr->peer_addr().IPPort().c_str());
+    NetLogger_trace("Connection remove, server total[%zu]- name:%s,  fd:%d, from :%s to :%s",
+            tcp_conn_count_, conn_ptr->name().c_str(), conn_ptr->socket().fd(),
+            conn_ptr->local_addr().IpPort().c_str(), conn_ptr->peer_addr().IpPort().c_str());
 
-    ConnDelList(conn_ptr);
+    DelConnListItem(conn_ptr);
 
     //通知connection已经销毁
-    conn_ptr->owner_loop()->RunInLoop(std::bind(&TCPConn::ConnectionDestroy, conn_ptr));
+    conn_ptr->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, conn_ptr));
 
 #ifdef _DEBUG
-    DumpConnection();
+    DumpConnections();
 #endif
 
     return;
 }
 //---------------------------------------------------------------------------
-void TCPServer::ConnAddList(const TCPConnPtr& conn_ptr)
+bool TCPServer::AddConnListItem(const TCPConnectionPtr& conn_ptr)
 {
-    if(tcp_conn_list_.size() <= static_cast<size_t>(conn_ptr->socket()->fd()))
-        tcp_conn_list_.resize(tcp_conn_list_.size()*2);
+    //并不需要锁，因为fd是系统唯一的,如果需要扩容则需要锁
+    //if(tcp_conn_list_.size() <= static_cast<size_t>(conn_ptr->socket().fd()))
+        //tcp_conn_list_.resize(tcp_conn_list_.size()*2);
 
-    if(tcp_conn_list_[conn_ptr->socket()->fd()])
+    int fd = conn_ptr->socket().fd();
+    if(tcp_conn_list_.size() < static_cast<size_t>(fd))
     {
-        NetLogger_warn("connection:%s already exist!!!", conn_ptr->name().c_str());
+        NetLogger_warn("connection already max");
+        return false;
+    }
+
+    if(tcp_conn_list_[fd])
+    {
+        NetLogger_error("connection:%s already exist!!!", conn_ptr->name().c_str());
         assert(0);
     }
 
-    tcp_conn_list_[conn_ptr->socket()->fd()] = conn_ptr;
+    tcp_conn_list_[fd] = conn_ptr;
     tcp_conn_count_++;
-    return;
+    return true;
 }
 //---------------------------------------------------------------------------
-void TCPServer::ConnDelList(const TCPConnPtr& conn_ptr)
+void TCPServer::DelConnListItem(const TCPConnectionPtr& conn_ptr)
 {
-    if(!tcp_conn_list_[conn_ptr->socket()->fd()])
+    int fd = conn_ptr->socket().fd();
+
+    //并不需要锁，因为fd是系统唯一的
+    if(!tcp_conn_list_[fd])
     {
-        NetLogger_warn("connection:%s not exist!!!", conn_ptr->name().c_str());
+        NetLogger_error("connection:%s not exist!!!", conn_ptr->name().c_str());
         assert(0);
     }
 
-    tcp_conn_list_[conn_ptr->socket()->fd()].reset();
+    tcp_conn_list_[fd].reset();
+    tcp_conn_list_[fd] = nullptr;
     tcp_conn_count_--;
+
     return;
 }
 //---------------------------------------------------------------------------

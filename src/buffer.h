@@ -6,11 +6,13 @@
 #include <string>
 #include <cassert>
 #include <cstring>
+#include <algorithm>
+#include "../thirdpart/base/include/noncopyable.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
-class Buffer
+class Buffer : public base::Noncopyable
 {
 public:
     Buffer()
@@ -31,6 +33,21 @@ public:
     const char* Peek() const
     {
         return Begin() + read_index_;
+    }
+
+    const char* FindCRLF() const
+    {
+        const char* crlf = std::search(Peek(), BeginWrite(), kCRLF, kCRLF+2);
+        return crlf==BeginWrite() ? nullptr : crlf;
+    }
+
+    const char* FindCRLF(const char* start) const
+    {
+        if(start>=BeginWrite())
+            return nullptr;
+
+        const char* crlf = std::search(start, BeginWrite(), kCRLF, kCRLF+2);
+        return crlf==BeginWrite() ? nullptr : crlf;
     }
 
     int64_t PeekInt64() const
@@ -77,11 +94,6 @@ public:
         {
             //没有检索完
             read_index_ += len;
-            if(read_index_ == write_index_)
-            {
-                read_index_ = 0;
-                write_index_= 0;
-            }
         }
         else
         {
@@ -92,10 +104,29 @@ public:
         return;
     }
 
-    void RetrieveInt64()    { Retrieve(sizeof(int64_t)); }
-    void RetrieveInt32()    { Retrieve(sizeof(int32_t)); }
-    void RetrieveInt16()    { Retrieve(sizeof(int16_t)); }
-    void RetrieveInt8()     { Retrieve(sizeof(int8_t)); }
+    void RetrieveUntil(const char* end)
+    {
+        assert(Peek() <= end);
+        assert(end <= BeginWrite());
+
+        Retrieve(end - Peek());
+        return;
+    }
+
+    std::string RetrieveAsString(size_t len)
+    {
+        assert(len <= ReadableBytes());
+        std::string result(Peek(), len);
+        Retrieve(len);
+        return result;
+    }
+
+    std::string RetrieveAllAsString() { return RetrieveAsString(ReadableBytes()); };
+
+    void RetrieveInt64() { Retrieve(sizeof(int64_t)); }
+    void RetrieveInt32() { Retrieve(sizeof(int32_t)); }
+    void RetrieveInt16() { Retrieve(sizeof(int16_t)); }
+    void RetrieveInt8() { Retrieve(sizeof(int8_t)); }
     void RetrieveAll()
     {
         read_index_ = 0;
@@ -141,7 +172,7 @@ public:
         EnsureWritableBytes(len);
 
         memcpy(BeginWrite(), dat, len);
-        HasWriteBytes(len);
+        HasWritten(len);
 
         return;
     }
@@ -202,7 +233,7 @@ private:
         return buffer_.size() - write_index_;
     }
 
-    void HasWriteBytes(size_t len)
+    void HasWritten(size_t len)
     {
         assert(len <= WritableBytes());
 
@@ -229,8 +260,6 @@ private:
         std::copy_backward(Begin()+read_index_, Begin()+write_index_, Begin()+readable);
         read_index_ = 0;
         write_index_= readable;
-
-        assert(readable == ReadableBytes());
     }
 
     void EnsureWritableBytes(size_t len)
@@ -242,11 +271,12 @@ private:
     }
 
 private:
-    size_t              read_index_;
-    size_t              write_index_;
-    std::vector<char>   buffer_;
+    size_t read_index_;
+    size_t write_index_;
+    std::vector<char> buffer_;
 
-    static const size_t   kInitialSize = 1024;
+    static const size_t kInitialSize = 1024;
+    static const char kCRLF[];
 };
 
 }//namespace net

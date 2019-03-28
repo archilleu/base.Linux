@@ -1,21 +1,26 @@
-
 //---------------------------------------------------------------------------
-#include "timer_task.h"
-#include "../depend/base/include/timestamp.h"
+#include "timer.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 //---------------------------------------------------------------------------
-std::atomic<int64_t> TimerTask::no_ = ATOMIC_VAR_INIT(0);
+std::atomic_uint64_t Timer::s_numCreated_(0);
 //---------------------------------------------------------------------------
-void TimerTask::Restart()
+void Timer::Restart(base::Timestamp now)
 {
-    if(0 < interval_)
-        expairation_ = base::Timestamp::Now().AddTime(interval_).Microseconds();
-
-    return ;
+    if(repeat_)
+    {
+        expiration_ = now.AddTime(interval_);
+    }
+    else
+    {
+        expiration_ = base::Timestamp::Invalid();
+    }
 }
 //---------------------------------------------------------------------------
 
 }//namespace net
+//---------------------------------------------------------------------------
+
+

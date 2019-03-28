@@ -18,14 +18,15 @@ set(HEADERS
 	buffer.h
     callback.h
     event_loop.h
-    timer_task.h
-    timer_task_id.h
-    timer_task_queue.h
     inet_address.h
     socket.h
     tcp_client.h
     tcp_server.h
     tcp_connection.h
+    timer.h
+    timer_id.h
+    timer_queue.h
+
     udp_server.h
     datagram_packet.h
     datagram_socket.h

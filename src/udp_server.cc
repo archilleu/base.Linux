@@ -4,7 +4,7 @@
 #include "udp_receiver.h"
 #include "udp_worker.h"
 #include "packet_queue.h"
-#include "net_log.h"
+#include "net_logger.h"
 #include "datagram_socket.h"
 //---------------------------------------------------------------------------
 namespace net

@@ -4,46 +4,60 @@
 //---------------------------------------------------------------------------
 #include <memory>
 #include <functional>
-#include "../depend/base/include/timestamp.h"
+#include "../thirdpart/base/include/noncopyable.h"
+#include "../thirdpart/base/include/any.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 class InetAddress;
 class EventLoop;
-class Socket;
 class Channel;
+class Socket;
 
-class Acceptor
+class Acceptor : public base::Noncopyable
 {
 public:
-    using CallbackNewConnection = std::function<void (int, const InetAddress&, uint64_t)>;
+    using NewConnectionCallback =
+        std::function<void (Socket&& client, InetAddress&&, uint64_t)>;
 
-    Acceptor(EventLoop* owner_loop, const InetAddress& inet_listen);
-    Acceptor(const Acceptor&) =delete;
-    Acceptor& operator=(const Acceptor&) =delete;
+    //附带额外的自定义数据
+    using NewConnectionDataCallback =
+        std::function<void (Socket&& client, InetAddress&&, uint64_t, const base::any&)>;
+
+    Acceptor(EventLoop* event_loop, const InetAddress& addr_listen);
     ~Acceptor();
 
-    void set_callback_new_connection(const CallbackNewConnection& callback) { callback_new_connection_ = callback; }
+public:
+    void set_new_conn_cb(const NewConnectionCallback&& cb) { new_conn_cb_ = cb; }
+    void set_new_conn_data_cb(const NewConnectionDataCallback&& cb) { new_conn_data_cb_ = cb; }
+
+    void set_config_data(const base::any& config_data) { config_data_ = config_data; }
+    const base::any& config_data() const { return config_data_; }
 
     void Listen();
 
 private:
-    int AcceptConnection(InetAddress* inet_peer);
+    int AcceptConnection(InetAddress& addr_peer);
 
     void HandleRead(uint64_t rcv_time);
 
     bool CheckConnection(int fd);
 
 private:
-    EventLoop*                  owner_loop_;
-    std::shared_ptr<Socket>     listen_sock_;
-    std::shared_ptr<Channel>    channel_listen_;
-    int                         idle_fd_;
+    EventLoop* event_loop_;
+    std::shared_ptr<Channel> listen_channel_;
+    std::shared_ptr<Socket> listen_socket_;
+    NewConnectionCallback new_conn_cb_;
+    NewConnectionDataCallback new_conn_data_cb_;
 
-    CallbackNewConnection callback_new_connection_;
+    //配置文件
+    base::any config_data_;
+
+    //fd打开过多
+    int idle_fd_;
 };
 
-}
+}//namespace net
 //---------------------------------------------------------------------------
 #endif //NET_ACCEPTOR_H_

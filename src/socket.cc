@@ -1,11 +1,23 @@
 #include "socket.h"
-#include "net_log.h"
+#include "net_logger.h"
 #include <sys/socket.h>
 #include <netinet/tcp.h>
 //---------------------------------------------------------------------------
 namespace net
 {
 
+//---------------------------------------------------------------------------
+Socket::Socket(int sockfd)
+:   fd_(sockfd)
+{
+    assert(0 < fd_);
+    return;
+}
+Socket::~Socket()
+{
+    if(0 < fd_)
+        ::close(fd_);
+}
 //---------------------------------------------------------------------------
 tcp_info Socket::GetTCPInfo() const
 {
@@ -21,22 +33,23 @@ std::string Socket::GetTCPInfoString() const
 {
     tcp_info info = GetTCPInfo();
     char buf[256];
-    snprintf(buf, sizeof(buf), "unrecovered=%u "
-                                "rto=%u ato=%u snd_mss=%u rcv_mss=%u "
-                                "lost=%u retrans=%u rtt=%u rttvar=%u "
-                                "sshthresh=%u cwnd=%u total_retrans=%u",
-                                info.tcpi_retransmits,  // Number of unrecovered [RTO] timeouts
-                                info.tcpi_rto,          // Retransmit timeout in usec
-                                info.tcpi_ato,          // Predicted tick of soft clock in usec
-                                info.tcpi_snd_mss,
-                                info.tcpi_rcv_mss,
-                                info.tcpi_lost,         // Lost packets
-                                info.tcpi_retrans,      // Retransmitted packets out
-                                info.tcpi_rtt,          // Smoothed round trip time in usec
-                                info.tcpi_rttvar,       // Medium deviation
-                                info.tcpi_snd_ssthresh,
-                                info.tcpi_snd_cwnd,
-                                info.tcpi_total_retrans);  // Total retransmits for entire connection
+    snprintf(buf, sizeof(buf), 
+            "unrecovered=%u "
+            "rto=%u ato=%u snd_mss=%u rcv_mss=%u "
+            "lost=%u retrans=%u rtt=%u rttvar=%u "
+            "sshthresh=%u cwnd=%u total_retrans=%u",
+            info.tcpi_retransmits,  // Number of unrecovered [RTO] timeouts
+            info.tcpi_rto,          // Retransmit timeout in usec
+            info.tcpi_ato,          // Predicted tick of soft clock in usec
+            info.tcpi_snd_mss,
+            info.tcpi_rcv_mss,
+            info.tcpi_lost,         // Lost packets
+            info.tcpi_retrans,      // Retransmitted packets out
+            info.tcpi_rtt,          // Smoothed round trip time in usec
+            info.tcpi_rttvar,       // Medium deviation
+            info.tcpi_snd_ssthresh,
+            info.tcpi_snd_cwnd,
+            info.tcpi_total_retrans);  // Total retransmits for entire connection
 
     return buf;
 }
@@ -87,7 +100,8 @@ void Socket::SetReusePort()
 void Socket::SetNodelay()
 {
     ///设置监听套接字选项，accept自动继承以下套接字选项
-    ///SO_DEBUG,SO_DONTROUTE,SO_KEEPALIVE,SO_LINGER,SO_OOBINLINE,SO_SNDBUF,SO_RCVBUF,SO_RCVLOWAT,SO_SNDLOWAT,TCP_NODELAY
+    ///SO_DEBUG,SO_DONTROUTE,SO_KEEPALIVE,SO_LINGER,SO_OOBINLINE,
+    //SO_SNDBUF,SO_RCVBUF,SO_RCVLOWAT,SO_SNDLOWAT,TCP_NODELAY
     int nodelay = 1;
     if(0 > setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)))
     {
@@ -118,7 +132,7 @@ void Socket::SetIPV6Only()
 void Socket::SetTimeoutRecv(int timeoutS)
 {
     struct timeval timeout;
-    timeout.tv_sec  = timeoutS;
+    timeout.tv_sec = timeoutS;
     timeout.tv_usec = 0;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)))
     {
@@ -132,7 +146,7 @@ void Socket::SetTimeoutRecv(int timeoutS)
 void Socket::SetTimeoutSend(int timeoutS)
 {
     struct timeval timeout;
-    timeout.tv_sec  = timeoutS;
+    timeout.tv_sec = timeoutS;
     timeout.tv_usec = 0;
     if(0 > setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)))
     {
@@ -167,8 +181,8 @@ void Socket::SetRecvBufferSize(int size)
 //---------------------------------------------------------------------------
 int Socket::GetSendBufferSize()
 {
-    int         val = 0;
-    socklen_t   len = sizeof(val);
+    int val = 0;
+    socklen_t len = sizeof(val);
     if(0 > getsockopt(fd_, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>(&val), &len))
     {
         NetLogger_warn("getsockopt failed errno:%d, msg:%s", errno, OSError(errno));
@@ -180,8 +194,8 @@ int Socket::GetSendBufferSize()
 //---------------------------------------------------------------------------
 int Socket::GetRecvBufferSize()
 {
-    int         val = 0;
-    socklen_t   len = sizeof(val);
+    int val = 0;
+    socklen_t len = sizeof(val);
     if(0 > getsockopt(fd_, SOL_SOCKET, SO_RCVBUF, reinterpret_cast<char*>(&val), &len))
     {
         NetLogger_warn("getsockopt failed errno:%d, msg:%s", errno, OSError(errno));
@@ -212,7 +226,7 @@ bool Socket::IsSelfConnect()
 InetAddress Socket::GetLocalAddress(int sockfd)
 {
     struct sockaddr_storage  local_address;
-    socklen_t           len = static_cast<socklen_t>(sizeof(local_address));
+    socklen_t len = static_cast<socklen_t>(sizeof(local_address));
     if(0 > ::getsockname(sockfd, reinterpret_cast<sockaddr*>(&local_address), &len))
     {
         NetLogger_warn("getsockopt failed errno:%d, msg:%s", errno, OSError(errno));
@@ -224,8 +238,8 @@ InetAddress Socket::GetLocalAddress(int sockfd)
 //---------------------------------------------------------------------------
 InetAddress Socket::GetPeerAddress(int sockfd)
 {
-    struct sockaddr_storage  peer_address;
-    socklen_t           len = static_cast<socklen_t>(sizeof(peer_address));
+    struct sockaddr_storage peer_address;
+    socklen_t len = static_cast<socklen_t>(sizeof(peer_address));
     if(0 > ::getpeername(sockfd, reinterpret_cast<sockaddr*>(&peer_address), &len))
     {
         NetLogger_warn("getsockopt failed errno:%d, msg:%s", errno, OSError(errno));
@@ -281,8 +295,8 @@ void Socket::SetKeepAlive(int sockfd, int interval)
 //---------------------------------------------------------------------------
 int Socket::GetSocketError(int sockfd)
 {
-    int         optval;
-    socklen_t   optlen = static_cast<socklen_t>(sizeof optval);
+    int optval;
+    socklen_t optlen = static_cast<socklen_t>(sizeof optval);
     if(0 > ::getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &optval, &optlen))
     {
         NetLogger_warn("getsocket failed, errno:%d, msg:%s", errno, OSError(errno));

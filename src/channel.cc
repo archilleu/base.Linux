@@ -1,31 +1,32 @@
 //---------------------------------------------------------------------------
 #include <sys/epoll.h>
+#include <sys/poll.h>
 #include <cassert>
 #include <sstream>
 #include "channel.h"
 #include "event_loop.h"
-#include "net_log.h"
+#include "net_logger.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 //---------------------------------------------------------------------------
-const int Channel::kNone        = 0;  
-const int Channel::kEventRead   = EPOLLIN | EPOLLPRI;
-const int Channel::kEventWrite  = EPOLLOUT;
+const int Channel::kNoneEvent = 0;
+const int Channel::kReadEvent = EPOLLIN | EPOLLPRI;
+const int Channel::kWriteEvent = EPOLLOUT;
 //---------------------------------------------------------------------------
-Channel::Channel(EventLoop* loop, int _fd)
-:   owner_loop_(loop),
-    fd_(_fd),
-    events_(kNone),//在TCPServer通知TCPConn对应成功建立连接前,loop都不能接收任何事件
-    revents_(0),
-    status_(1), //kNew
+Channel::Channel(EventLoop* event_loop, int fd, const char* name)
+:   event_loop_(event_loop),
+    name_(name),
+    fd_(fd),
+    events_(kNoneEvent),
+    revents_(kNoneEvent),
+    status_(1),  //kNew,在epoller里面定义
     handling_(false),
     tied_(false)
 {
-    NetLogger_info("Channel ctor, fd:%d", fd_);
-
-    assert(0 != owner_loop_);
+    NetLogger_trace("Channel ctor this(%p), fd:%d", this, fd_);
+    assert(0 != event_loop_);
     assert(0 < fd_);
 
     return;
@@ -33,109 +34,118 @@ Channel::Channel(EventLoop* loop, int _fd)
 //---------------------------------------------------------------------------
 Channel::~Channel()
 {
-    NetLogger_info("Channel dtor, fd:%d", fd_);
-
+    NetLogger_trace("channel dtor this(%p), fd:%d", this, fd_);
     assert(false == handling_);
+
     return;
 }
 //---------------------------------------------------------------------------
 void Channel::Tie(const std::shared_ptr<void>& owner)
 {
-    tie_    = owner;
-    tied_   = true;
-
-    return;
-}
-//---------------------------------------------------------------------------
-void Channel::HandleEvent(uint64_t rcv_time)
-{
-    if(true == tied_)
-    {
-        std::shared_ptr<void> guard = tie_.lock();
-        if(guard)
-        {
-            _HandleEvent(rcv_time);
-        }
-    }
-    else
-    {
-        _HandleEvent(rcv_time);
-    }
+    tie_ = owner;
+    tied_ = true;
 
     return;
 }
 //---------------------------------------------------------------------------
 void Channel::Remove()
 {
-    owner_loop_->ChannelRemove(this);
+    event_loop_->RemoveChannel(this);
     return;
 }
 //---------------------------------------------------------------------------
-std::string Channel::REventsToString()
+void Channel::HandleEvent(uint64_t rcv_time)
 {
-    return _EventsToString(revents_);
-}
-//---------------------------------------------------------------------------
-std::string Channel::EventsToString()
-{
-    return _EventsToString(events_);
-}
-//---------------------------------------------------------------------------
-void Channel::_HandleEvent(uint64_t rcv_time)
-{
-    //标记正在处理事件中
-    handling_ = true;
+    if(tied_)
+    {
+        std::shared_ptr<void> guard = tie_.lock();
+        if(guard)
+        {
+            HandleEvent_(rcv_time);
+        }
+    }
+    else
+    {
+        HandleEvent_(rcv_time);
+    }
 
-    NetLogger_trace("Handle event:fd:%d event:%s", fd_, REventsToString().c_str());
+    return;
+}
+//---------------------------------------------------------------------------
+void Channel::HandleEvent_(uint64_t rcv_time)
+{
+    NetLogger_trace("Channel(%s) handling event: fd:%d, events:%s", name_, fd_, REventsToString_().c_str());
+
+    //标记正在处理事件
+    handling_ = true;
 
     //优先处理断线情况
     if((EPOLLHUP | EPOLLRDHUP) & revents_)
     {
-        if(callback_close_)
-            callback_close_();
-
+        if(close_cb_)
+        {
+            close_cb_();
+        }
+    
         handling_ = false;
         return;
     }
 
-    //出错情况
-    if(EPOLLERR & revents_)
+    //出错
+    if(revents_ & EPOLLERR)
     {
-        if(callback_error_)
-            callback_error_();
+        if(error_cb_)
+        {
+            error_cb_();
+        }
 
         handling_ = false;
         return;
     }
 
     //可读
-    if((EPOLLIN|EPOLLPRI) & revents_)
+    if(revents_ & (EPOLLIN|EPOLLPRI))
     {
-        if(callback_read_)
-            callback_read_(rcv_time);
+        if(read_cb_)
+        {
+            read_cb_(rcv_time);
+        }
 
-        //同时可能有写操作
+        //处理可写
         //return;
     }
-    
+
     //可写
-    if(EPOLLOUT & revents_)
+    if(revents_ & EPOLLOUT)
     {
-        if(callback_write_)
-            callback_write_();
+        if(write_cb_)
+        {
+            write_cb_();
+        }
+
+        handling_ = false;
     }
 
     handling_ = false;
     return;
 }
 //---------------------------------------------------------------------------
-void Channel::UpdateEvent()
+std::string Channel::REventsToString_()
 {
-    owner_loop_->ChannelUpdate(this);
-    return;
+    return EventsToString_(revents_);
 }
 //---------------------------------------------------------------------------
-std::string Channel::_EventsToString(int ev)
+std::string Channel::EventsToString_()
+{
+    return EventsToString_(events_);
+}
+//---------------------------------------------------------------------------
+void Channel::UpdateEvent()
+{
+    event_loop_->UpdateChannel(this);
+}
+//---------------------------------------------------------------------------
+std::string Channel::EventsToString_(int ev)
 {
     std::ostringstream oss;
     oss << "<";
@@ -150,5 +160,5 @@ std::string Channel::_EventsToString(int ev)
     return oss.str();
 }
 //---------------------------------------------------------------------------
-
 }//namespace net
+//---------------------------------------------------------------------------

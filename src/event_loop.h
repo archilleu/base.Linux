@@ -2,82 +2,75 @@
 #ifndef NET_EVENT_LOOP_H_
 #define NET_EVENT_LOOP_H_
 //---------------------------------------------------------------------------
-#include <atomic>
+#include <vector>
 #include <list>
 #include <mutex>
+#include "../thirdpart/base/include/noncopyable.h"
+#include "../thirdpart/base/include/thread.h"
+#include "../thirdpart/base/include/timestamp.h"
 #include "callback.h"
-#include "timer_task_id.h"
+#include "net_logger.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 class Channel;
 class Poller;
-class TimerTaskQueue;
+class TimerId;
+class TimerQueue;
 
-class EventLoop
+class EventLoop : public base::Noncopyable
 {
 public:
-    using Task          = std::function<void (void)>;
-    using SignalFunc    = std::function<void (void)>;
+    using Task = std::function<void (void)>;
+    using SignalFunc = std::function<void (void)>;
     using BeforLoopFunc = std::function<void (void)>;
     using AfterLoopFunc = std::function<void (void)>;
 
-    enum
-    {
-        TRACE =0,
-        DEBUG,
-        INFO,
-        WARN,
-        ERROR,
-        CRITICAL,
-        OFF
-    };
-
     EventLoop();
     ~EventLoop();
-    EventLoop(const EventLoop&) =delete;
-    EventLoop& operator=(const EventLoop&) =delete;
 
-    void set_sig_int_callback(SignalFunc&& callback)     { sig_int_callback_    = std::move(callback); }
-    void set_sig_quit_callback(SignalFunc&& callback)    { sig_quit_callback_   = std::move(callback); }
-    void set_sig_usr1_callback(SignalFunc&& callback)    { sig_usr1_callback_   = std::move(callback); }
-    void set_sig_usr2_callback(SignalFunc&& callback)    { sig_usr2_callback_   = std::move(callback); }
-
-    void set_loop_befor_function(BeforLoopFunc&& callback)   { loop_befor_func_ = std::move(callback); }
-    void set_loop_after_function(AfterLoopFunc&& callback)   { loop_after_func_ = std::move(callback); }
-
-    //启动和退出
+public:
     void Loop();
     void Quit();
 
-    static void SetLogger(const std::string& path, int lv);
-    void SetAsSignalHandleEventLoop();
+    void set_sig_int_cb(SignalFunc&& cb) { sig_int_cb_ = std::move(cb); }
+    void set_sig_quit_cb(SignalFunc&& cb) { sig_quit_cb_ = std::move(cb); }
+    void set_sig_usr1_cb(SignalFunc&& cb) { sig_usr1_cb_ = std::move(cb); }
+    void set_sig_usr2_cb(SignalFunc&& cb) { sig_usr2_cb_ = std::move(cb); }
 
-    uint64_t iteration() const { return iteration_; }
+    void set_loop_befor_function(BeforLoopFunc&& cb) { loop_befor_func_ = std::move(cb); }
+    void set_loop_after_function(AfterLoopFunc&& cb) { loop_after_func_ = std::move(cb); }
 
-    void AssertInLoopThread() const;
-    bool IsInLoopThread() const;
+    void AssertInLoopThread() const
+    {
+        if(!IsInLoopThread())
+        {
+            AssertInLoopThread();
+        }
+    }
+
+    bool IsInLoopThread() const { return tid_ == base::CurrentThread::tid(); }
 
     //线程安全方法,如果调用着的线程是本EventLoop线程,则RunInLoop会立刻执行,否则排队到QueueInLoop
-    void RunInLoop  (Task&& task);
+    void RunInLoop(Task&& task);
     void QueueInLoop(Task&& task);
 
     //定时任务
-    TimerTaskId RunAt       (uint64_t when, CallbackTimerTask&& callback);
-    TimerTaskId RunAfter    (int delayS, CallbackTimerTask&& callback);
-    TimerTaskId RunInterval (int intervalS, CallbackTimerTask&& callback);
-    void        RunCancel   (TimerTaskId timer_task_id);
+    TimerId TimerAt(base::Timestamp when, TimerCallback&& cb);
+    TimerId TimerAfter(int delayS, TimerCallback&& cb);
+    TimerId TimerInterval(int intervalS, TimerCallback&& cb);
+    void TimerCancel(const TimerId& timer_id);
+
+    //处理信号，只能在主线程调用
+    void SetHandleSingnal();
 
 public:
     static EventLoop* GetEventLoopOfCurrentThread();
 
-private:
-    friend class Channel;
-    //改变监控的Channel状态,由connection通过Channel发起改变请求,Channel再通过EventLoop向poller请求改变
-    void ChannelUpdate(Channel* channel);
-    void ChannelRemove(Channel* channel);
-    bool HasChannel(Channel* channel) const;
+    //设置日志
+    static void SetLogger(const std::string& path, base::Logger::Level level,
+            base::Logger::Level flush_level);
 
 private:
     void AbortNotInLoopThread() const;
@@ -86,46 +79,55 @@ private:
     //为避免发生这样的情况,使用额外的手动事件来触发poll
     void Wakeup();
     void HandleWakeup();
+
+    //处理信号
     void HandleSignal();
 
     //处理RunInLoop和QueueInLoop的请求
     void DoPendingTasks();
 
-    //调试接口
-    void PrintActiveChannels() const;
 
 private:
-    std::atomic<bool>   looping_;
-    int                 tid_;
-    const char*         tname_;
-    int64_t             iteration_;
-    
+    //改变Channel监听状态,由connection通过Channel发起改变请求,
+    //Channel再通过EventLoop向poller请求改变
+    friend class Channel;
+    void UpdateChannel(Channel* channel);
+    void RemoveChannel(Channel* channel);
+    bool HasChannel(Channel* channel) const;
+
+private:
+    std::atomic<bool> looping_;
+    std::atomic<bool> quit_;
+    int tid_;
+    const char* tname_;
+    int64_t iteration_;
+
     //wakeup
     int wakeupfd_;
-    std::shared_ptr<Channel> channel_wakeup_;
+    std::shared_ptr<Channel> wakeup_channel_;
 
     //Task队列
-    std::list<Task>     task_list_;
-    std::mutex          mutex_;
-    std::atomic<bool>   need_wakup_;
+    std::list<Task> task_list_; //guard by mutex_
+    std::mutex mutex_;
+    std::atomic<bool> need_wakup_;
 
     std::shared_ptr<Poller> poller_;
-    std::shared_ptr<TimerTaskQueue> timer_task_queue_;
+    std::shared_ptr<TimerQueue> timer_queue_;
 
-    //signal
+    //signal 处理
     int sig_fd_;
-    SignalFunc  sig_int_callback_;
-    SignalFunc  sig_quit_callback_;
-    SignalFunc  sig_usr1_callback_;
-    SignalFunc  sig_usr2_callback_;
-    std::shared_ptr<Channel> channel_sig_;
+    SignalFunc  sig_int_cb_;
+    SignalFunc  sig_quit_cb_;
+    SignalFunc  sig_usr1_cb_;
+    SignalFunc  sig_usr2_cb_;
+    std::shared_ptr<Channel> sig_channel_;
 
     //befor after run
     BeforLoopFunc loop_befor_func_;
     AfterLoopFunc loop_after_func_;
 };
 
+
 }//namespace net
 //---------------------------------------------------------------------------
 #endif //NET_EVENT_LOOP_H_
-

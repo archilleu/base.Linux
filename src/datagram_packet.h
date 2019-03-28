@@ -4,6 +4,7 @@
 //---------------------------------------------------------------------------
 #include <cassert>
 #include <vector>
+#include "../thirdpart/base/include/memory_block.h"
 #include "inet_address.h"
 #include "callback.h"
 //---------------------------------------------------------------------------
@@ -20,14 +21,14 @@ public:
         return;
     }
 
-    DatagramPacket(const MemoryBlock& data)
+    DatagramPacket(const base::MemoryBlock& data)
     :   dat_(data),
         effective_(0)
     {
         return;
     }
 
-    DatagramPacket(const MemoryBlock&& data)
+    DatagramPacket(const base::MemoryBlock&& data)
     :   dat_(std::move(data)),
         effective_(0)
     {
@@ -82,8 +83,8 @@ public:
         return *this;
     }
 
-    const MemoryBlock&    dat()   const   { return dat_; }
-    MemoryBlock&          dat()           { return dat_; }
+    const base::MemoryBlock&    dat()   const   { return dat_; }
+    base::MemoryBlock&          dat()           { return dat_; }
 
     const InetAddress&  address     ()                          const   { return address_; }
     void                set_address (const InetAddress& addr)           { address_ = addr; }
@@ -92,7 +93,7 @@ public:
     void    set_effective   (size_t len)    { assert(len <= dat_.size()); effective_ = len; }
 
 private:
-    MemoryBlock dat_;
+    base::MemoryBlock dat_;
     size_t      effective_;
     InetAddress address_;
 };

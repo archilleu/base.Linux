@@ -2,7 +2,7 @@
 #include <cassert>
 #include "poller.h"
 #include "channel.h"
-#include "net_log.h"
+#include "net_logger.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -22,16 +22,18 @@ bool Poller::HasChannel(Channel* channel) const
     Channel* _channel = channels_[fd];
     if(nullptr == _channel)
         return false;
-    assert(((void)"channel no equal channel", _channel == channel));
 
+    assert(((void)"channel no equal channel", _channel == channel));
     return true;
 }
+
 //---------------------------------------------------------------------------
-void Poller::DumpChannel()
+void Poller::DumpChannels() const
 {
     AssertInLoopThread();
 
-    assert(((void)"current max fd >= channels_.size()", static_cast<size_t>(cur_max_fd_) < channels_.size()));
+    assert(((void)"current max fd >= channels_.size()",
+                static_cast<size_t>(cur_max_fd_) < channels_.size()));
 
     size_t count = 0;
     for(int i=0; i<=cur_max_fd_; i++)
@@ -43,7 +45,7 @@ void Poller::DumpChannel()
         count++;
     }
 
-    assert(((void)"channels num not eq num", count == channel_num_));
+    assert(((void)"channels num not eq count", count == channel_nums_));
     NetLogger_trace("has channels:%zu, current max fd:%d, egen:%zu", count, cur_max_fd_, egen_); 
 
     return;

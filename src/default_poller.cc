@@ -7,7 +7,7 @@ namespace net
 //---------------------------------------------------------------------------
 Poller* Poller::NewDefaultPoller(EventLoop* loop)
 {
-    return new EPoller(loop);
+    return new Epoller(loop);
 }
 //---------------------------------------------------------------------------
 }// namespace net

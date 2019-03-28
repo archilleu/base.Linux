@@ -2,9 +2,9 @@
 #ifndef NET_CONNECTOR_H_
 #define NET_CONNECTOR_H_
 //---------------------------------------------------------------------------
-#include <memory>
+#include <functional>
 #include "inet_address.h"
-#include "timer_task_id.h"
+#include "timer_id.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -58,7 +58,7 @@ private:
     }states_;
 
     int retry_delay_;
-    TimerTaskId timer_task_id_;
+    TimerId timer_id_;
 
 private:
     static const int kMaxRetryDelay = 30 * 1000;

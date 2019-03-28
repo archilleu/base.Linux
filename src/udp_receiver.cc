@@ -4,7 +4,7 @@
 #include "datagram_socket.h"
 #include "channel.h"
 #include "packet_queue.h"
-#include "net_log.h"
+#include "net_logger.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -32,8 +32,8 @@ UDPReceiver::UDPReceiver(EventLoop* owner_loop, DatagramSocket* sock, PacketQueu
     socket_->SetSndBufferSize(1024*256);
     socket_->SetRcvBufferSize(1024*256);
 
-    channel_->set_callback_read(std::bind(&UDPReceiver::HandleRead, this, std::placeholders::_1));
-    channel_->set_callback_error(std::bind(&UDPReceiver::HandleError, this));
+    channel_->set_read_cb(std::bind(&UDPReceiver::HandleRead, this, std::placeholders::_1));
+    channel_->set_error_cb(std::bind(&UDPReceiver::HandleError, this));
 
     return;
 }
@@ -54,7 +54,7 @@ UDPReceiver::~UDPReceiver()
 void UDPReceiver::Start()
 {
     NetLogger_info("Start...");
-    channel_->ReadEnable();
+    channel_->EnableReading();
 
     return;
 }

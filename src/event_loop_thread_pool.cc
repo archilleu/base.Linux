@@ -3,32 +3,34 @@
 #include "event_loop_thread_pool.h"
 #include "event_loop_thread.h"
 #include "event_loop.h"
-#include "net_log.h"
+#include "net_logger.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 //---------------------------------------------------------------------------
-EventLoopThreadPool::EventLoopThreadPool(EventLoop* loop_main, const std::string& pool_name)
+EventLoopThreadPool::EventLoopThreadPool(EventLoop* loop_main)
 :   loop_main_(loop_main),
-    name_(pool_name),
     running_(false),
     thread_nums_(0),
     next_(0)
 {
+    NetLogger_trace("EventLoopThreadPool(%p) ctor");
 }
 //---------------------------------------------------------------------------
 EventLoopThreadPool::~EventLoopThreadPool()
 {
-    Stop();
+    NetLogger_trace("EventLoopThreadPool(%p) dtor");
+
+    if(running_)
+        Stop();
 }
 //---------------------------------------------------------------------------
 void EventLoopThreadPool::Start()
 {
-    if(running_)
-        return;
-
     loop_main_->AssertInLoopThread();
+    assert(false == running_);
+    NetLogger_info("EventLoopTreadPool(%p) start");
 
     for(int i=0; i<thread_nums_; i++)
     {
@@ -45,21 +47,20 @@ void EventLoopThreadPool::Start()
 //---------------------------------------------------------------------------
 void EventLoopThreadPool::Stop()
 {
-    if(false == running_)
-        return;
+    loop_main_->AssertInLoopThread();
+    NetLogger_info("EventLoopTreadPool(%p) stop");
 
     for(auto iter : loop_threads_)
         iter->StopLoop();
 
-    running_    = false;
-    loop_main_  = 0;
+    running_ = false;
+    loop_main_ = 0;
     return;
 }
 //---------------------------------------------------------------------------
 EventLoop* EventLoopThreadPool::GetNextEventLoop()
 {
-    assert(running_);
-
+    assert(true == running_);
     loop_main_->AssertInLoopThread();
 
     if(true == loops_.empty())

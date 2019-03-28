@@ -5,9 +5,10 @@
 #include <cassert>
 #include <unistd.h>
 #include "inet_address.h"
+#include "../thirdpart/base/include/noncopyable.h"
 //---------------------------------------------------------------------------
 /*
- * Socket 内部维护的描述符不是由自己创建的,但是由自己销毁
+ * Socket 内部维护的描述符由外部创建,内部销毁
  */
 //---------------------------------------------------------------------------
 struct tcp_info;
@@ -15,23 +16,16 @@ struct tcp_info;
 namespace net
 {
 
-class Socket
+class Socket : public base::Noncopyable
 {
 public:
-    Socket(int sockfd)
-    :   fd_(sockfd)
+    Socket(int sockfd);
+    Socket(Socket&& other)
+    :   fd_(std::move(other.fd_))
     {
-        assert(0 < fd_);
-        return;
+        other.fd_ = -1;
     }
-
-    ~Socket()
-    {
-        if(0 < fd_)
-            ::close(fd_);
-    }
-    Socket(const Socket&) =delete;
-    Socket& operator=(const Socket&) =delete;
+    ~Socket();
 
     int fd() const { return fd_; };
 
@@ -69,13 +63,13 @@ public:
     static InetAddress GetLocalAddress(int sockfd);
     static InetAddress GetPeerAddress(int sockfd);
 
-    static void SetKeepAlive(int sockfd, int interval); //total detect disconnect time=interval*2 secs
+    //total detect disconnect time=interval*2 secs
+    static void SetKeepAlive(int sockfd, int interval);
     
     static int GetSocketError(int sockfd);
 
 private:
    int fd_;
-
 };
 
 }

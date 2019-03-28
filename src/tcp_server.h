@@ -3,32 +3,36 @@
 #define NET_TCP_SERVER_H_
 //---------------------------------------------------------------------------
 #include <vector>
+#include <atomic>
+#include "../thirdpart/base/include/noncopyable.h"
+#include "../thirdpart/base/include/any.h"
 #include "callback.h"
+#include "event_loop_thread_pool.h"
+#include "acceptor.h"
+#include "inet_address.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
 class EventLoop;
+class Socket;
 class InetAddress;
-class Acceptor;
-class EventLoopThreadPool;
 
-class TCPServer
+class TCPServer : public base::Noncopyable
 {
 public:
-    TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& listen_addr);
+    TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& addresses);
+    TCPServer(EventLoop* owner_loop, const std::vector<InetAddressData>& address_datas);
     TCPServer(EventLoop* owner_loop, short port);
-    TCPServer(const TCPServer&) =delete;
-    TCPServer& operator=(const TCPServer&) =delete;
     ~TCPServer();
 
-    void set_callback_connection        (CallbackConnection&& callback)                     { callback_connection_   = std::move(callback); }
-    void set_callback_disconnection     (CallbackDisconnection&& callback)                  { callback_disconnection_= std::move(callback); }
-    void set_callback_read              (CallbackRead&& callback)                           { callback_read_         = std::move(callback); }
-    void set_callback_write_complete    (CallbackWriteComplete&& callback)                  { callback_write_complete_ = std::move(callback); }
-    void set_callback_high_water_mark   (CallbackWriteHighWaterMark&& callback, size_t mark)
+    void set_connection_cb(ConnectionCallback&& cb) { connection_cb_ = std::move(cb); }
+    void set_disconnection_cb(DisconnectionCallback&& cb) { disconnection_cb_ = std::move(cb); }
+    void set_read_cb(ReadCallback&& cb) { read_cb_ = std::move(cb); }
+    void set_write_complete_cb(WriteCompleteCallback&& cb) { write_complete_cb_ = std::move(cb); }
+    void set_high_water_mark_cb(WriteHighWaterMarkCallback&& cb, size_t mark)
     {
-        callback_high_water_mark_ = std::move(callback);
+        high_water_mark_cb_ = std::move(cb);
         mark_ = mark;
     }
 
@@ -38,33 +42,39 @@ public:
     void Stop();
 
     //for debug
-    void DumpConnection();
+    void DumpConnections();
 
 private:
-    void OnNewConnection(int clientfd, const InetAddress& client_addr, uint64_t accept_time);
+    void OnNewConnection(Socket&& client, InetAddress&& client_addr, uint64_t accept_time);
+    void OnNewConnectionData(Socket&& client, InetAddress&& client_addr, uint64_t accept_time, const base::any& config_data);
+    //TCPConnectionPtr NewConnection(Socket&& client, InetAddress&& client_addr, uint64_t accept_time);
 
-    void OnConnectionRemove        (const TCPConnPtr& conn_ptr);
-    void OnConnectionRemoveInLoop  (const TCPConnPtr& conn_ptr);
+    void OnConnectionRemove(const TCPConnectionPtr& conn_ptr);
+    void OnConnectionRemoveInLoop(const TCPConnectionPtr& conn_ptr);
 
-    void ConnAddList(const TCPConnPtr& conn_ptr);
-    void ConnDelList(const TCPConnPtr& conn_ptr);
+    bool AddConnListItem(const TCPConnectionPtr& conn_ptr);
+    void DelConnListItem(const TCPConnectionPtr& conn_ptr);
 
 private:
-    CallbackConnection          callback_connection_;
-    CallbackDisconnection       callback_disconnection_;
-    CallbackRead                callback_read_;
-    CallbackWriteComplete       callback_write_complete_;
-    CallbackWriteHighWaterMark  callback_high_water_mark_;
-    size_t                      mark_;
+    ConnectionCallback connection_cb_;
+    DisconnectionCallback disconnection_cb_;
+    ReadCallback read_cb_;
+    WriteCompleteCallback write_complete_cb_;
+    WriteHighWaterMarkCallback high_water_mark_cb_;
+    size_t mark_;   //写缓存积压阈值
 
     EventLoop* owner_loop_;
     size_t next_connect_id_;
-    std::vector<std::shared_ptr<Acceptor>> acceptor_;
+    std::vector<std::shared_ptr<Acceptor>> acceptors_;
 
-    std::vector<TCPConnPtr> tcp_conn_list_;            
+    //vector的下标是TCPConnectionPtr的fd,方便快速定位
+    std::vector<TCPConnectionPtr> tcp_conn_list_;
     size_t tcp_conn_count_;
+    //注释理由：cur_max_fd//只是用来在退出监听通知所有的tcp_connection的哨兵指，
+    //避免遍历整个tcp_conn_list_,该方案可以替代，所以取消
+    //std::atomic<int> cur_max_fd_; //当前连接最大fd
 
-    std::shared_ptr<EventLoopThreadPool>    loop_thread_pool_;
+    EventLoopThreadPool loop_thread_pool_;
 };
 
 }//namespace net
