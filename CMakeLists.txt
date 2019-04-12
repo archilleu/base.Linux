@@ -54,5 +54,5 @@ message(STATUS "INSTALL PATH = " ${LIBRARY_OUTPUT_PATH_LIB} " and " ${LIBRARY_OU
 #add subdirectory
 #add_subdirectory(<dir>)
 add_subdirectory(src)
-add_subdirectory(test)
+#add_subdirectory(test)
 #---------------------------------------------------------------------------
