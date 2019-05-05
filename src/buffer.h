@@ -244,7 +244,7 @@ private:
     //可写内存不足时,分配内存
     void MakeSpace(size_t len)
     {
-        //如果已经读过的数据和可写的内存总和都不能够满足要写写入的大小,则重新申请足够大的内存
+        //如果已经读过的数据和可写的内存总和都不能够满足要写入的大小,则重新申请足够大的内存
         if((WritableBytes() + read_index_) < len)
         {
             assert((write_index_+len) > buffer_.size());
@@ -253,7 +253,7 @@ private:
             return;
         }
 
-        //否则移动已经读过的数据腾出可写内存
+        //够内存写入，移动已经读过的数据腾出可写内存
         size_t readable = ReadableBytes();
 //      memory areas must not overlap
 //      memcpy(Begin(), Begin() + read_index_, readable);
@@ -275,6 +275,7 @@ private:
     size_t write_index_;
     std::vector<char> buffer_;
 
+private:
     static const size_t kInitialSize = 1024;
     static const char kCRLF[];
 };

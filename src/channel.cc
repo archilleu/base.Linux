@@ -7,6 +7,8 @@
 #include "event_loop.h"
 #include "net_logger.h"
 //---------------------------------------------------------------------------
+extern int kNew;  //kNew,在epoller里面定义
+//---------------------------------------------------------------------------
 namespace net
 {
 
@@ -21,7 +23,7 @@ Channel::Channel(EventLoop* event_loop, int fd, const char* name)
     fd_(fd),
     events_(kNoneEvent),
     revents_(kNoneEvent),
-    status_(1),  //kNew,在epoller里面定义
+    status_(kNew),
     handling_(false),
     tied_(false)
 {
@@ -79,7 +81,7 @@ void Channel::HandleEvent_(uint64_t rcv_time)
     //标记正在处理事件
     handling_ = true;
 
-    //优先处理断线情况
+    //优先处理断线情况,断线了剩下的处理没有意义，直接返回
     if((EPOLLHUP | EPOLLRDHUP) & revents_)
     {
         if(close_cb_)
@@ -91,7 +93,7 @@ void Channel::HandleEvent_(uint64_t rcv_time)
         return;
     }
 
-    //出错
+    //出错,了剩下的处理没有意义，直接返回
     if(revents_ & EPOLLERR)
     {
         if(error_cb_)
@@ -111,7 +113,7 @@ void Channel::HandleEvent_(uint64_t rcv_time)
             read_cb_(rcv_time);
         }
 
-        //处理可写
+        //有可能还有可写事件
         //return;
     }
 
@@ -122,8 +124,6 @@ void Channel::HandleEvent_(uint64_t rcv_time)
         {
             write_cb_();
         }
-
-        handling_ = false;
     }
 
     handling_ = false;

@@ -21,9 +21,9 @@ using TCPConnectionWeakPtr = std::weak_ptr<TCPConnection>;
 using ConnectionCallback = std::function<void (const TCPConnectionPtr&)>;
 using DisconnectionCallback = std::function<void (const TCPConnectionPtr&)>;
 using RemoveCallback = std::function<void (const TCPConnectionPtr&)>;
-using ReadCallback = std::function<void (const TCPConnectionPtr&, Buffer&, uint64_t)>;
+using ReadCallback = std::function<void (const TCPConnectionPtr&, Buffer&/*数据*/, uint64_t/*产生时间*/)>;
 using WriteCompleteCallback = std::function<void (const TCPConnectionPtr&)>;
-using WriteHighWaterMarkCallback = std::function<void (const TCPConnectionPtr&, size_t)>;
+using WriteHighWaterMarkCallback = std::function<void (const TCPConnectionPtr&, size_t/*累计多少没发送出去的数据要触发*/)>;
 
 //timer task
 using TimerCallback = std::function<void (void)>;

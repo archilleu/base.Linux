@@ -37,24 +37,25 @@ public:
     void EnableWriting()    { events_ |= kWriteEvent; UpdateEvent(); }
     void DisableWriting()   { events_ &= ~kWriteEvent; UpdateEvent(); }
     void DisableAll()       { events_ = kNoneEvent; UpdateEvent(); }
-    void Remove();  //通知EventLoop移除channle
+
+    //移除监听事件
+    void Remove();
 
     //处理活动事件
     void HandleEvent(uint64_t rcv_time);
 
-    //是否关注写事件,用于buffer的写(如果写缓存还有,则该事件一直会被关注
-    bool IsWriting() const      { return events_ & kWriteEvent; }
-    bool IsNoneEvent() const    { return events_ == kNoneEvent; }
+    bool IsWriting() const { return events_ & kWriteEvent; }
+    bool IsNoneEvent() const { return events_ == kNoneEvent; }
 
-    const char* name() const    { return name_; }
-    int fd() const  { return fd_; }
-    int events() const  { return events_; }
-    void set_revents(int revents)   { revents_ = revents; }
+    const char* name() const { return name_; }
+    int fd() const { return fd_; }
+    int events() const { return events_; }
+    void set_revents(int revents) { revents_ = revents; }
 
-    int stauts() const  { return status_; }
+    int stauts() const { return status_; }
     void set_status(int status) { status_ = status; }
 
-    const EventLoop* OwnerLoop() const  { return event_loop_; }
+    const EventLoop* OwnerLoop() const { return event_loop_; }
 
     //调试接口
     std::string REventsToString_();
@@ -74,15 +75,20 @@ private:
     int events_;
     int revents_;
 
-    //在poll中的监听状态，kNew 在epoll中添加监听，kAdded表明已经在epoll中监听，
-    //而kDel表明禁止epoll中监听
+    //在poll中的监听状态
+    //1.kNew在epoll中添加监听
+    //2.kAdded表明已经在epoll中监听，
+    //3.kDel表明禁止epoll中监听
     int status_;
 
     bool handling_; //是否处于事件处理中（当channel析构时，应当为false）
 
-    //为防止拥有该Channel的对象析构导致自己在处理事件过程中TCPConnection析构导致
-    //Channel析构,需要增加对Channel的保护
-    bool tied_;                 //是否绑定了
+    //对方断开TCP连接，事件触发HandleEvent，回调用户提供的close_cb，
+    //在用户的回调中有可能会释放了TCPConnectionPtr的持有，导致引用计
+    //数有可能为0引发析构，这时候本身包含的Channel也会被析构，等于说
+    //HandelEvent执行一半的时候对象被析构了，程序立刻core dump了
+    //这种情况下需要增加保护
+    bool tied_;                 //绑定该Chanel
     std::weak_ptr<void> tie_;   //channel拥有者
 
     ReadEventCallback read_cb_;

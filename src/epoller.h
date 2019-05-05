@@ -15,10 +15,10 @@ public:
     Epoller(EventLoop* event_loop);
     virtual ~Epoller();
     
-    virtual uint64_t Poll(int timeoutS);
+    virtual uint64_t Poll(int timeoutS) override;
 
-    virtual void UpdateChannel(Channel* channel);
-    virtual void RemoveChannel(Channel* channel);
+    virtual void UpdateChannel(Channel* channel) override;
+    virtual void RemoveChannel(Channel* channel) override;
 
 private:
     void FillActiveChannel(int active_nums);

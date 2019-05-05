@@ -34,11 +34,13 @@ public:
     void Loop();
     void Quit();
 
+    //信号捕获
     void set_sig_int_cb(SignalFunc&& cb) { sig_int_cb_ = std::move(cb); }
     void set_sig_quit_cb(SignalFunc&& cb) { sig_quit_cb_ = std::move(cb); }
     void set_sig_usr1_cb(SignalFunc&& cb) { sig_usr1_cb_ = std::move(cb); }
     void set_sig_usr2_cb(SignalFunc&& cb) { sig_usr2_cb_ = std::move(cb); }
 
+    //开始loop前后处理函数
     void set_loop_befor_function(BeforLoopFunc&& cb) { loop_befor_func_ = std::move(cb); }
     void set_loop_after_function(AfterLoopFunc&& cb) { loop_after_func_ = std::move(cb); }
 
@@ -46,14 +48,15 @@ public:
     {
         if(!IsInLoopThread())
         {
-            AssertInLoopThread();
+            AbortNotInLoopThread();
         }
     }
 
     bool IsInLoopThread() const { return tid_ == base::CurrentThread::tid(); }
 
-    //线程安全方法,如果调用着的线程是本EventLoop线程,则RunInLoop会立刻执行,否则排队到QueueInLoop
+    //如果调用线程是本EventLoop线程,RunInLoop会立刻执行,否则调用QueueInLoop排队,线程安全方法
     void RunInLoop(Task&& task);
+    //排队调用任务
     void QueueInLoop(Task&& task);
 
     //定时任务
@@ -68,15 +71,15 @@ public:
 public:
     static EventLoop* GetEventLoopOfCurrentThread();
 
-    //设置日志
+    //设置日志参数
     static void SetLogger(const std::string& path, base::Logger::Level level,
             base::Logger::Level flush_level);
 
 private:
     void AbortNotInLoopThread() const;
 
-    //当poll没有外在事件发生时,poll阻塞返回需要最长5s,QueueInLoop和RunInLoop也因此需要5s
-    //为避免发生这样的情况,使用额外的手动事件来触发poll
+    //当poll没有外在事件发生时,poll阻塞返回需要最长等待时常,QueueInLoop和RunInLoop
+    //也因此需要等待,为避免发生这样的情况,使用额外的事件来触发poll
     void Wakeup();
     void HandleWakeup();
 
@@ -96,8 +99,8 @@ private:
     bool HasChannel(Channel* channel) const;
 
 private:
-    std::atomic<bool> looping_;
-    std::atomic<bool> quit_;
+    volatile bool looping_;
+    volatile bool quit_;
     int tid_;
     const char* tname_;
     int64_t iteration_;

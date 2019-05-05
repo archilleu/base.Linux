@@ -54,7 +54,7 @@ TCPServer::TCPServer(EventLoop* owner_loop, const std::vector<InetAddressData>& 
         acceptors_.push_back(std::make_shared<Acceptor>(owner_loop, addr_data.address));
         acceptors_.back()->set_new_conn_data_cb(std::bind(&TCPServer::OnNewConnectionData, this, 
                 _1, _2, _3, _4));
-        acceptors_.back()->set_config_data(addr_data.data);
+        acceptors_.back()->set_data(addr_data.data);
     }
 
     tcp_conn_list_.resize(kConnSize);

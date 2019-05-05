@@ -21,7 +21,7 @@ public:
     using NewConnectionCallback =
         std::function<void (Socket&& client, InetAddress&&, uint64_t)>;
 
-    //附带额外的自定义数据
+    //附带额外数据回调接口,使用set_data设置的数据
     using NewConnectionDataCallback =
         std::function<void (Socket&& client, InetAddress&&, uint64_t, const base::any&)>;
 
@@ -29,11 +29,12 @@ public:
     ~Acceptor();
 
 public:
+    //2个回调只能设置一个，不带额外数据的优先
     void set_new_conn_cb(const NewConnectionCallback&& cb) { new_conn_cb_ = cb; }
     void set_new_conn_data_cb(const NewConnectionDataCallback&& cb) { new_conn_data_cb_ = cb; }
 
-    void set_config_data(const base::any& config_data) { config_data_ = config_data; }
-    const base::any& config_data() const { return config_data_; }
+    void set_data(const base::any& data) { data_ = data; }
+    const base::any& data() const { return data_; }
 
     void Listen();
 
@@ -51,10 +52,10 @@ private:
     NewConnectionCallback new_conn_cb_;
     NewConnectionDataCallback new_conn_data_cb_;
 
-    //配置文件
-    base::any config_data_;
+    //每个链接附带的数据
+    base::any data_;
 
-    //fd打开过多
+    //占位的fd，用于fd打开过多导致链接建立失败，关闭该链接的一个占位fd
     int idle_fd_;
 };
 

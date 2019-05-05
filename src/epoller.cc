@@ -112,8 +112,8 @@ void Epoller::UpdateChannel(Channel* channel)
 
     int fd = channel->fd();
     int status = channel->stauts();
-    NetLogger_trace("fd:%d, events:%s, status:%s", fd, channel->EventsToString_().c_str(),
-            StatusToString(status));
+    NetLogger_trace("fd:%d, events:%s, status:%s",
+            fd, channel->EventsToString_().c_str(), StatusToString(status));
 
     //当前fd下标大于channels_可容纳的大小
     //考虑是否和TCPServer一样的扩容机制，目前不需要扩容
@@ -130,7 +130,7 @@ void Epoller::UpdateChannel(Channel* channel)
             //检擦是已经存在该fd，正常情况下该状态fd是不应该存在的
             if(nullptr != channels_[fd])
             {
-                assert(0);
+                assert(((void)"add fd already exists", 0));
                 NetLogger_error("channel(fd:%d) already add", fd);
                 break;
             }
@@ -155,7 +155,7 @@ void Epoller::UpdateChannel(Channel* channel)
         case kAdded:
             if(channel != channels_[fd])
             {
-                assert(0);
+                assert(((void)"fd != exists", 0));
                 NetLogger_error("channel(%p)  channels_[fd](%p), fd:%d", 
                         channel, channels_[fd], fd);
                 return;
@@ -183,7 +183,7 @@ void Epoller::UpdateChannel(Channel* channel)
         case kDel:
             if(channel != channels_[fd])
             {
-                assert(0);
+                assert(((void)"fd != exists", 0));
                 NetLogger_error("channel(%p)  channels_[fd](%p), fd:%d", 
                         channel, channels_[fd], fd);
                 return;
@@ -213,12 +213,12 @@ void Epoller::RemoveChannel(Channel* channel)
 
     int fd = channel->fd();
     int status = channel->stauts();
-    NetLogger_trace("fd:%d, events:%s, status:%s", fd, channel->EventsToString_().c_str(),
-            StatusToString(status));
+    NetLogger_trace("fd:%d, events:%s, status:%s",
+            fd, channel->EventsToString_().c_str(), StatusToString(status));
 
     if(kNew != status)
     {
-        assert(((void)"channel != channels_[fd]",channel == this->channels_[fd]));
+        assert(((void)"channel != channels_[fd]", channel == this->channels_[fd]));
 
         if(!channel->IsNoneEvent())
         {
@@ -289,7 +289,7 @@ bool Epoller::Update(int op, Channel* channel)
 
     struct epoll_event event;
     event.events = channel->events();
-    event.data.ptr  = channel;
+    event.data.ptr = channel;
     if(0 > ::epoll_ctl(efd_, op, channel->fd(), &event))
     {
         NetLogger_error("epoll_ctl error: op=%s, fd=%d, errno:%d, msg:%s", 
@@ -324,6 +324,7 @@ void Epoller::DelChannelListItem(Channel* channel)
 
     if(this->cur_max_fd_ == fd)
     {
+        //外放i的原因是Channel是最后一个有效的cannel
         int i = fd - 1;
         for(; i>0; i--)
         {

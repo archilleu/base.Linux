@@ -69,7 +69,7 @@ void Acceptor::Listen()
     if(0 > ::listen(listen_socket_->fd(), SOMAXCONN))
     {
         NetLogger_off("listen failed, errno:%d, msg:%s", errno, OSError(errno));
-        abort();
+        exit(errno);
     }
 
     listen_channel_->EnableReading();
@@ -80,16 +80,10 @@ int Acceptor::AcceptConnection(InetAddress& addr_peer)
 {
     sockaddr_storage client;
     socklen_t len = sizeof(client);
-    int client_fd = ::accept4(listen_socket_->fd(), reinterpret_cast<sockaddr*>(&client),
-            &len, SOCK_NONBLOCK|SOCK_CLOEXEC);
+    int client_fd = ::accept4(listen_socket_->fd(),
+            reinterpret_cast<sockaddr*>(&client), &len, SOCK_NONBLOCK|SOCK_CLOEXEC);
     if(0 > client_fd)
-    {
-        if(EAGAIN == errno)
-            return client_fd;
-
-        NetLogger_error("accept failed, errno:%d, msg:%s", errno, OSError(errno));
         return -1;
-    }
 
     addr_peer = InetAddress(client);
     return client_fd;
@@ -110,7 +104,7 @@ void Acceptor::HandleRead(uint64_t rcv_time)
                 continue;
             }
 
-            //如果不处理连接事件则关闭
+            //如果不想处理连接则直接关闭
             if(!new_conn_cb_ && !new_conn_data_cb_)
             {
                 ::close(client_fd);
@@ -125,7 +119,7 @@ void Acceptor::HandleRead(uint64_t rcv_time)
             }
             else
             {
-                new_conn_data_cb_(std::move(socket), std::move(addr_peer), rcv_time, config_data_);
+                new_conn_data_cb_(std::move(socket), std::move(addr_peer), rcv_time, data_);
             }
         }
         else
@@ -139,6 +133,7 @@ void Acceptor::HandleRead(uint64_t rcv_time)
                 idle_fd_ = AcceptConnection(addr_peer);
                 ::close(idle_fd_);
                 idle_fd_ = ::open("/dev/null", O_RDONLY|O_CLOEXEC);
+                NetLogger_warn("max connection, errno:%d, msg:%s", errno, OSError(errno));
             }
 
             NetLogger_error("accept failed, errno:%d, msg:%s", errno, OSError(errno));
@@ -151,7 +146,7 @@ void Acceptor::HandleRead(uint64_t rcv_time)
 //---------------------------------------------------------------------------
 bool Acceptor::CheckConnection(int fd)
 {
-    //正常情况下是可写的，如果不可写则连接有问题
+    //正常情况下是可写的，如果不可写则证明连接有问题
     struct pollfd pfd;
     pfd.fd = fd;
     pfd.events = POLLOUT;
