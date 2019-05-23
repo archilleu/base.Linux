@@ -45,13 +45,6 @@ public:
 private:
     struct sockaddr_storage address_;
 };
-
-struct InetAddressData
-{
-    net::InetAddress address;
-    base::any data;
-};
-
 //---------------------------------------------------------------------------
 inline bool operator==(const InetAddress& left, const InetAddress& right)
 {

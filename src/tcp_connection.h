@@ -24,12 +24,9 @@ public:
 
     TCPConnection(EventLoop* owner_loop, std::string&& name, Socket&& socket,
             InetAddress&& local_addr, InetAddress&& peer_addr);
-    TCPConnection(EventLoop* owner_loop, std::string&& name, Socket&& socket,
-            InetAddress&& local_addr, InetAddress&& peer_addr, const base::any& config_data);
     ~TCPConnection();
 
-    //注意:connection回调不能在回调里面发送数据
-    void set_connection_cb(const ConnectionCallback& cb) { connection_cb_ = cb; }
+    void set_connection_cb(const ConnectionCallback& cb) { connection_cb_ = cb; } //注意:connection回调不能在回调里面发送数据
     void set_disconnection_cb(const DisconnectionCallback& cb) { disconnection_cb_ = cb; }
     void set_read_cb(const ReadCallback& cb) { read_cb_ = cb; }
     void set_write_complete_cb(const WriteCompleteCallback& cb) { write_complete_cb_ = cb; }
@@ -46,14 +43,19 @@ public:
     void Initialize();
 
     //发送数据,线程安全
+    void Send(const std::string& dat);
     void Send(const char* dat, size_t len);
-    void Send(net::MemoryBlock&& dat);
+    void Send(MemoryBlock&& dat);
 
     //关闭链接
     void ShutdownWirte();
 
     //强制断线
     void ForceClose();
+
+    //链接附加自定义数据
+    void set_data(const base::any& data) { data_ = data; }
+    const base::any& data() const { return data_; }
 
 public:
     const std::string name() const { return name_; }
@@ -67,8 +69,6 @@ public:
     const Socket& socket() const { return socket_; }
 
     std::string GetTCPInfo() const;
-
-    const base::any& config_data() const { return config_data_; }
 
     void set_context(const base::any& context) { context_ = context; }
     const base::any& context() const { return context_; }
@@ -133,8 +133,8 @@ private:
     RemoveCallback remove_cb_;
     size_t overstock_size_;
 
-    //配置文件数据
-    base::any config_data_;
+    //附加数据
+    mutable base::any data_;
 
     //该连接上下文数据
     base::any context_;

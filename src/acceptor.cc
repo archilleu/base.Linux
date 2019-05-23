@@ -105,7 +105,7 @@ void Acceptor::HandleRead(uint64_t rcv_time)
             }
 
             //如果不想处理连接则直接关闭
-            if(!new_conn_cb_ && !new_conn_data_cb_)
+            if(!new_conn_cb_)
             {
                 ::close(client_fd);
                 continue;
@@ -116,10 +116,6 @@ void Acceptor::HandleRead(uint64_t rcv_time)
             if(new_conn_cb_)
             {
                 new_conn_cb_(std::move(socket), std::move(addr_peer), rcv_time);
-            }
-            else
-            {
-                new_conn_data_cb_(std::move(socket), std::move(addr_peer), rcv_time, data_);
             }
         }
         else

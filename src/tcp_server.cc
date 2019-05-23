@@ -40,29 +40,6 @@ TCPServer::TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& addr
     return;
 }
 //---------------------------------------------------------------------------
-TCPServer::TCPServer(EventLoop* owner_loop, const std::vector<InetAddressData>& addr_datas)
-:   mark_(0),
-    owner_loop_(owner_loop),
-    next_connect_id_(0),
-    tcp_conn_count_(0),
-    loop_thread_pool_(owner_loop)
-{
-    std::string msg = "ctor tcp server, listen address:";
-    for(auto& addr_data : addr_datas)
-    {
-        msg += " " + addr_data.address.IpPort();
-        acceptors_.push_back(std::make_shared<Acceptor>(owner_loop, addr_data.address));
-        acceptors_.back()->set_new_conn_data_cb(std::bind(&TCPServer::OnNewConnectionData, this, 
-                _1, _2, _3, _4));
-        acceptors_.back()->set_data(addr_data.data);
-    }
-
-    tcp_conn_list_.resize(kConnSize);
-    NetLogger_trace("%s", msg.c_str());
-
-    return;
-}
-//---------------------------------------------------------------------------
 TCPServer::TCPServer(EventLoop* owner_loop, short port)
 :   mark_(0),
     owner_loop_(owner_loop),
@@ -72,6 +49,7 @@ TCPServer::TCPServer(EventLoop* owner_loop, short port)
 {
     NetLogger_trace("ctor tcp server, listen address:localhost");
 
+    //ipv4、ipv6同时监听
     acceptors_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, true)));
     acceptors_.push_back(std::make_shared<Acceptor>(owner_loop, InetAddress(port, false)));
     tcp_conn_list_.resize(kConnSize);
@@ -104,7 +82,7 @@ void TCPServer::Start()
 
     for(auto& acceptor : acceptors_)
     {
-        //确保在owner_loop的线程监听（有可能调用线程和owner_loop线程不在同一个）
+        //确保在owner_loop线程(主线程)监听（有可能调用线程和owner_loop线程不在同一个）
         owner_loop_->RunInLoop(std::bind(&Acceptor::Listen, acceptor));
     }
 
@@ -119,19 +97,11 @@ void TCPServer::Stop()
     loop_thread_pool_.Stop();
 
     //断开所有连接
-    size_t count = 0;
     for(auto& conn : tcp_conn_list_)
     {
         if(!conn)
-        {
-            //连续32(数值大概）个连接为空则认为后面都是无效连接，因为fd系统是按最小可用分配的。
-            if(32 == count++)
-                break;
-
             continue;
-        }
 
-        count = 0;
         //客户端的连接需要在自己的线程中回调销毁
         conn->owner_loop()->RunInLoop(std::bind(&TCPConnection::ConnectionDestroy, conn));
     }
@@ -139,7 +109,7 @@ void TCPServer::Stop()
     return;
 }
 //---------------------------------------------------------------------------
-void TCPServer::DumpConnections()
+void TCPServer::DumpConnections() const
 {
     owner_loop_->AssertInLoopThread();
 
@@ -183,45 +153,11 @@ void TCPServer::OnNewConnection(Socket&& client, InetAddress&& client_addr, uint
     conn_ptr->set_write_complete_cb(write_complete_cb_);
     conn_ptr->set_high_water_mark_cb(high_water_mark_cb_, mark_);
     conn_ptr->set_remove_cb(std::bind(&TCPServer::OnConnectionRemove, this, std::placeholders::_1));
-    
-    //加入到连接list中
-    if(false == AddConnListItem(conn_ptr))
-        return;
-
-    conn_ptr->Initialize();
-    
-    //通知连接已经就绪,监听事件，在conn_ptr中通知,只有在加入到tcp_conn_list_中后才
-    //允许该连接的事件,防止在未加入list前,该连接又close掉导致list里找不到该连接
-    loop->RunInLoop(std::bind(&TCPConnection::ConnectionEstablished, conn_ptr)); 
-
-    return;
-}
-//---------------------------------------------------------------------------
-void TCPServer::OnNewConnectionData(Socket&& client, InetAddress&& client_addr, uint64_t accept_time,
-        const base::any& config_data)
-{
-    owner_loop_->AssertInLoopThread();
-
-    //获取一个event_loop
-    EventLoop* loop = loop_thread_pool_.GetNextEventLoop();
-
-    std::string new_conn_name = base::CombineString("%zu", next_connect_id_++);
-    InetAddress local_addr = Socket::GetLocalAddress(client.fd());
-
-    NetLogger_trace("accept time:%s, new connection server name:[%s], fd:%d, total[%zu]- from :%s to :%s",
-            base::Timestamp(accept_time).Datetime(true).c_str(), new_conn_name.c_str(), client.fd(),
-            tcp_conn_count_, local_addr.IpPort().c_str(), client_addr.IpPort().c_str());
-
-    TCPConnectionPtr conn_ptr = std::make_shared<TCPConnection>(loop, std::move(new_conn_name),
-            std::move(client), std::move(local_addr), std::move(client_addr), config_data);
-
-    //初始化连接
-    conn_ptr->set_connection_cb(connection_cb_);
-    conn_ptr->set_disconnection_cb(disconnection_cb_);
-    conn_ptr->set_read_cb(read_cb_);
-    conn_ptr->set_write_complete_cb(write_complete_cb_);
-    conn_ptr->set_high_water_mark_cb(high_water_mark_cb_, mark_);
-    conn_ptr->set_remove_cb(std::bind(&TCPServer::OnConnectionRemove, this, std::placeholders::_1));
+    //如果有额外的连接数据，则附加
+    if(!data_.empty())
+    {
+        conn_ptr->set_data(data_);
+    }
     
     //加入到连接list中
     if(false == AddConnListItem(conn_ptr))
@@ -266,9 +202,8 @@ void TCPServer::OnConnectionRemoveInLoop(const TCPConnectionPtr& conn_ptr)
 //---------------------------------------------------------------------------
 bool TCPServer::AddConnListItem(const TCPConnectionPtr& conn_ptr)
 {
-    //并不需要锁，因为fd是系统唯一的,如果需要扩容则需要锁
-    //if(tcp_conn_list_.size() <= static_cast<size_t>(conn_ptr->socket().fd()))
-        //tcp_conn_list_.resize(tcp_conn_list_.size()*2);
+    if(tcp_conn_list_.size() <= static_cast<size_t>(conn_ptr->socket().fd()))
+        tcp_conn_list_.resize(tcp_conn_list_.size()*2);
 
     int fd = conn_ptr->socket().fd();
     if(tcp_conn_list_.size() < static_cast<size_t>(fd))
@@ -292,7 +227,6 @@ void TCPServer::DelConnListItem(const TCPConnectionPtr& conn_ptr)
 {
     int fd = conn_ptr->socket().fd();
 
-    //并不需要锁，因为fd是系统唯一的
     if(!tcp_conn_list_[fd])
     {
         NetLogger_error("connection:%s not exist!!!", conn_ptr->name().c_str());

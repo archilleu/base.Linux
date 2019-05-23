@@ -99,9 +99,10 @@ void Socket::SetReusePort()
 //---------------------------------------------------------------------------
 void Socket::SetNodelay()
 {
-    ///设置监听套接字选项，accept自动继承以下套接字选项
-    ///SO_DEBUG,SO_DONTROUTE,SO_KEEPALIVE,SO_LINGER,SO_OOBINLINE,
-    //SO_SNDBUF,SO_RCVBUF,SO_RCVLOWAT,SO_SNDLOWAT,TCP_NODELAY
+    /*设置监听套接字选项，accept的socket自动继承以下套接字选项
+     *SO_DEBUG,SO_DONTROUTE,SO_KEEPALIVE,SO_LINGER,SO_OOBINLINE,
+     *SO_SNDBUF,SO_RCVBUF,SO_RCVLOWAT,SO_SNDLOWAT,TCP_NODELAY
+     */
     int nodelay = 1;
     if(0 > setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)))
     {

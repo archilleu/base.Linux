@@ -162,7 +162,7 @@ void EventLoop::Quit()
 {
     quit_ = true;
 
-    //wakup
+    //一般是由其它线程来执行退出操作，进行该判断只是以防万一
     if(!IsInLoopThread())
     {
         Wakeup();
@@ -194,8 +194,7 @@ void EventLoop::QueueInLoop(Task&& task)
     }
 
     //如果不是在当前线程里面，目标线程有可能没有事件在处理,需要唤醒;又或者，即使
-    //在当前线程，添加Task的在HandleEvent事件里面,或者在DoPendingTasks里面,前者不需
-    //要唤醒，后者需要
+    //在当前线程，添加Task的操作在HandleEvent事件里面,不需要唤醒，而在在DoPendingTasks里面则需要唤醒
     if(!IsInLoopThread() || need_wakup_)
     {
         Wakeup();
@@ -312,11 +311,11 @@ void EventLoop::HandleSignal()
         ssize_t rlen = read(sig_fd_, reinterpret_cast<char*>(&siginfo)+offset, len);
         if(-1 == rlen)
         {
-            if(EINTR==errno || (EAGAIN==errno))
+            if(EINTR==errno || EAGAIN==errno)
                 continue;
 
             NetLogger_error("read signal failed, errno:%d, msg:%s", errno, OSError(errno));
-                return;
+            return;
         }
 
         len -= rlen;
@@ -406,5 +405,3 @@ bool EventLoop::HasChannel(Channel* channel) const
 
 }//namespace net
 //---------------------------------------------------------------------------
-
-

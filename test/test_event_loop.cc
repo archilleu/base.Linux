@@ -2,16 +2,18 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <signal.h>
-#include "test_event_loop.h"
 #include <sys/timerfd.h>
+#include "test_inc.h"
 #include "../src/event_loop.h"
-#include "../depend/base/include/thread.h"
+#include "../thirdpart/base/include/thread.h"
 #include "../src/channel.h"
-#include "../src/timer_task.h"
-#include "../src/timer_task_queue.h"
+#include "../src/timer.h"
+#include "../src/timer_queue.h"
 //---------------------------------------------------------------------------
+namespace test
+{
+
 using namespace net;
-using namespace test;
 //---------------------------------------------------------------------------
 EventLoop* g_loop;
 //---------------------------------------------------------------------------
@@ -26,13 +28,6 @@ void ThreadEventLoop()
     g_loop->Quit();
 }
 //---------------------------------------------------------------------------
-void ThreadEventLoop2()
-{
-    EventLoop loop;
-    loop.SetAsSignalHandleEventLoop();
-    loop.Loop();
-}
-//---------------------------------------------------------------------------
 void ThreadEventLoop1()
 {
     fprintf(stderr, "event loop:%u", base::CurrentThread::tid());
@@ -42,16 +37,11 @@ void ThreadEventLoop1()
     loop.Loop();
 }
 //---------------------------------------------------------------------------
-bool TestEventLoop::DoTest()
+void ThreadEventLoop2()
 {
-    if(false == Test_Channel())     return false;
-    if(false == Test_Normal())      return false;
-    if(false == Test_Signal())      return false;
-    if(false == Test_RunInLoop())   return false;
-    if(false == Test_Timefd())      return false;
-    if(false == Test_TimerTask())   return false;
-
-    return true;
+    EventLoop loop;
+    loop.SetHandleSingnal();
+    loop.Loop();
 }
 //---------------------------------------------------------------------------
 void SigIntCallback()
@@ -363,4 +353,21 @@ bool TestEventLoop::Test_TimerTask()
 
     return true;
 }
+//---------------------------------------------------------------------------
+int main(int, char**)
+{
+    TestTitle();
+
+    TEST_ASSER(Test_Channel());
+    TEST_ASSER(Test_Normal());
+    TEST_ASSER(Test_Signal());
+    TEST_ASSER(Test_RunInLoop());
+    TEST_ASSER(Test_Timefd());
+    TEST_ASSER(Test_TimerTask());
+
+    return 0;
+}
+//---------------------------------------------------------------------------
+
+}//namespace test
 //---------------------------------------------------------------------------

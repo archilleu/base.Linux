@@ -22,7 +22,6 @@ class TCPServer : public base::Noncopyable
 {
 public:
     TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& addresses);
-    TCPServer(EventLoop* owner_loop, const std::vector<InetAddressData>& address_datas);
     TCPServer(EventLoop* owner_loop, short port);
     ~TCPServer();
 
@@ -38,16 +37,17 @@ public:
 
     void set_event_loop_nums(int nums);
 
+    void set_data(const base::any& data) { data_ = data; }
+    const base::any& data() const { return data_; }
+     
     void Start();
     void Stop();
 
     //for debug
-    void DumpConnections();
+    void DumpConnections() const;
 
 private:
     void OnNewConnection(Socket&& client, InetAddress&& client_addr, uint64_t accept_time);
-    void OnNewConnectionData(Socket&& client, InetAddress&& client_addr, uint64_t accept_time, const base::any& config_data);
-    //TCPConnectionPtr NewConnection(Socket&& client, InetAddress&& client_addr, uint64_t accept_time);
 
     void OnConnectionRemove(const TCPConnectionPtr& conn_ptr);
     void OnConnectionRemoveInLoop(const TCPConnectionPtr& conn_ptr);
@@ -62,6 +62,8 @@ private:
     WriteCompleteCallback write_complete_cb_;
     WriteHighWaterMarkCallback high_water_mark_cb_;
     size_t mark_;   //写缓存积压阈值
+
+    base::any data_;
 
     EventLoop* owner_loop_;
     size_t next_connect_id_;

@@ -30,14 +30,6 @@ TCPConnection::TCPConnection(EventLoop* ownerloop, std::string&& tcpname, Socket
     return;
 }
 //---------------------------------------------------------------------------
-TCPConnection::TCPConnection(EventLoop* owner_loop, std::string&& name, Socket&& socket,
-        InetAddress&& local_addr, InetAddress&& peer_addr, const base::any& config_data)
-:   TCPConnection(owner_loop, std::move(name), std::move(socket), std::move(local_addr), std::move(peer_addr))
-{
-    config_data_ = config_data;
-    return;
-}
-//---------------------------------------------------------------------------
 TCPConnection::~TCPConnection()
 {
     NetLogger_trace("dtor-->name:%s, fd:%d, localaddr:%s, peeraddr:%s",
@@ -74,7 +66,7 @@ void TCPConnection::Send(const char* dat, size_t len)
         //不在本线程调用,则排入本线程发送队列,该conn在EventLoop的DoPendingTask处理之前，
         //可能被conn.reset()导致conn被析构，所以不能用this指针
         owner_loop_->QueueInLoop(std::bind(&TCPConnection::SendInLoop,
-                    shared_from_this()/*this*/, net::MemoryBlock(dat, dat+len)));
+                    shared_from_this()/*this*/, MemoryBlock(dat, dat+len)));
     }
     else
     {
@@ -84,28 +76,14 @@ void TCPConnection::Send(const char* dat, size_t len)
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::Send(net::MemoryBlock&& dat)
+void TCPConnection::Send(const std::string& dat)
 {
-    if(CONNECTED == state_)
-    {
-        //如果在本线程调用,则直接发送
-        if(true == owner_loop_->IsInLoopThread())
-        {
-            _Send(dat.data(), dat.size());
-            return;
-        }
-
-        //不在本线程调用,则排入本线程发送队列,该conn在EventLoop的DoPendingTask处理之前，
-        //可能被conn.reset()导致conn被析构，所以不能用this指针
-        owner_loop_->QueueInLoop(std::bind(&TCPConnection::SendInLoop,
-                    shared_from_this()/*this*/, std::move(dat)));
-    }
-    else
-    {
-        //TCPConnection可能在其他线程强制关闭，这个时候发送请求忽略
-    }
-
-    return;
+    Send(dat.data(), dat.size());
+}
+//---------------------------------------------------------------------------
+void TCPConnection::Send(MemoryBlock&& dat)
+{
+    Send(dat.data(), dat.size());
 }
 //---------------------------------------------------------------------------
 void TCPConnection::ShutdownWirte()
@@ -197,7 +175,7 @@ void TCPConnection::_Send(const char* dat, size_t len)
     return;
 }
 //---------------------------------------------------------------------------
-void TCPConnection::SendInLoop(const net::MemoryBlock& dat)
+void TCPConnection::SendInLoop(const MemoryBlock& dat)
 {
     _Send(dat.data(), dat.size());
     return;
