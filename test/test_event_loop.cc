@@ -7,20 +7,17 @@
 #include "../src/event_loop.h"
 #include "../thirdpart/base/include/thread.h"
 #include "../src/channel.h"
-#include "../src/timer.h"
+#include "../src/timer_id.h"
 #include "../src/timer_queue.h"
 //---------------------------------------------------------------------------
-namespace test
-{
-
 using namespace net;
 //---------------------------------------------------------------------------
 EventLoop* g_loop;
 //---------------------------------------------------------------------------
-static bool rcv_sig_usr1_;
-static bool rcv_sig_usr2_;
-static bool rcv_sig_int_;
-static bool rcv_sig_quit_;
+static bool g_rcv_sig_usr1;
+static bool g_rcv_sig_usr2;
+static bool g_rcv_sig_int;
+static bool g_rcv_sig_quit_;
 //---------------------------------------------------------------------------
 void ThreadEventLoop()
 {
@@ -46,58 +43,53 @@ void ThreadEventLoop2()
 //---------------------------------------------------------------------------
 void SigIntCallback()
 {
-    rcv_sig_int_ = true;
+    g_rcv_sig_int = true;
     kill(getpid(), SIGQUIT);
     std::cout << "recv int sig" << std::endl;
 }
 //---------------------------------------------------------------------------
 void SigQuitCallback()
 {
-    rcv_sig_quit_ = true;
+    g_rcv_sig_quit_ = true;
     std::cout << "recv quit sig" << std::endl;
     g_loop->Quit();
 }
 //---------------------------------------------------------------------------
 void SigUsr1Callback()
 {
-    rcv_sig_usr1_ = true;
+    g_rcv_sig_usr1 = true;
     kill(getpid(), SIGUSR2);
     std::cout << "recv usr1 sig" << std::endl;
 }
 //---------------------------------------------------------------------------
 void SigUsr2Callback()
 {
-    rcv_sig_usr2_ = true;
+    g_rcv_sig_usr2 = true;
     kill(getpid(), SIGINT);
     std::cout << "recv usr2 sig" << std::endl;
 }
 //---------------------------------------------------------------------------
-bool TestEventLoop::Test_Channel()
+bool Test_Channel()
 {
     int timefd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK|TFD_CLOEXEC);
     EventLoop loop;
     Channel channel(&loop, timefd);
     channel.DisableAll();
-    channel.DisableAll();
-    channel.ReadDisable();
-    channel.ReadDisable();
-    channel.WriteDisable();
-    channel.WriteDisable();
-    MY_ASSERT(channel.IsNoneEvent());
+    channel.EnableReading();
+    channel.DisableReading();
+    channel.DisableWriting();
+    TEST_ASSERT(channel.IsNoneEvent());
 
-    channel.ReadEnable();
-    channel.ReadEnable();
-    channel.WriteEnable();
-    channel.WriteEnable();
-    MY_ASSERT(!channel.IsNoneEvent());
-    channel.ReadDisable();
-    channel.ReadDisable();
-    channel.WriteDisable();
+    channel.EnableReading();
+    channel.EnableWriting();
+    TEST_ASSERT(!channel.IsNoneEvent());
+    channel.DisableReading();
+    channel.DisableWriting();
     channel.DisableAll();
-    channel.WriteDisable();
-    channel.ReadEnable();
+    channel.DisableWriting();
+    channel.EnableReading();
     channel.DisableAll();
-    MY_ASSERT(channel.IsNoneEvent());
+    TEST_ASSERT(channel.IsNoneEvent());
 
     channel.Remove();
     channel.Remove();
@@ -105,9 +97,9 @@ bool TestEventLoop::Test_Channel()
     return true;
 }
 //---------------------------------------------------------------------------
-bool TestEventLoop::Test_Normal()
+bool Test_Normal()
 {
-    //非法的,成功dump
+    //非法的,成功dump(要在主线程启动)
     {
     //EventLoop loop;
     //g_loop = &loop;
@@ -116,7 +108,7 @@ bool TestEventLoop::Test_Normal()
     //t.Join();
     }
 
-    //非法的设置处理信号线程,成功dump
+    //非法的设置处理信号线程,成功dump(只能在主线程设置信号处理)
     {
     //base::Thread t(ThreadEventLoop2);
     //t.Start();
@@ -148,20 +140,20 @@ void SigTimeout(base::Timestamp, int  timerfd)
     kill(getpid(), SIGUSR1);
 }
 //---------------------------------------------------------------------------
-bool TestEventLoop::Test_Signal()
+bool Test_Signal()
 {
     fprintf(stderr, "====>event loop:%u\n", base::CurrentThread::tid());
 
     EventLoop loop;
-    loop.set_sig_int_callback(SigIntCallback);
-    loop.set_sig_quit_callback(SigQuitCallback);
-    loop.set_sig_usr1_callback(SigUsr1Callback);
-    loop.set_sig_usr2_callback(SigUsr2Callback);
-    loop.SetAsSignalHandleEventLoop();
+    loop.set_sig_int_cb(SigIntCallback);
+    loop.set_sig_quit_cb(SigQuitCallback);
+    loop.set_sig_usr1_cb(SigUsr1Callback);
+    loop.set_sig_usr2_cb(SigUsr2Callback);
+    loop.SetHandleSingnal();
 
     //添加多个Channel
     const int size = 8;
-    int     fds[size];
+    int fds[size];
     Channel* cl[size];
     for(int i=0; i<size; i++)
     {
@@ -170,8 +162,8 @@ bool TestEventLoop::Test_Signal()
             assert(0);
 
         cl[i] = new Channel(&loop, fds[i]);
-        cl[i]->set_callback_read(std::bind(SigTimeout, base::Timestamp(5), fds[i]));
-        cl[i]->ReadEnable();
+        cl[i]->set_read_cb(std::bind(SigTimeout, base::Timestamp(5), fds[i]));
+        cl[i]->EnableReading();
 
         struct itimerspec howlog;
         bzero(&howlog, sizeof(howlog));
@@ -182,14 +174,14 @@ bool TestEventLoop::Test_Signal()
     }
     g_loop = &loop;
     loop.Loop();
-    assert(true == rcv_sig_int_);
-    assert(true == rcv_sig_usr1_);
-    assert(true == rcv_sig_usr2_);
-    assert(true == rcv_sig_quit_);
+    assert(true == g_rcv_sig_int);
+    assert(true == g_rcv_sig_usr1);
+    assert(true == g_rcv_sig_usr2);
+    assert(true == g_rcv_sig_quit_);
     for(int i=0; i<size; i++)
     {
         std::cout << "fd:" << cl[i]->fd() << std::endl;
-        cl[i]->ReadDisable();
+        cl[i]->DisableReading();
         cl[i]->Remove();
         delete cl[i];
         ::close(fds[i]);
@@ -209,7 +201,8 @@ void QueueInLoop()
     std::cout << "tid:" << base::CurrentThread::tid() 
         << " QueueInLoop" << std::endl;
 }
-bool TestEventLoop::Test_RunInLoop()
+//---------------------------------------------------------------------------
+bool Test_RunInLoop()
 {
     std::cout << "=====>In current thread" << std::endl;
     EventLoop loop;
@@ -236,15 +229,15 @@ void Timeout(base::Timestamp rcv_time, int timerfd)
     g_loop->Quit();
 }
 //---------------------------------------------------------------------------
-bool TestEventLoop::Test_Timefd()
+bool Test_Timefd()
 {
     EventLoop loop;
     g_loop = &loop;
 
     int timefd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK|TFD_CLOEXEC);
     Channel channel(&loop, timefd);
-    channel.set_callback_read(std::bind(Timeout, base::Timestamp(5), timefd));
-    channel.ReadEnable();
+    channel.set_read_cb(std::bind(Timeout, base::Timestamp(5), timefd));
+    channel.EnableReading();
 
     struct itimerspec howlog;
     bzero(&howlog, sizeof(howlog));
@@ -255,7 +248,7 @@ bool TestEventLoop::Test_Timefd()
 
     loop.Loop();
     channel.DisableAll();
-    channel.ReadDisable();
+    channel.DisableReading();
     channel.Remove();
     ::close(timefd);
 
@@ -263,24 +256,24 @@ bool TestEventLoop::Test_Timefd()
 }
 //---------------------------------------------------------------------------
 bool g_flag = false;
-int cat = 0;
-int rat = 0;
-int r = 0;
 //---------------------------------------------------------------------------
 void OnTimerTaskRunAt()
 {
+    static int cat = 0;
     printf("======================>OnTimerTaskRunAt:%d\n", cat++);
     g_flag = true;
 }
 //---------------------------------------------------------------------------
 void OnTimerTaskRunAter()
 {
+    static int rat = 0;
     printf("===============================>OnTimerTaskRunAfter:%d\n", rat++);
     g_flag = true;
 }
 //---------------------------------------------------------------------------
 void OnTimerTaskRunInterval()
 {
+    static int r = 0;
     printf("==================================>OnTimerTaskRunInterval:%d\n", r++);
 }
 //---------------------------------------------------------------------------
@@ -300,45 +293,34 @@ void OnTimerTask()
 {
     g_flag = false;
     printf("thread start.......\n");
-    uint64_t when = base::Timestamp::Now().AddTime(2).Microseconds();
-    g_loop->RunAt(when, OnTimerTaskRunAt);
-    g_loop->RunAt(when, OnTimerTaskRunAt);
-    g_loop->RunAt(when, OnTimerTaskRunAt);
-    g_loop->RunAt(when, OnTimerTaskRunAt);
-    g_loop->RunAt(when, OnTimerTaskRunAt);
-    g_loop->RunAt(when, OnTimerTaskRunAt);
-    g_loop->RunAt(when, OnTimerTaskRunAt);
-    g_loop->RunAt(when, OnTimerTaskRunAt);
-    g_loop->RunAt(when, OnTimerTaskRunAt);
-    g_loop->RunAt(when, OnTimerTaskRunAt);
+    base::Timestamp when = base::Timestamp::Now().AddTime(2);
+    for(int i=0; i<10; i++)
+    {
+        g_loop->TimerAt(when, OnTimerTaskRunAt);
+    }
 
     printf("sleep 5s.......\n");
     sleep(5);
     assert(true == g_flag);
 
     g_flag = false;
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
-    g_loop->RunAfter(2, OnTimerTaskRunAter);
+    for(int i=0; i<10; i++)
+    {
+        g_loop->TimerAfter(2, OnTimerTaskRunAter);
+    }
     sleep(5);
     assert(true == g_flag);
     
-    TimerTaskId tid1 = g_loop->RunInterval(1, OnTimerTaskRunInterval);
-    TimerTaskId tid2 = g_loop->RunInterval(1, OnTimerTaskRunInterval);
+    TimerId tid1 = g_loop->TimerInterval(1, OnTimerTaskRunInterval);
+    TimerId tid2 = g_loop->TimerInterval(1, OnTimerTaskRunInterval);
     sleep(10);
-    g_loop->RunCancel(tid1);
+    g_loop->TimerCancel(tid1);
+    g_loop->TimerCancel(tid2);
 
     g_loop->Quit();
 }
 //---------------------------------------------------------------------------
-bool TestEventLoop::Test_TimerTask()
+bool Test_TimerTask()
 {
     EventLoop loop;
     g_loop = &loop;
@@ -356,18 +338,15 @@ bool TestEventLoop::Test_TimerTask()
 //---------------------------------------------------------------------------
 int main(int, char**)
 {
-    TestTitle();
+    base::test::TestTitle();
 
-    TEST_ASSER(Test_Channel());
-    TEST_ASSER(Test_Normal());
-    TEST_ASSER(Test_Signal());
-    TEST_ASSER(Test_RunInLoop());
-    TEST_ASSER(Test_Timefd());
-    TEST_ASSER(Test_TimerTask());
+    TEST_ASSERT(Test_Channel());
+    TEST_ASSERT(Test_Normal());
+    TEST_ASSERT(Test_Signal());
+    TEST_ASSERT(Test_RunInLoop());
+    TEST_ASSERT(Test_Timefd());
+    TEST_ASSERT(Test_TimerTask());
 
     return 0;
 }
-//---------------------------------------------------------------------------
-
-}//namespace test
 //---------------------------------------------------------------------------

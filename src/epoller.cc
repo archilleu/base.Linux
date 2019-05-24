@@ -9,6 +9,7 @@
 //---------------------------------------------------------------------------
 namespace
 {
+
 const int kNew = 1;
 const int kAdded = 2;
 const int kDel = 3;

@@ -7,8 +7,6 @@
 #include "event_loop.h"
 #include "net_logger.h"
 //---------------------------------------------------------------------------
-extern int kNew;  //kNew,在epoller里面定义
-//---------------------------------------------------------------------------
 namespace net
 {
 
@@ -23,7 +21,7 @@ Channel::Channel(EventLoop* event_loop, int fd, const char* name)
     fd_(fd),
     events_(kNoneEvent),
     revents_(kNoneEvent),
-    status_(kNew),
+    status_(1), //kNew==1,在epoller里面定义
     handling_(false),
     tied_(false)
 {

@@ -1,66 +1,60 @@
 //---------------------------------------------------------------------------
 #include <unistd.h>
-#include "test_acceptor.h"
+#include "test_inc.h"
 #include "../src/acceptor.h"
+#include "../src/socket.h"
 #include "../src/event_loop.h"
 #include "../src/event_loop_thread.h"
 #include "../src/inet_address.h"
-#include "../depend/base/include/thread.h"
+#include "../thirdpart/base/include/thread.h"
 //---------------------------------------------------------------------------
 using namespace net;
-using namespace net::test;
 //---------------------------------------------------------------------------
-bool TestAcceptor::DoTest()
+bool Test_Illgal()
 {
-    if(false == Test_Illgal())  return false;
-    if(false == Test_Normal())  return false;
-
-    return true;
-}
-//---------------------------------------------------------------------------
-bool TestAcceptor::Test_Illgal()
-{
-//    EventLoop loop;
-//    {
-//    InetAddress listen_addr;
-//    Acceptor    acceptor(0, listen_addr);
-//    }
+    EventLoop loop;
+    {
+    //InetAddress listen_addr;
+    //Acceptor    acceptor(0, listen_addr);
+    }
 
     return true;
 }
 //---------------------------------------------------------------------------
 static EventLoop* g_loop = 0;
 //---------------------------------------------------------------------------
-void NewConn(int fd, const InetAddress& addr, uint64_t rcv_time)
+void NewConn(Socket socket, const InetAddress& addr, uint64_t rcv_time)
 {
-    std::cout << "=====================>rcv: " << base::Timestamp(rcv_time).Datetime(true) <<  "fd:" << fd << " addr:"
-        << addr.IPPort() << std::endl;
+    std::cout << "=====================>time: " << base::Timestamp(rcv_time).Datetime(true) <<  " fd:" << socket.fd() << " addr:"
+        << addr.IpPort() << std::endl;
+    sleep(1);
 }
 //---------------------------------------------------------------------------
-bool TestAcceptor::Test_Normal()
+void ClientConnect();
+//---------------------------------------------------------------------------
+bool Test_Normal()
 {
-    EventLoop       loop;
-    //ipv4
-    InetAddress     listen_addr(9999, true);
-    InetAddress     listen_addr6(9999, false);
-    Acceptor        acceptor(&loop, listen_addr);
-    Acceptor        acceptor6(&loop, listen_addr6);
-    acceptor.set_callback_new_connection(NewConn);
-    acceptor6.set_callback_new_connection(NewConn);
+    EventLoop loop;
+    InetAddress listen_addr(9999, true); //ipv4
+    InetAddress listen_addr6(9999, false);
+    Acceptor acceptor(&loop, listen_addr);
+    Acceptor acceptor6(&loop, listen_addr6);
+    acceptor.set_new_conn_cb(NewConn);
+    acceptor6.set_new_conn_cb(NewConn);
     acceptor.Listen();
     acceptor6.Listen();
 
     g_loop = &loop;
 
     //启动客户端请求连接线程
-    base::Thread t(std::bind(&TestAcceptor::ClientConnect, this));
+    base::Thread t(ClientConnect);
     t.Start();
 
     loop.Loop();
     return true;
 }
 //---------------------------------------------------------------------------
-void TestAcceptor::ClientConnect()
+void ClientConnect()
 {
     //ipv4
     {
@@ -100,7 +94,17 @@ void TestAcceptor::ClientConnect()
     ::close(clientfd);
 
     }
+
+    sleep(2);
     g_loop->Quit();
     return;
+}
+//---------------------------------------------------------------------------
+int main()
+{
+    TEST_ASSERT(Test_Illgal());
+    TEST_ASSERT(Test_Normal());
+
+    return 1;
 }
 //---------------------------------------------------------------------------
