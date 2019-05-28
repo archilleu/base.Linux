@@ -1,39 +1,30 @@
 //---------------------------------------------------------------------------
-#include <unistd.h>
-#include "test_buffer.h"
+#include "test_inc.h"
 #include "../src/buffer.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "../depend/base/include/function.h"
-#include "../depend/base/include/timestamp.h"
-#include "../depend/base/include/memory_block.h"
+#include "../thirdpart/base/include/function.h"
+#include "../thirdpart/base/include/timestamp.h"
+#include "../thirdpart/base/include/memory_block.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;
 //---------------------------------------------------------------------------
-bool TestBuffer::DoTest()
-{
-    if(false == Test_Illegal()) return false;
-    if(false == Test_Normal())  return false;
-
-    return true;
-}
-//---------------------------------------------------------------------------
-bool TestBuffer::Test_Illegal()
+bool Test_Illegal()
 {
     Buffer net_buf;
 
-    int err_no;
-    MY_ASSERT(0 > net_buf.ReadFd(9527, &err_no));
+    //int err_no;
+    //TEST_ASSERT(0 > net_buf.ReadFd(9527, &err_no));
     
-//    net_buf.PeekInt8();
-//    net_buf.ReadInt8();
+    //net_buf.PeekInt8();
+    //net_buf.ReadInt8();
 
     return true;
 }
 //---------------------------------------------------------------------------
-bool TestBuffer::Test_Normal()
+bool Test_Normal()
 {
     Buffer buffer;
 
@@ -143,7 +134,7 @@ bool TestBuffer::Test_Normal()
     {
     Buffer tcp_buf;
 
-    std::string path = base::RunPathFileName("./file/test");
+    std::string path = base::RunPathFileName("../../test/test_buffer.cc");
     base::MemoryBlock mb;
     base::LoadFile(path, &mb);
     int fd = ::open(path.c_str(), O_RDONLY);
@@ -157,10 +148,20 @@ bool TestBuffer::Test_Normal()
     }
     close(fd);
 
-    assert(mb.len() == tcp_buf.ReadableBytes());
-    assert(0 == memcmp(mb.dat(), tcp_buf.Peek(), tcp_buf.ReadableBytes()));
+    assert(mb.size() == tcp_buf.ReadableBytes());
+    assert(0 == memcmp(mb.data(), tcp_buf.Peek(), tcp_buf.ReadableBytes()));
     }
 
     return true;
+}
+//---------------------------------------------------------------------------
+int main()
+{
+    TestTitle();
+
+    TEST_ASSERT(Test_Illegal());
+    TEST_ASSERT(Test_Normal());
+
+    return 0;
 }
 //---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-#include "test_udp_receiver.h"
+#include "test_inc.h"
 #include "../src/udp_receiver.h"
 #include "../src/event_loop.h"
 #include "../src/callback.h"
@@ -12,15 +12,8 @@ using namespace net::test;
 //---------------------------------------------------------------------------
 namespace 
 {
-    const char* RCV_IP  = "127.0.0.1";
-    short       RCV_PORT= 9999;
-}
-//---------------------------------------------------------------------------
-bool TestUDPReceiver::DoTest()
-{
-    if(false == Test_Normal())  return false;
-
-    return true;
+    short RCV_PORT= 9999;
+    const char* RCV_IP = "127.0.0.1";
 }
 //---------------------------------------------------------------------------
 void OnError()
@@ -29,12 +22,12 @@ void OnError()
     return;
 }
 //---------------------------------------------------------------------------
-bool TestUDPReceiver::Test_Normal()
+bool Test_Normal()
 {
-    EventLoop       loop;
-    InetAddress     rcv_addr(RCV_IP, RCV_PORT);
-    DatagramSocket  sock(rcv_addr);
-    PacketQueue     pkt_queue;
+    EventLoop loop;
+    InetAddress rcv_addr(RCV_IP, RCV_PORT);
+    DatagramSocket sock(rcv_addr);
+    PacketQueue pkt_queue;
     UDPReceiver receiver(&loop, &sock, &pkt_queue);
     
     receiver.set_callback_error(OnError);
@@ -43,5 +36,14 @@ bool TestUDPReceiver::Test_Normal()
     receiver.Stop();
 
     return true;
+}
+//---------------------------------------------------------------------------
+int main()
+{
+    TestTitle();
+
+    TEST_ASSERT(Test_Normal());
+
+    return 0;
 }
 //---------------------------------------------------------------------------

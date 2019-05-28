@@ -1,32 +1,16 @@
 //---------------------------------------------------------------------------
-#include "test_socket.h"
+#include "test_inc.h"
 #include "../src/socket.h"
 #include "../src/inet_address.h"
 //---------------------------------------------------------------------------
 using namespace net;
 using namespace net::test;
 //---------------------------------------------------------------------------
-TestSocket::TestSocket()
-{
-    fd_ = ::socket(AF_INET, SOCK_STREAM, 0);
-    return;
-}
+int fd = ::socket(AF_INET, SOCK_STREAM, 0);
 //---------------------------------------------------------------------------
-TestSocket::~TestSocket()
+bool Test_Normal()
 {
-    ::close(fd_);
-}
-//---------------------------------------------------------------------------
-bool TestSocket::DoTest()
-{
-    if(false == Test_Normal())  return false;
-
-    return true;
-}
-//---------------------------------------------------------------------------
-bool TestSocket::Test_Normal()
-{
-    Socket sock(fd_);
+    Socket sock(fd);
     printf("socket fd:%d\n", sock.fd());
 
     int slen = sock.GetSendBufferSize();
@@ -41,15 +25,15 @@ bool TestSocket::Test_Normal()
     rlen = sock.GetRecvBufferSize();
     printf("socket send size:%d recv size:%d\n", slen, rlen);
 
-    printf("local addr:%s perr addr:\n", sock.GetLocalAddress().IPPort().c_str()); 
+    printf("local addr:%s perr addr:\n", sock.GetLocalAddress().IpPort().c_str()); 
 
     sock.Bind(InetAddress("127.0.0.1", 9999));
-    printf("local addr:%s perr addr:\n", sock.GetLocalAddress().IPPort().c_str());
+    printf("local addr:%s perr addr:\n", sock.GetLocalAddress().IpPort().c_str());
 
     sock.SetKeepAlive(60);
     int val = 0;                                                                                                                                                              
     socklen_t   len = sizeof(val);
-    if(0 > getsockopt(fd_, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&val), &len))
+    if(0 > getsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&val), &len))
     {
         assert(0);
         return false;
@@ -62,5 +46,12 @@ bool TestSocket::Test_Normal()
     std::string info = sock.GetTCPInfoString();
     std::cout << "tcp info:" << info << std::endl;
     return true;
+}
+//---------------------------------------------------------------------------
+int main()
+{
+    TEST_ASSERT(Test_Normal());
+
+    return 0;
 }
 //---------------------------------------------------------------------------

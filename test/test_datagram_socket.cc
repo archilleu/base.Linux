@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-#include "test_datagram_socket.h"
+#include "test_inc.h"
 #include "../src/datagram_socket.h"
 //---------------------------------------------------------------------------
 using namespace net;
@@ -13,23 +13,14 @@ namespace
     const short cli_port= 10000;
 }
 //---------------------------------------------------------------------------
-bool TestDatagramSocket::DoTest()
-{
-    if(false == Test_Anonym())  return false;
-    if(false == Test_Named())   return false;
-    if(false == Test_Normal())  return false;
-
-    return true;
-}
-//---------------------------------------------------------------------------
-bool TestDatagramSocket::Test_Anonym()
+bool Test_Anonym()
 {
     DatagramSocket ds;
-    MY_ASSERT(false == ds.IsBind());
-    MY_ASSERT(false == ds.IsConnect());
+    TEST_ASSERT(false == ds.IsBind());
+    TEST_ASSERT(false == ds.IsConnect());
 
-    MY_ASSERT(InetAddress::INVALID_ADDR == ds.server_addr());
-    std::cout << "local:" << ds.local_addr().IPPort() << std::endl;
+    TEST_ASSERT(InetAddress::INVALID_ADDR == ds.server_addr());
+    std::cout << "local:" << ds.local_addr().IpPort() << std::endl;
     std::cout << "is broadcast " << ds.IsBroadcast() << std::endl;
 
     std::cout << "rcv buf size: " << ds.GetRcvBufferSize() << "snd buf size:" << ds.GetSndBufferSize() << std::endl;
@@ -40,17 +31,17 @@ bool TestDatagramSocket::Test_Anonym()
     return true;
 }
 //---------------------------------------------------------------------------
-bool TestDatagramSocket::Test_Named()
+bool Test_Named()
 {
     {
     DatagramSocket ds(cli_port);
     ds.SetReuseAddress();
 
-    MY_ASSERT(true == ds.IsBind());
-    MY_ASSERT(false == ds.IsConnect());
+    TEST_ASSERT(true == ds.IsBind());
+    TEST_ASSERT(false == ds.IsConnect());
 
-    MY_ASSERT(InetAddress::INVALID_ADDR == ds.server_addr());
-    std::cout << "local:" << ds.local_addr().IPPort() << std::endl;
+    TEST_ASSERT(InetAddress::INVALID_ADDR == ds.server_addr());
+    std::cout << "local:" << ds.local_addr().IpPort() << std::endl;
     std::cout << "is broadcast " << ds.IsBroadcast() << std::endl;
 
     std::cout << "rcv buf size: " << ds.GetRcvBufferSize() << "snd buf size:" << ds.GetSndBufferSize() << std::endl;
@@ -63,11 +54,11 @@ bool TestDatagramSocket::Test_Named()
     DatagramSocket ds(InetAddress(cli_ip, cli_port));
     ds.SetReuseAddress();
 
-    MY_ASSERT(true == ds.IsBind());
-    MY_ASSERT(false == ds.IsConnect());
+    TEST_ASSERT(true == ds.IsBind());
+    TEST_ASSERT(false == ds.IsConnect());
 
-    MY_ASSERT(InetAddress::INVALID_ADDR == ds.server_addr());
-    std::cout << "local:" << ds.local_addr().IPPort() << std::endl;
+    TEST_ASSERT(InetAddress::INVALID_ADDR == ds.server_addr());
+    std::cout << "local:" << ds.local_addr().IpPort() << std::endl;
     std::cout << "is broadcast " << ds.IsBroadcast() << std::endl;
 
     std::cout << "rcv buf size: " << ds.GetRcvBufferSize() << "snd buf size:" << ds.GetSndBufferSize() << std::endl;
@@ -79,7 +70,7 @@ bool TestDatagramSocket::Test_Named()
     return true;
 }
 //---------------------------------------------------------------------------
-bool TestDatagramSocket::Test_Normal()
+bool Test_Normal()
 {
     //没有connect
     {
@@ -92,14 +83,14 @@ bool TestDatagramSocket::Test_Normal()
 
         ds.Send(pkt);
         DatagramPacket pkt_rcv = ds.Receive(65536);
-        MY_ASSERT(0 == memcmp(pkt_rcv.dat().data(), pkt.dat().data(), pkt.effective()));
+        TEST_ASSERT(0 == memcmp(pkt_rcv.dat().data(), pkt.dat().data(), pkt.effective()));
     }
     }
 
     {
     DatagramSocket ds;
     ds.Connect(InetAddress(svr_ip, svr_port));
-    MY_ASSERT(true == ds.IsConnect());
+    TEST_ASSERT(true == ds.IsConnect());
     for(uint64_t i=0; i<1024; i++)
     {
         DatagramPacket pkt(rand()%65536);
@@ -108,7 +99,7 @@ bool TestDatagramSocket::Test_Normal()
 
         ds.Send(pkt);
         DatagramPacket pkt_rcv = ds.Receive(65536);
-        MY_ASSERT(0 == memcmp(pkt_rcv.dat().data(), pkt.dat().data(), pkt.effective()));
+        TEST_ASSERT(0 == memcmp(pkt_rcv.dat().data(), pkt.dat().data(), pkt.effective()));
     }
     }
 
@@ -116,9 +107,9 @@ bool TestDatagramSocket::Test_Normal()
     DatagramSocket ds;
     ds.Bind(InetAddress(cli_ip, cli_port));
     ds.Connect(InetAddress(svr_ip, svr_port));
-    MY_ASSERT(true == ds.IsBind());
-    MY_ASSERT(true == ds.IsConnect());
-    MY_ASSERT(InetAddress(cli_ip, cli_port) == ds.local_addr());
+    TEST_ASSERT(true == ds.IsBind());
+    TEST_ASSERT(true == ds.IsConnect());
+    TEST_ASSERT(InetAddress(cli_ip, cli_port) == ds.local_addr());
     for(uint64_t i=0; i<1024; i++)
     {
         DatagramPacket pkt(rand()%65536);
@@ -127,9 +118,18 @@ bool TestDatagramSocket::Test_Normal()
 
         ds.Send(pkt);
         DatagramPacket pkt_rcv = ds.Receive(65536);
-        MY_ASSERT(0 == memcmp(pkt_rcv.dat().data(), pkt.dat().data(), pkt.effective()));
+        TEST_ASSERT(0 == memcmp(pkt_rcv.dat().data(), pkt.dat().data(), pkt.effective()));
     }
     }
     return true;
+}
+//---------------------------------------------------------------------------
+int main()
+{
+    TEST_ASSERT(Test_Anonym());
+    TEST_ASSERT(Test_Named());
+    TEST_ASSERT(Test_Normal());
+
+    return 0;
 }
 //---------------------------------------------------------------------------

@@ -13,8 +13,8 @@ import os
 HOST = "0.0.0.0"
 PORT = 9999
 
-TIMES = 1
-#TIMES = 100000
+#TIMES = 1
+TIMES = 100000
 REPLY = 1
 NOTIFY = 2
 
@@ -181,4 +181,4 @@ if __name__ == "__main__":
     for line in out.splitlines():
         if 'net_test' in line.decode('utf-8'):
             pid = int(line.split(None, 1)[0])
-         #   os.kill(pid, signal.SIGQUIT)
+            os.kill(pid, signal.SIGQUIT)

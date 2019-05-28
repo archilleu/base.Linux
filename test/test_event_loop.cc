@@ -11,6 +11,7 @@
 #include "../src/timer_queue.h"
 //---------------------------------------------------------------------------
 using namespace net;
+using namespace net::test;
 //---------------------------------------------------------------------------
 EventLoop* g_loop;
 //---------------------------------------------------------------------------
@@ -338,7 +339,7 @@ bool Test_TimerTask()
 //---------------------------------------------------------------------------
 int main(int, char**)
 {
-    base::test::TestTitle();
+    TestTitle();
 
     TEST_ASSERT(Test_Channel());
     TEST_ASSERT(Test_Normal());

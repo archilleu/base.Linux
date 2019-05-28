@@ -15,12 +15,12 @@ EventLoopThreadPool::EventLoopThreadPool(EventLoop* loop_main)
     thread_nums_(0),
     next_(0)
 {
-    NetLogger_trace("EventLoopThreadPool(%p) ctor");
+    NetLogger_trace("EventLoopThreadPool(%p) ctor", this);
 }
 //---------------------------------------------------------------------------
 EventLoopThreadPool::~EventLoopThreadPool()
 {
-    NetLogger_trace("EventLoopThreadPool(%p) dtor");
+    NetLogger_trace("EventLoopThreadPool(%p) dtor", this);
 
     if(running_)
         Stop();
@@ -30,7 +30,7 @@ void EventLoopThreadPool::Start()
 {
     loop_main_->AssertInLoopThread();
     assert(false == running_);
-    NetLogger_info("EventLoopTreadPool(%p) start");
+    NetLogger_info("EventLoopTreadPool(%p) start", this);
 
     for(int i=0; i<thread_nums_; i++)
     {
@@ -48,7 +48,7 @@ void EventLoopThreadPool::Start()
 void EventLoopThreadPool::Stop()
 {
     loop_main_->AssertInLoopThread();
-    NetLogger_info("EventLoopTreadPool(%p) stop");
+    NetLogger_info("EventLoopTreadPool(%p) stop", this);
 
     for(auto iter : loop_threads_)
         iter->StopLoop();

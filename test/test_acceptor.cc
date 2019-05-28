@@ -9,6 +9,7 @@
 #include "../thirdpart/base/include/thread.h"
 //---------------------------------------------------------------------------
 using namespace net;
+using namespace net::test;
 //---------------------------------------------------------------------------
 bool Test_Illgal()
 {
@@ -102,6 +103,8 @@ void ClientConnect()
 //---------------------------------------------------------------------------
 int main()
 {
+    TestTitle();
+
     TEST_ASSERT(Test_Illgal());
     TEST_ASSERT(Test_Normal());
 
