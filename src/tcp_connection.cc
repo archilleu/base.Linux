@@ -4,6 +4,7 @@
 #include "inet_address.h"
 #include "acceptor.h"
 #include "net_logger.h"
+#include "channel.h"
 #include "event_loop_thread_pool.h"
 //---------------------------------------------------------------------------
 namespace net
@@ -19,7 +20,7 @@ TCPConnection::TCPConnection(EventLoop* ownerloop, std::string&& tcpname, Socket
     state_(CONNECTING),
     requests_(0),
     socket_(std::move(socket)),
-    channel_(owner_loop_, socket_.fd()),
+    channel_(new Channel(owner_loop_, socket_.fd())),
     overstock_size_(0)
 {
     NetLogger_trace("ctor-->name:%s, fd:%d, localaddr:%s, peeraddr:%s",
@@ -44,10 +45,10 @@ void TCPConnection::Initialize()
 {
     assert(CONNECTING == state_);
 
-    channel_.set_read_cb(std::bind(&TCPConnection::HandleRead, this, std::placeholders::_1));
-    channel_.set_write_cb(std::bind(&TCPConnection::HandleWrite, this));
-    channel_.set_error_cb(std::bind(&TCPConnection::HandleError, this));
-    channel_.set_close_cb(std::bind(&TCPConnection::HandleClose, this));
+    channel_->set_read_cb(std::bind(&TCPConnection::HandleRead, this, std::placeholders::_1));
+    channel_->set_write_cb(std::bind(&TCPConnection::HandleWrite, this));
+    channel_->set_error_cb(std::bind(&TCPConnection::HandleError, this));
+    channel_->set_close_cb(std::bind(&TCPConnection::HandleClose, this));
 
     return;
 }
@@ -128,8 +129,8 @@ void TCPConnection::ConnectionEstablished()
     owner_loop_->AssertInLoopThread();
 
     state_ = CONNECTED;
-    channel_.Tie(shared_from_this());
-    channel_.EnableReading();
+    channel_->Tie(shared_from_this());
+    channel_->EnableReading();
     
     if(connection_cb_)
         connection_cb_(shared_from_this());
@@ -144,7 +145,7 @@ void TCPConnection::ConnectionDestroy()
     owner_loop_->AssertInLoopThread();
 
     state_ = DISCONNECTED;
-    channel_.Remove();
+    channel_->Remove();
     return;
 }
 //---------------------------------------------------------------------------
@@ -185,11 +186,11 @@ ssize_t TCPConnection::_SendMostPossible(const char* dat, size_t len)
 {
     //如果没有关注写事件,意味着写缓存为空,则可以直接发送数据
     ssize_t wlen = 0;
-    if(false == channel_.IsWriting())
+    if(false == channel_->IsWriting())
     {
         assert(0 == buffer_output_.ReadableBytes());
 
-        wlen = ::send(channel_.fd(), dat, len, 0) ;
+        wlen = ::send(channel_->fd(), dat, len, 0) ;
         if(0 > wlen)
         {
             //发送出错,关闭连接
@@ -225,8 +226,8 @@ void TCPConnection::_SendDatQueueInBuffer(const char* dat, size_t remain)
     
     //添加未完成发送的数据到缓存
     buffer_output_.Append(dat, remain);
-    if(false == channel_.IsWriting())
-        channel_.EnableWriting();
+    if(false == channel_->IsWriting())
+        channel_->EnableWriting();
 
     return;
 }
@@ -238,7 +239,7 @@ void TCPConnection::ShutdownWriteInLoop()
 
     owner_loop_->AssertInLoopThread();
 
-    if(false == channel_.IsWriting())
+    if(false == channel_->IsWriting())
         socket_.ShutDownWrite();
 
     return;
@@ -307,7 +308,7 @@ void TCPConnection::HandleWrite()
         buffer_output_.Retrieve(wlen);
         if(readable_len == static_cast<size_t>(wlen))
         {
-            channel_.DisableWriting();
+            channel_->DisableWriting();
 
             //发送完成回调
             if(write_complete_cb_)
@@ -353,7 +354,7 @@ void TCPConnection::HandleClose()
         Hang up happened on the associated file descriptor.epoll_wait(2) will always 
         wait for this event; it is not necessary to set it in events.
     */
-    channel_.DisableAll();
+    channel_->DisableAll();
     
     TCPConnectionPtr guard(shared_from_this());
 

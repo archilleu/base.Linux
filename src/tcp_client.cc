@@ -2,7 +2,8 @@
 #include "tcp_client.h"
 #include "event_loop.h"
 #include "tcp_connection.h"
-#include "../thirdpart/base/include/function.h"
+#include "net_logger.h"
+#include "base/include/function.h"
 //---------------------------------------------------------------------------
 namespace net
 {

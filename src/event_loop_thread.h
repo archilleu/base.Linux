@@ -5,8 +5,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include "../thirdpart/base/include/thread.h"
-#include "../thirdpart/base/include/noncopyable.h"
+#include "base/include/thread.h"
+#include "base/include/noncopyable.h"
 //---------------------------------------------------------------------------
 namespace net
 {

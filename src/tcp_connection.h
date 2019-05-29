@@ -7,13 +7,13 @@
 #include "inet_address.h"
 #include "buffer.h"
 #include "socket.h"
-#include "channel.h"
-#include "../thirdpart/base/include/noncopyable.h"
-#include "../thirdpart/base/include/any.h"
+#include "base/include/noncopyable.h"
+#include "base/include/any.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
+class Channel;
 class EventLoop;
 
 class TCPConnection : public base::Noncopyable,
@@ -123,7 +123,7 @@ private:
     Buffer buffer_output_;
 
     Socket socket_;
-    Channel channel_;
+    std::shared_ptr<Channel> channel_;
 
     ConnectionCallback connection_cb_;
     DisconnectionCallback disconnection_cb_;

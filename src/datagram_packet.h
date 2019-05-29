@@ -4,7 +4,7 @@
 //---------------------------------------------------------------------------
 #include <cassert>
 #include <vector>
-#include "../thirdpart/base/include/memory_block.h"
+#include "base/include/memory_block.h"
 #include "inet_address.h"
 #include "callback.h"
 //---------------------------------------------------------------------------

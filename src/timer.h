@@ -4,7 +4,7 @@
 //---------------------------------------------------------------------------
 #include <atomic>
 #include "callback.h"
-#include "../thirdpart/base/include/timestamp.h"
+#include "base/include/timestamp.h"
 //---------------------------------------------------------------------------
 namespace net
 {

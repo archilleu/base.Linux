@@ -6,6 +6,9 @@ cmake_minimum_required (VERSION 2.8)
 #aux_source_directory(<dir> <variable>)
 aux_source_directory(. DIR_SRCS)
 #---------------------------------------------------------------------------
+#add header file
+include_directories(../thirdpart)
+#---------------------------------------------------------------------------
 #generate static library
 #add_library(libname ${<dir>})
 set(LIBNAME net)
@@ -15,7 +18,7 @@ add_library(${LIBNAME} ${DIR_SRCS})
 install(TARGETS ${LIBNAME} DESTINATION ${LIBRARY_OUTPUT_PATH_LIB})
 
 set(HEADERS
-	buffer.h
+    buffer.h
     callback.h
     event_loop.h
     inet_address.h
@@ -23,9 +26,7 @@ set(HEADERS
     tcp_client.h
     tcp_server.h
     tcp_connection.h
-    timer.h
     timer_id.h
-    timer_queue.h
 
     udp_server.h
     datagram_packet.h

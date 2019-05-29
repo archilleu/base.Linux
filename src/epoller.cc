@@ -5,7 +5,7 @@
 #include "epoller.h"
 #include "channel.h"
 #include "net_logger.h"
-#include "../thirdpart/base/include/timestamp.h"
+#include "base/include/timestamp.h"
 //---------------------------------------------------------------------------
 namespace
 {

@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "../thirdpart/base/include/noncopyable.h"
+#include "base/include/noncopyable.h"
 //---------------------------------------------------------------------------
 namespace net
 {

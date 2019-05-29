@@ -7,7 +7,7 @@
 #include <memory>
 #include <atomic>
 #include "channel.h"
-#include "../thirdpart/base/include/timestamp.h"
+#include "base/include/timestamp.h"
 #include "callback.h"
 //---------------------------------------------------------------------------
 namespace net

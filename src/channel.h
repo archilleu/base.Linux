@@ -4,7 +4,7 @@
 //---------------------------------------------------------------------------
 #include <memory>
 #include <functional>
-#include "../thirdpart/base/include/noncopyable.h"
+#include "base/include/noncopyable.h"
 //---------------------------------------------------------------------------
 namespace net
 {

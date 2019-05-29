@@ -15,6 +15,10 @@ void OnConnection(const TCPConnectionPtr& conn_ptr)
 {
     std::cout << "TestTCPServer" << ": connect:" << conn_ptr->name() << std::endl;
     std::cout << "count:" <<  conn_ptr.use_count() << std::endl;
+    if(!conn_ptr->data().empty())
+    {
+        std::cout << "any data: " << base::any_cast<std::string>(conn_ptr->data()) << std::endl;
+    }
 }
 //---------------------------------------------------------------------------
 void OnDisconnection(const TCPConnectionPtr& conn_ptr)
@@ -88,12 +92,33 @@ bool Test_MultiThread()
     return true;
 }
 //---------------------------------------------------------------------------
+bool Test_MultiThreadData()
+{
+    EventLoop loop;
+    g_loop = &loop;
+    InetAddress listen_addr(9999);
+    base::any data = std::string("new any data");
+    TCPServer tcp_server(&loop, {{listen_addr, data}});
+    loop.set_sig_usr1_cb(Dump);
+    loop.set_sig_quit_cb(Quit);
+    loop.SetHandleSingnal();
+    tcp_server.set_event_loop_nums(8);
+    tcp_server.set_connection_cb(std::bind(OnConnection, std::placeholders::_1));
+    tcp_server.set_disconnection_cb(std::bind(OnDisconnection, std::placeholders::_1));
+    tcp_server.Start();
+    loop.Loop();
+    tcp_server.Stop();
+
+    return true;
+}
+//---------------------------------------------------------------------------
 int main()
 {
     TestTitle();
 
-    TEST_ASSERT(Test_Normal());
-    TEST_ASSERT(Test_MultiThread());
+    //TEST_ASSERT(Test_Normal());
+    //TEST_ASSERT(Test_MultiThread());
+    TEST_ASSERT(Test_MultiThreadData());
     return 0;
 }
 //---------------------------------------------------------------------------

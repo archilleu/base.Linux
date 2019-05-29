@@ -3,7 +3,7 @@
 #define NET_UDP_WORKER_H_
 //---------------------------------------------------------------------------
 #include <vector>
-#include "../thirdpart/base/include/thread.h"
+#include "base/include/thread.h"
 //---------------------------------------------------------------------------
 namespace net
 {

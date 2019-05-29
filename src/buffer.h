@@ -7,7 +7,7 @@
 #include <cassert>
 #include <cstring>
 #include <algorithm>
-#include "../thirdpart/base/include/noncopyable.h"
+#include "base/include/noncopyable.h"
 //---------------------------------------------------------------------------
 namespace net
 {

@@ -7,7 +7,7 @@
 #include <cstring>
 #include <netinet/in.h>
 #include <memory>
-#include "../thirdpart/base/include/any.h"
+#include "base/include/any.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -48,13 +48,19 @@ private:
 //---------------------------------------------------------------------------
 inline bool operator==(const InetAddress& left, const InetAddress& right)
 {
-        return (0 == memcmp(&left.address_, &right.address_, sizeof(sockaddr_in)));
+    return (0 == memcmp(&left.address_, &right.address_, sizeof(sockaddr_in)));
 }
 //---------------------------------------------------------------------------
 inline bool operator!=(const InetAddress& left, const InetAddress& right)
 {
-        return !(left==right);
+    return !(left==right);
 }
+//---------------------------------------------------------------------------
+struct InetAddressConfig
+{
+    InetAddress address;
+    base::any data;
+};
 //---------------------------------------------------------------------------
 
 }//namespace net

@@ -5,6 +5,9 @@ cmake_minimum_required (VERSION 2.8)
 #look up dir's file, and add to var
 aux_source_directory(. DIR_TESTS)
 #---------------------------------------------------------------------------
+#add header file
+include_directories(../thirdpart)
+#---------------------------------------------------------------------------
 #add lib path
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../thirdpart/base/lib)
 #---------------------------------------------------------------------------

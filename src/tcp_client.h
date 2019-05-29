@@ -7,7 +7,7 @@
 #include "inet_address.h"
 #include "callback.h"
 #include "tcp_connector.h"
-#include "../thirdpart/base/include/noncopyable.h"
+#include "base/include/noncopyable.h"
 //---------------------------------------------------------------------------
 namespace net
 {

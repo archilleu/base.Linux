@@ -4,24 +4,25 @@
 //---------------------------------------------------------------------------
 #include <vector>
 #include <atomic>
-#include "../thirdpart/base/include/noncopyable.h"
-#include "../thirdpart/base/include/any.h"
+#include "base/include/noncopyable.h"
 #include "callback.h"
-#include "event_loop_thread_pool.h"
-#include "acceptor.h"
 #include "inet_address.h"
 //---------------------------------------------------------------------------
 namespace net
 {
 
-class EventLoop;
 class Socket;
+class Acceptor;
+class EventLoop;
 class InetAddress;
+struct InetAddressConfig;
+class EventLoopThreadPool;
 
 class TCPServer : public base::Noncopyable
 {
 public:
     TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& addresses);
+    TCPServer(EventLoop* owner_loop, const std::vector<InetAddressConfig>& addresses);
     TCPServer(EventLoop* owner_loop, short port);
     ~TCPServer();
 
@@ -37,9 +38,6 @@ public:
 
     void set_event_loop_nums(int nums);
 
-    void set_data(const base::any& data) { data_ = data; }
-    const base::any& data() const { return data_; }
-     
     void Start();
     void Stop();
 
@@ -48,6 +46,7 @@ public:
 
 private:
     void OnNewConnection(Socket&& client, InetAddress&& client_addr, uint64_t accept_time);
+    void OnNewConnectionData(Socket&& client, InetAddressConfig&& client_addr, uint64_t accept_time);
 
     void OnConnectionRemove(const TCPConnectionPtr& conn_ptr);
     void OnConnectionRemoveInLoop(const TCPConnectionPtr& conn_ptr);
@@ -63,8 +62,6 @@ private:
     WriteHighWaterMarkCallback high_water_mark_cb_;
     size_t mark_;   //写缓存积压阈值
 
-    base::any data_;
-
     EventLoop* owner_loop_;
     size_t next_connect_id_;
     std::vector<std::shared_ptr<Acceptor>> acceptors_;
@@ -76,7 +73,7 @@ private:
     //避免遍历整个tcp_conn_list_,该方案可以替代，所以取消
     //std::atomic<int> cur_max_fd_; //当前连接最大fd
 
-    EventLoopThreadPool loop_thread_pool_;
+    std::shared_ptr<EventLoopThreadPool> loop_thread_pool_;
 };
 
 }//namespace net

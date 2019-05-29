@@ -13,16 +13,8 @@ namespace net
 
 //---------------------------------------------------------------------------
 Acceptor::Acceptor(EventLoop* event_loop, const InetAddress& addr_listen)
-:   event_loop_(event_loop),
-    idle_fd_(::open("/dev/null", O_RDONLY|O_CLOEXEC))
 {
-    NetLogger_trace("Acceptor(%p) ctor", this);
-
-    if(0 > idle_fd_)
-    {
-        NetLogger_off("open /dev/null failed, errno:%d, msg:%s", errno, OSError(errno));
-        exit(errno);
-    }
+    Initialize(event_loop);
 
     if(addr_listen.IsV4())
     {
@@ -44,6 +36,37 @@ Acceptor::Acceptor(EventLoop* event_loop, const InetAddress& addr_listen)
     listen_socket_->SetReuseAddress();
     listen_socket_->Bind(addr_listen);
 
+    listen_channel_ = std::make_shared<Channel>(event_loop_, listen_socket_->fd(), "acceptor");
+    listen_channel_->set_read_cb(std::bind(&Acceptor::HandleRead, this,std::placeholders::_1));
+
+    return;
+}
+//---------------------------------------------------------------------------
+Acceptor::Acceptor(EventLoop* event_loop, const InetAddressConfig& addr_listen)
+{
+    Initialize(event_loop);
+
+    if(addr_listen.address.IsV4())
+    {
+        listen_socket_ = std::make_shared<Socket>(::socket(AF_INET,
+                    SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0));
+    }
+    else
+    {
+        listen_socket_ = std::make_shared<Socket>(::socket(AF_INET6,
+                    SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0));
+        listen_socket_->SetIPV6Only();
+    }
+
+    if(0 > listen_socket_->fd())
+    {
+        NetLogger_off("listen sock create failed, errno:%d, msg:%s", errno, OSError(errno));
+        exit(errno);
+    }
+    listen_socket_->SetReuseAddress();
+    listen_socket_->Bind(addr_listen.address);
+
+    data_ = addr_listen.data;
     listen_channel_ = std::make_shared<Channel>(event_loop_, listen_socket_->fd(), "acceptor");
     listen_channel_->set_read_cb(std::bind(&Acceptor::HandleRead, this,std::placeholders::_1));
 
@@ -76,6 +99,22 @@ void Acceptor::Listen()
     return;
 }
 //---------------------------------------------------------------------------
+void Acceptor::Initialize(EventLoop* event_loop)
+{
+    event_loop_ = event_loop;
+    idle_fd_ = ::open("/dev/null", O_RDONLY|O_CLOEXEC);
+
+    NetLogger_trace("Acceptor(%p) ctor", this);
+
+    if(0 > idle_fd_)
+    {
+        NetLogger_off("open /dev/null failed, errno:%d, msg:%s", errno, OSError(errno));
+        exit(errno);
+    }
+
+    return;
+}
+//---------------------------------------------------------------------------
 int Acceptor::AcceptConnection(InetAddress& addr_peer)
 {
     sockaddr_storage client;
@@ -105,7 +144,7 @@ void Acceptor::HandleRead(uint64_t rcv_time)
             }
 
             //如果不想处理连接则直接关闭
-            if(!new_conn_cb_)
+            if(!new_conn_cb_ && !new_conn_data_cb_)
             {
                 ::close(client_fd);
                 continue;
@@ -116,6 +155,11 @@ void Acceptor::HandleRead(uint64_t rcv_time)
             if(new_conn_cb_)
             {
                 new_conn_cb_(std::move(socket), std::move(addr_peer), rcv_time);
+            }
+            else
+            {
+                InetAddressConfig address_config = {addr_peer, data_};
+                new_conn_data_cb_(std::move(socket), std::move(address_config), rcv_time);
             }
         }
         else

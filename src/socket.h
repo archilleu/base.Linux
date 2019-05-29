@@ -5,7 +5,7 @@
 #include <cassert>
 #include <unistd.h>
 #include "inet_address.h"
-#include "../thirdpart/base/include/noncopyable.h"
+#include "base/include/noncopyable.h"
 //---------------------------------------------------------------------------
 /*
  * Socket 内部维护的描述符由外部创建,内部销毁

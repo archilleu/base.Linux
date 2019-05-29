@@ -4,7 +4,7 @@
 //---------------------------------------------------------------------------
 #include <vector>
 #include <map>
-#include "../thirdpart/base/include/noncopyable.h"
+#include "base/include/noncopyable.h"
 #include "event_loop.h"
 //---------------------------------------------------------------------------
 namespace net

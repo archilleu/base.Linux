@@ -5,7 +5,7 @@
 #include <functional>
 #include "inet_address.h"
 #include "channel.h"
-#include "../thirdpart/base/include/noncopyable.h"
+#include "base/include/noncopyable.h"
 #include "timer_id.h"
 //---------------------------------------------------------------------------
 namespace net

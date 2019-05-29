@@ -5,11 +5,11 @@
 #include <vector>
 #include <list>
 #include <mutex>
-#include "../thirdpart/base/include/noncopyable.h"
-#include "../thirdpart/base/include/thread.h"
-#include "../thirdpart/base/include/timestamp.h"
+#include "base/include/noncopyable.h"
+#include "base/include/thread.h"
+#include "base/include/timestamp.h"
+#include "base/include/logger.h"
 #include "callback.h"
-#include "net_logger.h"
 //---------------------------------------------------------------------------
 namespace net
 {
