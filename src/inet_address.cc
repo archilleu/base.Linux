@@ -134,6 +134,12 @@ std::string InetAddress::IpPort() const
     return Ip() + ":" + Port();
 }
 //---------------------------------------------------------------------------
+short InetAddress::port() const
+{
+    const sockaddr_in* addr = reinterpret_cast<const sockaddr_in*>(&address_);
+    return be16toh(addr->sin_port);
+}
+//---------------------------------------------------------------------------
 std::vector<InetAddress> InetAddress::GetList(std::string domain_name, short port)
 {
     std::vector<InetAddress> addr_list;

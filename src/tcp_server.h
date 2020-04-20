@@ -15,14 +15,12 @@ class Socket;
 class Acceptor;
 class EventLoop;
 class InetAddress;
-struct InetAddressConfig;
 class EventLoopThreadPool;
 
 class TCPServer : public base::Noncopyable
 {
 public:
     TCPServer(EventLoop* owner_loop, const std::vector<InetAddress>& addresses);
-    TCPServer(EventLoop* owner_loop, const std::vector<InetAddressConfig>& addresses);
     TCPServer(EventLoop* owner_loop, short port);
     ~TCPServer();
 
@@ -46,7 +44,6 @@ public:
 
 private:
     void OnNewConnection(Socket&& client, InetAddress&& client_addr, uint64_t accept_time);
-    void OnNewConnectionData(Socket&& client, InetAddressConfig&& client_addr, uint64_t accept_time);
 
     void OnConnectionRemove(const TCPConnectionPtr& conn_ptr);
     void OnConnectionRemoveInLoop(const TCPConnectionPtr& conn_ptr);

@@ -31,15 +31,6 @@ void NewConn(Socket socket, const InetAddress& addr, uint64_t rcv_time)
     sleep(1);
 }
 //---------------------------------------------------------------------------
-void NewConnData(Socket socket, const InetAddressConfig& addr, uint64_t rcv_time)
-{
-    std::cout << "=====================>time: " 
-        << base::Timestamp(rcv_time).Datetime(true) <<  " fd:" << socket.fd() << " addr:"
-        << addr.address.IpPort()
-        << " any data:" << base::any_cast<std::string>(addr.data) << std::endl;
-    sleep(1);
-}
-//---------------------------------------------------------------------------
 void ClientConnect();
 //---------------------------------------------------------------------------
 bool Test_Normal()
@@ -51,29 +42,6 @@ bool Test_Normal()
     Acceptor acceptor6(&loop, listen_addr6);
     acceptor.set_new_conn_cb(NewConn);
     acceptor6.set_new_conn_cb(NewConn);
-    acceptor.Listen();
-    acceptor6.Listen();
-
-    g_loop = &loop;
-
-    //启动客户端请求连接线程
-    base::Thread t(ClientConnect);
-    t.Start();
-
-    loop.Loop();
-    return true;
-}
-//---------------------------------------------------------------------------
-bool Test_NormalData()
-{
-    EventLoop loop;
-    base::any data = std::string("hello,xxx");
-    InetAddress listen_addr(9999, true); //ipv4
-    InetAddress listen_addr6(9999, false);
-    Acceptor acceptor(&loop, {listen_addr, data});
-    Acceptor acceptor6(&loop, {listen_addr6, data});
-    acceptor.set_new_conn_data_cb(NewConnData);
-    acceptor6.set_new_conn_data_cb(NewConnData);
     acceptor.Listen();
     acceptor6.Listen();
 
@@ -139,7 +107,6 @@ int main()
 
     TEST_ASSERT(Test_Illgal());
     TEST_ASSERT(Test_Normal());
-    TEST_ASSERT(Test_NormalData());
 
     return 1;
 }

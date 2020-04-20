@@ -7,7 +7,6 @@
 #include <cstring>
 #include <netinet/in.h>
 #include <memory>
-#include "base/include/any.h"
 //---------------------------------------------------------------------------
 namespace net
 {
@@ -26,6 +25,8 @@ public:
     std::string Ip() const;
     std::string Port() const;
     std::string IpPort() const;
+
+    short port() const;
 
     bool IsV4() const { return (AF_INET == address_.ss_family); }
 
@@ -55,12 +56,6 @@ inline bool operator!=(const InetAddress& left, const InetAddress& right)
 {
     return !(left==right);
 }
-//---------------------------------------------------------------------------
-struct InetAddressConfig
-{
-    InetAddress address;
-    base::any data;
-};
 //---------------------------------------------------------------------------
 
 }//namespace net

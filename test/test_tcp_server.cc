@@ -97,8 +97,7 @@ bool Test_MultiThreadData()
     EventLoop loop;
     g_loop = &loop;
     InetAddress listen_addr(9999);
-    base::any data = std::string("new any data");
-    TCPServer tcp_server(&loop, {{listen_addr, data}});
+    TCPServer tcp_server(&loop, {{listen_addr}});
     loop.set_sig_usr1_cb(Dump);
     loop.set_sig_quit_cb(Quit);
     loop.SetHandleSingnal();

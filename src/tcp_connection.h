@@ -70,10 +70,6 @@ public:
 
     std::string GetTCPInfo() const;
 
-    void set_context(const base::any& context) { context_ = context; }
-    const base::any& context() const { return context_; }
-    base::any* getContext() { return &context_; }
-
 private:
     //以下方法仅供TCPServer调用
     friend class TCPServer;
@@ -135,9 +131,6 @@ private:
 
     //附加数据
     mutable base::any data_;
-
-    //该连接上下文数据
-    base::any context_;
 };
 
 }//namespace net

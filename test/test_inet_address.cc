@@ -15,6 +15,7 @@ bool Test_Normal()
     InetAddress none;
     printf("none ip:%s ip:port:%s\n", none.Ip().c_str(), none.IpPort().c_str());
     TEST_ASSERT(InetAddress::INVALID_ADDR == none);
+    TEST_ASSERT(0 == none.port());
     }
 
     {
@@ -22,11 +23,13 @@ bool Test_Normal()
     InetAddress port(10000, true);
     printf("port ip:%s ip:port:%s\n", port.Ip().c_str(), port.IpPort().c_str());
     TEST_ASSERT("10000" == port.Port());
+    TEST_ASSERT(10000 == port.port());
 
     //ipv6
     InetAddress port6(10000, false);
     printf("port ip:%s ip:port:%s\n", port6.Ip().c_str(), port6.IpPort().c_str());
     TEST_ASSERT("10000" == port6.Port());
+    TEST_ASSERT(10000 == port6.port());
     }
 
     {
