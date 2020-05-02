@@ -7,15 +7,6 @@
 #include <memory>
 #include <cstdarg>
 //---------------------------------------------------------------------------
-#ifdef _DEBUG
-#define LOGGER_STR_H(x) #x
-#define LOGGER_STR_HELPER(x) LOGGER_STR_H(x)
-#define LOGGER_TRACE(logger, ...) logger->trace("[" __FILE__ ":" LOGGER_STR_HELPER(__LINE__) "]: " __VA_ARGS__)
-#define LOGGER_DEBUG(logger, ...) logger->debug(__VA_ARGS__)
-#else
-#define LOGGER_TRACE(logger, ...)
-#define LOGGER_DEBUG(logger, ...)
-#endif
 //---------------------------------------------------------------------------
 namespace base
 {

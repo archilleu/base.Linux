@@ -70,6 +70,10 @@ bool SaveFile(const char* path, const char* dat, size_t len);
 bool DocumentExist(const std::string& pathname);
 bool DocumentExist(const char* pathname);
 //---------------------------------------------------------------------------
+//HTTP时间转换
+time_t ParseHTTPDatetime(const char* datetime);
+std::string FormatHTTPDatetime(time_t time);
+//---------------------------------------------------------------------------
 
 }//namespace base
 //---------------------------------------------------------------------------

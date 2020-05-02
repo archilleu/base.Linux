@@ -71,9 +71,8 @@ public:
 public:
     static EventLoop* GetEventLoopOfCurrentThread();
 
-    //设置日志参数
-    static void SetLogger(const std::string& path, base::Logger::Level level,
-            base::Logger::Level flush_level);
+    //设置日志对象
+    static void SetLogger(const std::shared_ptr<base::Logger>& logger);
 
 private:
     void AbortNotInLoopThread() const;

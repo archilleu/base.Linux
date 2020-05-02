@@ -203,7 +203,10 @@ void Close()
 //---------------------------------------------------------------------------
 bool Test_Normal()
 {
-    EventLoop::SetLogger("/tmp/logger", base::Logger::Level::TRACE, base::Logger::Level::ERROR);
+    auto logger = base::Logger::file_stdout_logger_mt("/tmp/logger");
+    logger->set_level(base::Logger::TRACE);
+    logger->set_flush_level(base::Logger::ERROR);
+    EventLoop::SetLogger(logger);
     EventLoop loop;
     g_loop = &loop;
     TCPServer server(&loop, 9999);

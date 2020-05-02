@@ -45,9 +45,6 @@ class GlobalInit
         GlobalInit()
         {
             InitSignal();
-
-            //设置默认的logger
-            g_net_logger = base::Logger::stdout_logger_mt();
         }
 }g_init;
 //---------------------------------------------------------------------------
@@ -146,7 +143,7 @@ void EventLoop::Loop()
         DoPendingTasks();
 
         //刷新日志
-        g_net_logger->Flush();
+        if(g_net_logger) g_net_logger->Flush();
     }
 
     //处理剩下的工作
@@ -256,17 +253,9 @@ void EventLoop::SetHandleSingnal()
     return t_loop_in_current_thread;
 }
 //---------------------------------------------------------------------------
-void EventLoop::SetLogger(const std::string& path, base::Logger::Level level,
-        base::Logger::Level flush_level)
+void EventLoop::SetLogger(const std::shared_ptr<base::Logger>& logger)
 {
-    if(!path.empty())
-    {
-        g_net_logger = base::Logger::file_stdout_logger_mt(path);
-    }
-
-    g_net_logger->set_level(level);
-    g_net_logger->set_flush_level(flush_level);
-
+    g_net_logger = logger;
     return;
 }
 //---------------------------------------------------------------------------
